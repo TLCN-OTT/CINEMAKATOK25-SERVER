@@ -13,7 +13,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       - name: Build
         run: npm run format
       # - name: Commit linted files
@@ -28,7 +28,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       - name: Build
         run: npm run lint
   build-and-deploy:
