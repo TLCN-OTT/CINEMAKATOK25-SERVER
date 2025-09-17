@@ -118,6 +118,16 @@ jobs:
             docker exec my-nest-app sh -c "echo 'Database Port:' \$core__database__port"
             docker exec my-nest-app sh -c "echo 'Database Name Length:' \${#core__database__dbName}"
 
+            # Test config loading trong container
+            echo "🔍 Testing config loading in container..."
+            docker exec my-nest-app node -e "
+              const config = require('config');
+              console.log('Config loaded from:', config.util.getConfigSources().map(s => s.name));
+              console.log('Database host from config:', config.get('core.database.host'));
+              console.log('Database port from config:', config.get('core.database.port'));
+              console.log('Database dbName from config:', config.get('core.database.dbName'));
+            " || echo "Config test failed"
+
             # Debug trực tiếp từ secrets (masked nhưng có thể test connectivity)
             echo "🔍 Testing database connectivity from host..."
             nc -zv ${{ secrets.CORE_DATABASE_HOST }} ${{ secrets.CORE_DATABASE_PORT }} || echo "Host to DB connection failed"
