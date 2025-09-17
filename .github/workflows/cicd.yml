@@ -69,11 +69,21 @@ jobs:
             docker stop my-nest-app || true
             docker rm my-nest-app || true
 
+            echo "${{ secrets.DB_CA_CERTIFICATE }}" > /home/ubuntu/ca.pem
+
             docker run -d \
               --name my-nest-app \
               --restart always \
               -p 127.0.0.1:3000:3000 \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              -e CORE_DATABASE_TYPE=postgres \
+              -e CORE_DATABASE_HOST=${{ secrets.CORE_DATABASE_HOST }} \
+              -e CORE_DATABASE_PORT=${{ secrets.CORE_DATABASE_PORT }} \
+              -e CORE_DATABASE_USERNAME=${{ secrets.CORE_DATABASE_USERNAME }} \
+              -e CORE_DATABASE_PASSWORD=${{ secrets.CORE_DATABASE_PASSWORD }} \
+              -e CORE_DATABASE_DB_NAME=${{ secrets.CORE_DATABASE_DB_NAME }} \
+              -e CORE_DATABASE_SYNCHRONIZE=false \
+              -e DB_CA_CERTIFICATE_PATH=/app/ca.pem \
+              -v /home/ubuntu/ca.pem:/app/ca.pem:ro \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
 
             sudo systemctl reload nginx
