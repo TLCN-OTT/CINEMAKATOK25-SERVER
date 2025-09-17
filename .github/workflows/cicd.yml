@@ -2,18 +2,22 @@ name: Build
 on:
   push:
     branches: [develop]
+
 jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-          # Remove cache since no lock file exists
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Format
         run: pnpm run format
 
@@ -21,34 +25,68 @@ jobs:
     needs: [format]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Install dependencies
-        run: pnpm install # Changed from npm ci to npm install
+        run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm run build
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Log in to Docker Hub
-        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-      - name: Push Docker image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
       - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             docker pull ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
             docker stop my-nest-app || true
             docker rm my-nest-app || true
+
+            # Install curl in EC2 if not exists
+            sudo apt-get update && sudo apt-get install -y curl || sudo yum install -y curl || true
+
             docker run -d \
               --name my-nest-app \
               --restart always \
               -p 3000:3000 \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
+
+            # Wait for container to start
+            sleep 30
+
+            # Verify deployment using external check
+            if curl -f http://${{ secrets.EC2_HOST }}:3000/health; then
+              echo "✅ Deployment successful - Health check passed"
+            elif docker ps | grep -q my-nest-app; then
+              echo "✅ Deployment successful - Container is running"
+              docker logs --tail 10 my-nest-app
+            else
+              echo "❌ Deployment failed"
+              docker logs my-nest-app
+              exit 1
+            fi
+
+            # Clean up old images
+            docker image prune -f
