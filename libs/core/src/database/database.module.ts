@@ -15,7 +15,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       synchronize: true,
       autoLoadEntities: true,
       ssl: {
-        rejectUnauthorized: true,
+        rejectUnauthorized: false,
         ca: config.get('core.database.caCertificate'),
       },
       extra: config.has('core.database.extra')
