@@ -94,15 +94,16 @@ jobs:
               --restart always \
               -p 3000:3000 \
               -e SUPPRESS_NO_CONFIG_WARNING=true \
-              -e core__database__type=postgres \
-              -e core__database__host=${{ secrets.CORE_DATABASE_HOST }} \
-              -e core__database__port=${{ secrets.CORE_DATABASE_PORT }} \
-              -e core__database__username=${{ secrets.CORE_DATABASE_USERNAME }} \
-              -e core__database__password=${{ secrets.CORE_DATABASE_PASSWORD }} \
-              -e core__database__dbName=${{ secrets.CORE_DATABASE_DB_NAME }} \
-              -e core__database__ssl=true \
+              -e CORE_DATABASE_TYPE=postgres \
+              -e CORE_DATABASE_HOST=${{ secrets.CORE_DATABASE_HOST }} \
+              -e CORE_DATABASE_PORT=${{ secrets.CORE_DATABASE_PORT }} \
+              -e CORE_DATABASE_USERNAME=${{ secrets.CORE_DATABASE_USERNAME }} \
+              -e CORE_DATABASE_PASSWORD=${{ secrets.CORE_DATABASE_PASSWORD }} \
+              -e CORE_DATABASE_DB_NAME=${{ secrets.CORE_DATABASE_DB_NAME }} \
+              -e CORE_DATABASE_SYNCHRONIZE=${{ secrets.CORE_DATABASE_SYNCHRONIZE }} \
+              -e DB_CA_CERTIFICATE="${{ secrets.DB_CA_CERTIFICATE }}" \
               -e PGSSLMODE=require \
-              -v /home/ubuntu/ca.pem:/app/ca.pem \
+              -v /home/ubuntu/ca.pem:/app/ca.pem:ro \
               -v /home/ubuntu/exports:/app/exports \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
               
@@ -111,13 +112,13 @@ jobs:
 
             # Verify container environment variables are set
             echo "🔍 Verifying container environment..."
-            docker exec my-nest-app printenv | grep "core__database" | wc -l
+            docker exec my-nest-app printenv | grep "CORE_DATABASE" | wc -l
 
             # Debug environment variables (không show values)
             echo "🔍 Debugging database connection..."
-            docker exec my-nest-app sh -c "echo 'Database Host Length:' \${#core__database__host}"
-            docker exec my-nest-app sh -c "echo 'Database Port:' \$core__database__port"
-            docker exec my-nest-app sh -c "echo 'Database Name Length:' \${#core__database__dbName}"
+            docker exec my-nest-app sh -c "echo 'Database Host Length:' \${#CORE_DATABASE_HOST}"
+            docker exec my-nest-app sh -c "echo 'Database Port:' \$CORE_DATABASE_PORT"
+            docker exec my-nest-app sh -c "echo 'Database Name Length:' \${#CORE_DATABASE_DB_NAME}"
 
             # Test config loading trong container
             echo "🔍 Testing config loading in container..."
@@ -135,7 +136,7 @@ jobs:
 
             # Test database connectivity từ trong container
             echo "🔍 Testing database connectivity from container..."
-            docker exec my-nest-app sh -c "timeout 5 nc -zv \$core__database__host \$core__database__port" || echo "Container to DB connection failed"
+            docker exec my-nest-app sh -c "timeout 5 nc -zv \$CORE_DATABASE_HOST \$CORE_DATABASE_PORT" || echo "Container to DB connection failed"
 
             sudo systemctl reload nginx
 
