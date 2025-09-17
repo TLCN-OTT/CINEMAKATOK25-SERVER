@@ -80,9 +80,6 @@ jobs:
             [ -n "${{ secrets.CORE_DATABASE_PASSWORD }}" ] && echo "✅ CORE_DATABASE_PASSWORD is set" || echo "❌ CORE_DATABASE_PASSWORD is empty"
             [ -n "${{ secrets.CORE_DATABASE_DB_NAME }}" ] && echo "✅ CORE_DATABASE_DB_NAME is set" || echo "❌ CORE_DATABASE_DB_NAME is empty"
 
-            # Create exports directory with proper permissions
-            mkdir -p /home/ubuntu/exports
-            chmod 755 /home/ubuntu/exports
 
             docker run -d \
               --name my-nest-app \
@@ -98,8 +95,14 @@ jobs:
               -e core__database__synchronize=false \
               -e core__database__caCertificate=/app/ca.pem \
               -v /home/ubuntu/ca.pem:/app/ca.pem:ro \
-              -v /home/ubuntu/exports:/app/exports \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
+              
+            # Wait a moment for container to start
+            sleep 5
+
+            # Verify container environment variables are set
+            echo "🔍 Verifying container environment..."
+            docker exec my-nest-app printenv | grep "core__database" | wc -l
 
             # Debug environment variables (không show values)
             echo "🔍 Debugging database connection..."
@@ -107,9 +110,13 @@ jobs:
             docker exec my-nest-app sh -c "echo 'Database Port:' \$core__database__port"
             docker exec my-nest-app sh -c "echo 'Database Name Length:' \${#core__database__dbName}"
 
-            # Test database connectivity (sử dụng values trực tiếp)
-            echo "🔍 Testing database connectivity..."
-            docker exec my-nest-app sh -c "timeout 5 nc -zv \$core__database__host \$core__database__port" || echo "Database connection failed"
+            # Debug trực tiếp từ secrets (masked nhưng có thể test connectivity)
+            echo "🔍 Testing database connectivity from host..."
+            nc -zv ${{ secrets.CORE_DATABASE_HOST }} ${{ secrets.CORE_DATABASE_PORT }} || echo "Host to DB connection failed"
+
+            # Test database connectivity từ trong container
+            echo "🔍 Testing database connectivity from container..."
+            docker exec my-nest-app sh -c "timeout 5 nc -zv \$core__database__host \$core__database__port" || echo "Container to DB connection failed"
 
             sudo systemctl reload nginx
 
