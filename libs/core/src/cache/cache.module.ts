@@ -1,15 +1,15 @@
-import { Module } from "@nestjs/common";
-import * as config from 'config';
-import {CacheModule as NestCacheModule} from '@nestjs/cache-manager';
+import { getConfig } from '@app/common/utils/get-config';
+import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
+import { Module } from '@nestjs/common';
 
 @Module({
-    imports:[
-        NestCacheModule.register({
-            store: 'memory',
-            max: config.get('core.cache.max'),
-            ttl: config.get('core.cache.ttl'),
-        }),
-    ],
-    exports: [NestCacheModule],
+  imports: [
+    NestCacheModule.register({
+      store: 'memory',
+      max: getConfig('core.cache.max', 100),
+      ttl: getConfig('core.cache.ttl', 60),
+    }),
+  ],
+  exports: [NestCacheModule],
 })
 export class CacheModule {}
