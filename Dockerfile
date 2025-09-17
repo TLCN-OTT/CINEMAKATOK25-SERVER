@@ -1,23 +1,28 @@
 # Sử dụng node image
-FROM node:22-alpine
-
-# Tạo thư mục app
+FROM node:22-alpine AS deps
 WORKDIR /app
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
 
-# Copy package trước để cache layer
-COPY package*.json ./
-
-# Cài dependencies
-RUN npm install 
-
-# Copy toàn bộ source
+FROM node:22-alpine AS builder
+WORKDIR /app
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
+RUN pnpm run build
 
-# Build NestJS
-RUN npm run build
+FROM node:22-alpine AS runner
+WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nestjs
 
-# Expose port
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./package.json
+
+USER nestjs
 EXPOSE 3000
-
-# Run app
-CMD ["node", "dist/main.js"]
+ENV NODE_ENV=production
+CMD ["node", "dist/main"]
