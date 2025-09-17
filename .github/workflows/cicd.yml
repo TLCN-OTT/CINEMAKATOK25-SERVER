@@ -92,7 +92,7 @@ jobs:
             docker run -d \
               --name my-nest-app \
               --restart always \
-              -p 127.0.0.1:3000:3000 \
+              -p 3000:3000 \
               -e SUPPRESS_NO_CONFIG_WARNING=true \
               -e core__database__type=postgres \
               -e core__database__host=${{ secrets.CORE_DATABASE_HOST }} \
@@ -100,8 +100,9 @@ jobs:
               -e core__database__username=${{ secrets.CORE_DATABASE_USERNAME }} \
               -e core__database__password=${{ secrets.CORE_DATABASE_PASSWORD }} \
               -e core__database__dbName=${{ secrets.CORE_DATABASE_DB_NAME }} \
-              -e core__database__synchronize=false \
-              -e core__database__caCertificate=/app/ca.pem \
+              -e core__database__ssl=true \
+              -e PGSSLMODE=require \
+              -v /home/ubuntu/ca.pem:/app/ca.pem \
               -v /home/ubuntu/exports:/app/exports \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
               
