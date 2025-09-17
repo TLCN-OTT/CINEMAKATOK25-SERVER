@@ -25,6 +25,7 @@ jobs:
   build-and-deploy:
     needs: [format]
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
@@ -71,6 +72,14 @@ jobs:
 
             echo "${{ secrets.DB_CA_CERTIFICATE }}" > /home/ubuntu/ca.pem
 
+            # Kiểm tra secrets có giá trị không (không show content)
+            echo "🔍 Checking secrets availability..."
+            [ -n "${{ secrets.CORE_DATABASE_HOST }}" ] && echo "✅ CORE_DATABASE_HOST is set" || echo "❌ CORE_DATABASE_HOST is empty"
+            [ -n "${{ secrets.CORE_DATABASE_PORT }}" ] && echo "✅ CORE_DATABASE_PORT is set" || echo "❌ CORE_DATABASE_PORT is empty"
+            [ -n "${{ secrets.CORE_DATABASE_USERNAME }}" ] && echo "✅ CORE_DATABASE_USERNAME is set" || echo "❌ CORE_DATABASE_USERNAME is empty"
+            [ -n "${{ secrets.CORE_DATABASE_PASSWORD }}" ] && echo "✅ CORE_DATABASE_PASSWORD is set" || echo "❌ CORE_DATABASE_PASSWORD is empty"
+            [ -n "${{ secrets.CORE_DATABASE_DB_NAME }}" ] && echo "✅ CORE_DATABASE_DB_NAME is set" || echo "❌ CORE_DATABASE_DB_NAME is empty"
+
             # Create exports directory with proper permissions
             mkdir -p /home/ubuntu/exports
             chmod 755 /home/ubuntu/exports
@@ -89,15 +98,18 @@ jobs:
               -e core__database__synchronize=false \
               -e core__database__caCertificate=/app/ca.pem \
               -v /home/ubuntu/ca.pem:/app/ca.pem:ro \
+              -v /home/ubuntu/exports:/app/exports \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
 
-            # Debug environment variables
+            # Debug environment variables (không show values)
             echo "🔍 Debugging database connection..."
-            docker exec my-nest-app printenv | grep -E "(core__database|DATABASE)" || echo "No database env vars found"
+            docker exec my-nest-app sh -c "echo 'Database Host Length:' \${#core__database__host}"
+            docker exec my-nest-app sh -c "echo 'Database Port:' \$core__database__port"
+            docker exec my-nest-app sh -c "echo 'Database Name Length:' \${#core__database__dbName}"
 
-            # Test database connectivity from container
+            # Test database connectivity (sử dụng values trực tiếp)
             echo "🔍 Testing database connectivity..."
-            docker exec my-nest-app sh -c "nc -zv \$core__database__host \$core__database__port || echo 'Database connection failed'"
+            docker exec my-nest-app sh -c "timeout 5 nc -zv \$core__database__host \$core__database__port" || echo "Database connection failed"
 
             sudo systemctl reload nginx
 
