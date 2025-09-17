@@ -101,8 +101,7 @@ jobs:
               -e core__database__password=${{ secrets.CORE_DATABASE_PASSWORD }} \
               -e core__database__dbName=${{ secrets.CORE_DATABASE_DB_NAME }} \
               -e core__database__synchronize=false \
-              -e core__database__ssl=true \
-              -e core__database__extra='{"ssl": {"rejectUnauthorized": false}}' \
+              -e core__database__caCertificate=/app/ca.pem \
               -v /home/ubuntu/exports:/app/exports \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
               
