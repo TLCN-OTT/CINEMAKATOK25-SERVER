@@ -71,6 +71,10 @@ jobs:
 
             echo "${{ secrets.DB_CA_CERTIFICATE }}" > /home/ubuntu/ca.pem
 
+            # Create exports directory with proper permissions
+            mkdir -p /home/ubuntu/exports
+            chmod 755 /home/ubuntu/exports
+
             docker run -d \
               --name my-nest-app \
               --restart always \
@@ -85,6 +89,7 @@ jobs:
               -e core__database__synchronize=false \
               -e core__database__caCertificate=/app/ca.pem \
               -v /home/ubuntu/ca.pem:/app/ca.pem:ro \
+              -v /home/ubuntu/exports:/app/exports \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
 
             sudo systemctl reload nginx
