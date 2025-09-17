@@ -80,6 +80,14 @@ jobs:
             [ -n "${{ secrets.CORE_DATABASE_PASSWORD }}" ] && echo "✅ CORE_DATABASE_PASSWORD is set" || echo "❌ CORE_DATABASE_PASSWORD is empty"
             [ -n "${{ secrets.CORE_DATABASE_DB_NAME }}" ] && echo "✅ CORE_DATABASE_DB_NAME is set" || echo "❌ CORE_DATABASE_DB_NAME is empty"
 
+            # Create exports directory with proper permissions
+            mkdir -p /home/ubuntu/exports
+            chmod 755 /home/ubuntu/exports
+
+            # Test Aiven PostgreSQL connectivity (port 11476)
+            echo "🔍 Testing Aiven PostgreSQL connectivity..."
+            nc -zv pg-13bf4f4-nguyensanghuypy-6098.k.aivencloud.com 11476 || echo "Aiven DB connection failed"
+
 
             docker run -d \
               --name my-nest-app \
@@ -93,8 +101,9 @@ jobs:
               -e core__database__password=${{ secrets.CORE_DATABASE_PASSWORD }} \
               -e core__database__dbName=${{ secrets.CORE_DATABASE_DB_NAME }} \
               -e core__database__synchronize=false \
-              -e core__database__caCertificate=/app/ca.pem \
-              -v /home/ubuntu/ca.pem:/app/ca.pem:ro \
+              -e core__database__ssl=true \
+              -e core__database__extra='{"ssl": {"rejectUnauthorized": false}}' \
+              -v /home/ubuntu/exports:/app/exports \
               ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
               
             # Wait a moment for container to start
