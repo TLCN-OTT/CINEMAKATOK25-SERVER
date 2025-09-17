@@ -11,19 +11,19 @@ module.exports = {
   // Core Config
   core: {
     database: {
-      type: 'postgres', // Example default value
+      type: 'postgres',
       host: 'localhost',
       port: 5432,
       username: 'postgres',
       password: 'postgres',
       dbName: 'postgres',
-      synchronize: false,
+      synchronize: true,
       caCertificate: null,
     },
     cache: {
       store: 'memory',
-      ttl: 5000, // 5 seconds
-      max: 100, // 100 items
+      ttl: 5000,
+      max: 100,
     },
     healthCheck: {
       disk: {
@@ -32,8 +32,8 @@ module.exports = {
         enable: false,
       },
       memory: {
-        heapThreshold: 314572800, // Bytes ~ 314 MB
-        rssThreshold: 314572800, // Bytes ~ 314 MB
+        heapThreshold: 314572800,
+        rssThreshold: 314572800,
         enableHeapCheck: false,
         enableRssCheck: false,
       },
@@ -46,7 +46,7 @@ module.exports = {
       },
     },
     axios: {
-      timeout: 3000, // 3 seconds
+      timeout: 3000,
     },
   },
 };
