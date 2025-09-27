@@ -1,29 +1,54 @@
 import { IsAdmin } from '@app/common/decorators/admin-role.decorator';
+import { UserSession } from '@app/common/decorators/userSession.decorator';
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConflictResponse,
+  ApiConsumes,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
+import {
+  ChangeEmailRequest,
+  ChangeEmailResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
+  GetProfileResponse,
+  ResendEmailChangeOtpResponse,
+  UpdateProfileNameRequest,
+  UpdateProfileResponse,
+  UploadAvatarResponse,
+  VerifyEmailChangeRequest,
+  VerifyEmailChangeResponse,
+} from '../dtos/profile.dto';
 import { CreateUserDto, UpdateUserDto, UserDto, mapToUserDto } from '../dtos/user.dto';
+import { ProfileService } from '../service/profile.service';
 import { UserService } from '../service/user.service';
 
 @Controller({
@@ -31,11 +56,253 @@ import { UserService } from '../service/user.service';
   version: '1',
 })
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, IsAdminGuard)
-@IsAdmin()
 @ApiTags('gsa / User')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly profileService: ProfileService,
+  ) {}
+
+  // Profile management endpoints (User-accessible)
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get user profile',
+    description: 'Get the current user profile information',
+  })
+  @ApiOkResponse({
+    description: 'Profile retrieved successfully',
+    type: GetProfileResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing access token',
+  })
+  async getProfile(@UserSession('id') userId: string) {
+    const result = await this.profileService.getProfile(userId);
+    return ResponseBuilder.createResponse({ data: result });
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Update user profile',
+    description: 'Update the current user profile information (name and/or email)',
+  })
+  @ApiOkResponse({
+    description: 'Profile updated successfully',
+    type: UpdateProfileResponse,
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing access token',
+  })
+  async updateProfile(
+    @UserSession('id') userId: string,
+    @Body() updateProfileDto: UpdateProfileNameRequest,
+  ) {
+    const result = await this.profileService.updateProfile(userId, updateProfileDto);
+    return ResponseBuilder.createResponse({ data: result });
+  }
+
+  @Post('profile/change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Change password',
+    description: 'Change the current user password',
+  })
+  @ApiOkResponse({
+    description: 'Password changed successfully',
+    type: ChangePasswordResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid current password or passwords do not match',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing access token',
+  })
+  async changePassword(
+    @UserSession('id') userId: string,
+    @Body() changePasswordDto: ChangePasswordRequest,
+  ) {
+    const result = await this.profileService.changePassword(userId, changePasswordDto);
+    return ResponseBuilder.createResponse({ data: result });
+  }
+
+  @Post('profile/avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Upload avatar',
+    description: 'Upload a new avatar image for the current user',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Avatar image file',
+    type: 'multipart/form-data',
+    schema: {
+      type: 'object',
+      properties: {
+        avatar: {
+          type: 'string',
+          format: 'binary',
+          description: 'Avatar image file (jpg, png, gif)',
+        },
+      },
+      required: ['avatar'],
+    },
+  })
+  @ApiOkResponse({
+    description: 'Avatar uploaded successfully',
+    type: UploadAvatarResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid file type or file size too large',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing access token',
+  })
+  @UseInterceptors(FileInterceptor('avatar'))
+  async uploadAvatar(@UserSession('id') userId: string, @UploadedFile() file?: any) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const result = await this.profileService.uploadAvatar(userId, file);
+    return ResponseBuilder.createResponse({ data: result });
+  }
+
+  @Delete('profile/avatar')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Delete avatar',
+    description: 'Delete the current user avatar',
+  })
+  @ApiOkResponse({
+    description: 'Avatar deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Avatar deleted successfully' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'No avatar to delete',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing access token',
+  })
+  async deleteAvatar(@UserSession('id') userId: string) {
+    const result = await this.profileService.deleteAvatar(userId);
+    return ResponseBuilder.createResponse({ data: result });
+  }
+
+  // ============ EMAIL CHANGE WITH OTP ENDPOINTS ============
+
+  @Post('profile/change-email')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Request email change with OTP',
+    description: 'Send OTP to current email address to verify email change request',
+  })
+  @ApiOkResponse({
+    description: 'OTP sent to current email successfully',
+    type: ChangeEmailResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'New email is same as current email or invalid email format',
+  })
+  @ApiConflictResponse({
+    description: 'Email already exists',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing access token',
+  })
+  async requestEmailChange(
+    @UserSession('id') userId: string,
+    @Body() changeEmailDto: ChangeEmailRequest,
+  ) {
+    const result = await this.profileService.requestEmailChange(userId, changeEmailDto);
+    return ResponseBuilder.createResponse({ data: result });
+  }
+
+  @Post('profile/verify-email-change')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Verify email change with OTP',
+    description: 'Verify OTP and complete email change process',
+  })
+  @ApiOkResponse({
+    description: 'Email changed successfully',
+    type: VerifyEmailChangeResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid or expired OTP',
+  })
+  @ApiConflictResponse({
+    description: 'Email already exists',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing access token',
+  })
+  async verifyEmailChange(
+    @UserSession('id') userId: string,
+    @Body() verifyDto: VerifyEmailChangeRequest,
+  ) {
+    const result = await this.profileService.verifyEmailChange(userId, verifyDto);
+    return ResponseBuilder.createResponse({ data: result });
+  }
+
+  @Post('profile/resend-email-otp')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Resend OTP for email change',
+    description: 'Resend OTP to the new email address for pending email change',
+  })
+  @ApiOkResponse({
+    description: 'OTP resent successfully',
+    type: ResendEmailChangeOtpResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid request or no pending email change',
+  })
+  @ApiConflictResponse({
+    description: 'Email already exists',
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Invalid or missing access token',
+  })
+  async resendEmailChangeOtp(
+    @UserSession('id') userId: string,
+    @Body('newEmail') newEmail: string,
+  ) {
+    const result = await this.profileService.resendEmailChangeOtp(userId, newEmail);
+    return ResponseBuilder.createResponse({ data: result });
+  }
+
+  // Admin-only user management endpoints
   @Get()
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   @ApiOkResponse({ description: 'List of users', type: PaginatedApiResponseDto(UserDto) })
@@ -91,15 +358,16 @@ export class UserController {
     return ResponseBuilder.createResponse({ data: mapToUserDto(result) });
   }
 
+  @Put(':id')
   @ApiOkResponse({ description: 'User updated successfully', type: ApiResponseDto(UserDto) })
   @ApiBody({ type: UpdateUserDto })
-  @Put(':id')
   async update(@Param('id', new ParseUUIDPipe()) id: string, @Body() updateUserDto: UpdateUserDto) {
     const result = await this.userService.update(id, updateUserDto);
     return ResponseBuilder.createResponse({ data: mapToUserDto(result) });
   }
-  @ApiOkResponse({ description: 'User deleted successfully' })
+
   @Delete(':id')
+  @ApiOkResponse({ description: 'User deleted successfully' })
   async delete(@Param('id', new ParseUUIDPipe()) id: string) {
     await this.userService.delete(id);
     return ResponseBuilder.createResponse({ data: null });

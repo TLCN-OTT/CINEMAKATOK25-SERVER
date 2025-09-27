@@ -8,6 +8,16 @@ module.exports = {
     expiresTime: '5m',
     refreshExpiresTime: '7d',
   },
+  // Email configuration
+  email: {
+    host: 'smtp.gmail.com',
+    port: 587,
+    user: 'cinemakatok@gmail.com',
+    pass: 'jkmq nuhe nnld fcee',
+    fromName: 'CinemaKATOK 🎬',
+    secure: false,
+  },
+
   // Core Config
   core: {
     database: {
@@ -15,7 +25,7 @@ module.exports = {
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: 'postgres',
+      password: 'manhtu',
       dbName: 'postgres',
       synchronize: true,
       caCertificate: null,
