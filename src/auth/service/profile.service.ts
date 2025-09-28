@@ -44,7 +44,6 @@ export class ProfileService {
    * Get user profile by ID
    */
   async getProfile(userId: string) {
-    console.log('Fetching profile for userId:', userId); // Debug log
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
@@ -82,7 +81,6 @@ export class ProfileService {
           message: 'User not found',
         });
       }
-      console.log('Update DTO:', updateDto);
       if (updateDto.name) {
         user.name = updateDto.name;
       }

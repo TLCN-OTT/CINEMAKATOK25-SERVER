@@ -345,7 +345,6 @@ export class AuthService {
       return user;
     } catch (error) {
       const result = await this.usersService.create(googleUser);
-      console.log('asdsd', result);
       return result;
     }
   }
