@@ -8,6 +8,19 @@ module.exports = {
   //Server configuration
   port: number('PORT'),
   appName: 'APP_NAME',
+  google: {
+    clientID: 'GOOGLE_CLIENT_ID',
+    clientSecret: 'GOOGLE_CLIENT_SECRET',
+    callbackURL: 'GOOGLE_CALLBACK_URL',
+  },
+  email: {
+    host: 'SMTP_HOST',
+    port: number('SMTP_PORT'),
+    user: 'SMTP_USER',
+    pass: 'SMTP_PASS',
+    fromName: 'FROM_NAME',
+    secure: boolean('SMTP_SECURE'),
+  },
   jwt: {
     privateKey: 'JWT_PRIVATE_KEY',
     publicKey: 'JWT_PUBLIC_KEY',

@@ -121,6 +121,21 @@ jobs:
                 expiresTime: 'ACCESS_TOKEN_EXPIRES_TIME',
                 refreshExpiresTime: 'REFRESH_TOKEN_EXPIRES_TIME',
               },
+              //// Email configuration
+              email: {
+                host: 'SMTP_HOST',
+                port: number('SMTP_PORT'),
+                user: 'SMTP_USER',
+                pass: 'SMTP_PASS',
+                fromName: 'SMTP_FROM',
+                secure: boolean('SMTP_SECURE'),
+              },
+              // OAuth2 configuration
+              google: {
+                clientID: 'GOOGLE_CLIENT_ID',
+                clientSecret: 'GOOGLE_CLIENT_SECRET',
+                callbackURL: 'GOOGLE_CALLBACK_URL',
+              },
               // Core Config
               core: {
                 database: {
@@ -179,12 +194,21 @@ jobs:
               -e CORE_DATABASE_USERNAME=${{ secrets.CORE_DATABASE_USERNAME }} \
               -e CORE_DATABASE_PASSWORD=${{ secrets.CORE_DATABASE_PASSWORD }} \
               -e CORE_DATABASE_DB_NAME=${{ secrets.CORE_DATABASE_DB_NAME }} \
-              -e CORE_DATABASE_SYNCHRONIZE=false \
+              -e CORE_DATABASE_SYNCHRONIZE=true \
               -e DB_CA_CERTIFICATE="${{ secrets.DB_CA_CERTIFICATE }}" \
               -e JWT_PRIVATE_KEY="${{ secrets.JWT_PRIVATE_KEY }}" \
               -e JWT_PUBLIC_KEY="${{ secrets.JWT_PUBLIC_KEY }}" \
               -e ACCESS_TOKEN_EXPIRES_TIME="${{ secrets.ACCESS_TOKEN_EXPIRES_TIME || '5m' }}" \
               -e REFRESH_TOKEN_EXPIRES_TIME="${{ secrets.REFRESH_TOKEN_EXPIRES_TIME || '7d' }}" \
+              -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+              -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+              -e GOOGLE_CALLBACK_URL="${{ secrets.GOOGLE_CALLBACK_URL }}" \
+              -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \
+              -e SMTP_PORT=587 \
+              -e SMTP_USER="${{ secrets.SMTP_USER }}" \
+              -e SMTP_FROM="${{ secrets.SMTP_FROM }}" \
+              -e SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+              -e SMTP_SECURE=false \
               -e CORE_CACHE_STORE=memory \
               -e CORE_CACHE_TTL=5000 \
               -e CORE_CACHE_MAX=100 \

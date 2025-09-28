@@ -5,5 +5,12 @@ import { ExecutionContext, createParamDecorator } from '@nestjs/common';
 
 export const UserSession = createParamDecorator((data: unknown, ctx: ExecutionContext) => {
   const request = ctx.switchToHttp().getRequest();
-  return request.userSession;
+  const user = request.userSession || request.user;
+
+  // If data is provided (like 'id'), return that specific property
+  if (data && user && typeof user === 'object') {
+    return user[data as string];
+  }
+
+  return user;
 });

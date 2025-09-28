@@ -4,6 +4,7 @@ import * as config from 'config';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { USER_STATUS } from '@app/common/enums/global.enum';
+import { getConfig } from '@app/common/utils/get-config';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 
@@ -18,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: config.get('jwt.publicKey'),
+      secretOrKey: getConfig('jwt.publicKey', 'your_jwt_public_key'),
     });
   }
 
