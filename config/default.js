@@ -8,6 +8,16 @@ module.exports = {
     expiresTime: '5m',
     refreshExpiresTime: '7d',
   },
+  // Email configuration
+  email: {
+    host: 'smtp.gmail.com',
+    port: 587,
+    user: 'your_email@gmail.com',
+    pass: 'your_email_password',
+    fromName: 'your_app_name',
+    secure: false,
+  },
+
   // Core Config
   core: {
     database: {
