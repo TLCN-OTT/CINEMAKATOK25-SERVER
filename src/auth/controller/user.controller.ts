@@ -304,6 +304,8 @@ export class UserController {
 
   // Admin-only user management endpoints
   @Get()
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @IsAdmin()
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   @ApiOkResponse({ description: 'List of users', type: PaginatedApiResponseDto(UserDto) })
   @ApiQuery({

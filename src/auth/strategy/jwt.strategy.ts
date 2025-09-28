@@ -1,4 +1,3 @@
-import { get } from 'node_modules/axios/index.cjs';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import * as config from 'config';
