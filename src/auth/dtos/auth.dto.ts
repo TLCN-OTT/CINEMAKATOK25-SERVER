@@ -1,4 +1,4 @@
-import { Expose } from 'class-transformer/types/decorators/expose.decorator';
+import { Expose } from 'class-transformer';
 import { IsEmail, IsString } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';

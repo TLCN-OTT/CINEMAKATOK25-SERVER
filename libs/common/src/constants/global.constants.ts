@@ -22,6 +22,7 @@ export const ERROR_CODE = {
   ACCOUNT_DEACTIVATED: 'ACCOUNT_DEACTIVATED',
   UNAUTHORIZED: 'UNAUTHORIZED',
   INVALID_PASSWORD: 'INVALID_PASSWORD',
+  USER_NOT_FOUND: 'USER_NOT_FOUND',
 };
 
 export const operationsMap = new Map<string, Type<ICommand>>();

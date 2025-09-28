@@ -10,12 +10,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { JwtPayload } from '../constants/jwt-payload';
 import { AuthRequest, TokenRequest, TokenResponse } from '../dtos/auth.dto';
+import { CreateUserDto } from '../dtos/user.dto';
 import { EntityRefreshToken } from '../entities/refreshtoken.entity';
 import { UserService } from './user.service';
 
 @Injectable()
 export class AuthService {
-  private readonly refreshExpiresTime = config.get('jwt.refreshExpiresIn'); // getConfig<string>('jwt.refreshExpiresIn', '1d')
+  private readonly refreshExpiresTime = config.get('jwt.refreshExpiresTime'); // getConfig<string>('jwt.refreshExpiresIn', '1d')
   constructor(
     private readonly usersService: UserService,
     @InjectRepository(EntityRefreshToken)
@@ -33,6 +34,16 @@ export class AuthService {
     await this.saveRefreshToken(refreshToken, user.id);
     return new TokenResponse(accessToken, refreshToken);
   }
+  async loginGoogle(email: string): Promise<TokenResponse> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) throw new BadRequestException({ code: ERROR_CODE.USER_NOT_FOUND });
+    const { accessToken, refreshToken } = await this.generateTokens({
+      sub: user.id,
+    });
+    await this.saveRefreshToken(refreshToken, user.id);
+    return new TokenResponse(accessToken, refreshToken);
+  }
+
   async refresh(token: TokenRequest) {
     const existedToken = await this.checkRefreshToken(token.refreshToken);
     const { accessToken, refreshToken } = await this.generateTokens({
@@ -76,5 +87,16 @@ export class AuthService {
       { expiresIn: this.refreshExpiresTime } as JwtSignOptions,
     );
     return { accessToken, refreshToken };
+  }
+
+  async validateGoogleUser(googleUser: CreateUserDto) {
+    try {
+      const user = await this.usersService.findByEmail(googleUser.email);
+      return user;
+    } catch (error) {
+      const result = await this.usersService.create(googleUser);
+      console.log('asdsd', result);
+      return result;
+    }
   }
 }

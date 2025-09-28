@@ -45,7 +45,7 @@ export class UserDto extends BaseEntityDto {
 
 export class UpdateUserDto extends PickType(UserDto, ['name', 'email', 'isAdmin', 'status']) {}
 
-export class CreateUserDto extends OmitType(UserDto, ['status']) {}
+export class CreateUserDto extends OmitType(UserDto, ['status', 'id', 'createdAt', 'updatedAt']) {}
 export function mapToUserDto(entity: EntityUser): UserDto {
   return {
     ...plainToInstance(UserDto, entity, { excludeExtraneousValues: true }),

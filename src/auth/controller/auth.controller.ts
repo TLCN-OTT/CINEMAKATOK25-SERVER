@@ -1,7 +1,8 @@
 import path from 'path';
 
+import { GoogleAuthGuard } from '@app/common/guards/google-auth.guard';
 import { ApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
 import { AuthRequest, TokenRequest, TokenResponse } from '../dtos/auth.dto';
@@ -45,5 +46,16 @@ export class AuthController {
     return ResponseBuilder.createResponse({
       data: null,
     });
+  }
+  @UseGuards(GoogleAuthGuard)
+  @Get('/google/login')
+  googleLogin() {}
+
+  @UseGuards(GoogleAuthGuard)
+  @Get('/google/callback')
+  async googleCallback(@Req() req, @Res() res) {
+    const response = await this.authService.loginGoogle(req.user.email);
+    // res.redirect(`http://localhost:5173?token=${response.accessToken}`);
+    return ResponseBuilder.createResponse({ data: response });
   }
 }
