@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { AuthModule } from './auth/auth.module';
+import { CmsModule } from './cms/cms.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AuthModule } from './auth/auth.module';
 
     //feature module
     AuthModule,
+    CmsModule,
   ],
   controllers: [],
   providers: [],
