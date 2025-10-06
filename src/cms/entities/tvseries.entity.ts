@@ -1,0 +1,63 @@
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+
+import { BaseEntity } from '@app/common/base/base-entity';
+
+import { EntityContent } from './content.entity';
+import { EntityVideo } from './video.entity';
+
+@Entity({ name: 'tvseries' })
+export class EntityTVSeries extends BaseEntity {
+  @Column({ type: 'int' })
+  seasons: number;
+
+  @OneToOne(() => EntityContent, { cascade: true, eager: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'content_id' })
+  metaData: EntityContent;
+
+  @OneToMany(() => EntitySeason, season => season.tvseries, { cascade: true })
+  seasonDetails: EntitySeason[];
+}
+
+@Entity({ name: 'season' })
+export class EntitySeason extends BaseEntity {
+  @Column({ type: 'int' })
+  seasonNumber: number;
+
+  @Column({ type: 'int' })
+  totalEpisodes: number;
+
+  @OneToMany(() => EntityEpisode, episode => episode.season, { cascade: true })
+  episodeDetails: EntityEpisode[];
+
+  @ManyToOne(() => EntityTVSeries, tvseries => tvseries.seasonDetails)
+  @JoinColumn({ name: 'tv_series_id' })
+  tvseries: EntityTVSeries;
+}
+
+@Entity({ name: 'episode' })
+export class EntityEpisode extends BaseEntity {
+  @Column({ type: 'int' })
+  episodeNumber: number;
+
+  @Column({ type: 'int' })
+  episodeDuration: number;
+
+  @Column({ type: 'varchar', length: 100 })
+  episodeTitle: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  episodeThumbnail: string;
+
+  @ManyToOne(() => EntitySeason, season => season.episodeDetails)
+  @JoinColumn({ name: 'season_id' })
+  season: EntitySeason;
+  // Helper method để lấy videos
+  async getVideos(videoRepository): Promise<EntityVideo[]> {
+    return videoRepository.find({
+      where: {
+        ownerType: 'episode',
+        ownerId: this.id,
+      },
+    });
+  }
+}

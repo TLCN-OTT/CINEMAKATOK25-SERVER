@@ -3,14 +3,13 @@ import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique } from
 import { BaseEntity } from '@app/common/base/base-entity';
 import { USER_STATUS } from '@app/common/enums/global.enum';
 
+import { PersonEntity } from './person.entity';
+
 @Entity({
   name: 'user',
 })
 @Unique(['provider', 'providerId'])
-export class EntityUser extends BaseEntity {
-  @Column({ type: 'varchar', length: 255 })
-  name: string;
-
+export class EntityUser extends PersonEntity {
   @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   email?: string | null;
 
@@ -31,6 +30,12 @@ export class EntityUser extends BaseEntity {
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   avatar: string;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  address: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phoneNumber: string;
 
   @Column({ type: 'enum', enum: USER_STATUS, default: USER_STATUS.ACTIVATED })
   status: USER_STATUS;
