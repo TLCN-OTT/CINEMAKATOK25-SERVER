@@ -1,5 +1,15 @@
-import { Expose } from 'class-transformer';
-import { IsEmail, IsIn, IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import {
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -78,8 +88,11 @@ export class VerifyOtpRequest {
     maxLength: 6,
   })
   @IsString({ message: 'OTP is required' })
+  @MinLength(6, { message: 'OTP must be exactly 6 digits' })
+  @MaxLength(6, { message: 'OTP must be exactly 6 digits' })
   @Matches(/^\d{6}$/, { message: 'OTP must be exactly 6 digits' })
   @Expose()
+  @IsNotEmpty()
   otp: string;
 }
 
@@ -117,58 +130,13 @@ export class ResetPasswordRequest {
   newPassword: string;
 }
 
-export class ForgotPasswordResponse {
-  @ApiProperty({ example: true })
-  @Expose()
-  success: boolean;
-
-  @ApiProperty({ example: 'OTP has been sent to your email' })
-  @Expose()
-  message: string;
-
+export class OTPResponse {
   @ApiProperty({ example: 5 })
   @Expose()
   otpExpiryMinutes: number;
 
-  constructor(success: boolean, message: string, otpExpiryMinutes: number = 5) {
-    this.success = success;
-    this.message = message;
+  constructor(otpExpiryMinutes: number = 5) {
     this.otpExpiryMinutes = otpExpiryMinutes;
-  }
-}
-
-export class ResetPasswordResponse {
-  @ApiProperty({ example: true })
-  @Expose()
-  success: boolean;
-
-  @ApiProperty({ example: 'Password has been reset successfully' })
-  @Expose()
-  message: string;
-
-  constructor(success: boolean, message: string) {
-    this.success = success;
-    this.message = message;
-  }
-}
-
-export class VerifyOtpResponse {
-  @ApiProperty({ example: true })
-  @Expose()
-  success: boolean;
-
-  @ApiProperty({ example: 'OTP verified successfully' })
-  @Expose()
-  message: string;
-
-  @ApiProperty({ example: true })
-  @Expose()
-  verified: boolean;
-
-  constructor(success: boolean, message: string, verified: boolean = true) {
-    this.success = success;
-    this.message = message;
-    this.verified = verified;
   }
 }
 
@@ -219,43 +187,6 @@ export class RegisterWithOtpRequest extends RegisterRequest {
   otp: string;
 }
 
-export class RegisterResponse {
-  @ApiProperty({ example: true })
-  @Expose()
-  success: boolean;
-
-  @ApiProperty({ example: 'Registration successful' })
-  @Expose()
-  message: string;
-
-  @ApiProperty({
-    description: 'User information',
-    example: {
-      id: 'uuid-123',
-      name: 'John Doe',
-      email: 'user@example.com',
-      isEmailVerified: true,
-    },
-  })
-  @Expose()
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    isEmailVerified: boolean;
-  } | null;
-
-  constructor(
-    success: boolean,
-    message: string,
-    user: { id: string; name: string; email: string; isEmailVerified: boolean } | null,
-  ) {
-    this.success = success;
-    this.message = message;
-    this.user = user;
-  }
-}
-
 // ============ SOCIAL LOGIN DTOs ============
 export class SocialLoginRequest {
   @ApiProperty({
@@ -279,56 +210,33 @@ export class SocialLoginRequest {
   accessToken: string;
 }
 
-export class SocialLoginResponse {
-  @ApiProperty({ example: true })
-  @Expose()
-  success: boolean;
-
-  @ApiProperty({ example: 'Login successful' })
-  @Expose()
-  message: string;
-
+export class LoginResponse {
   @ApiProperty({
-    description: 'User information',
-    example: {
-      id: 'uuid-123',
-      name: 'John Doe',
-      email: 'john@gmail.com',
-      isEmailVerified: true,
-      provider: 'google',
-      avatar: 'https://lh3.googleusercontent.com/...',
-    },
+    description: 'User ID',
+    example: 'user-123',
   })
   @Expose()
-  user: {
-    id: string;
-    name: string;
-    email: string | null;
-    isEmailVerified: boolean;
-    provider: string;
-    avatar?: string;
-  };
-
+  id: string;
   @ApiProperty({
-    description: 'JWT tokens',
-    example: {
-      accessToken: 'eyJhbGciOiJSUzI1NiIs...',
-      refreshToken: 'eyJhbGciOiJSUzI1NiIs...',
-    },
+    description: 'User full name',
+    example: 'John Doe',
   })
   @Expose()
-  tokens: {
-    accessToken: string;
-    refreshToken: string;
-  };
+  name: string;
 
-  constructor(
-    success: boolean,
-    message: string,
-    tokens: { accessToken: string; refreshToken: string },
-  ) {
-    this.success = success;
-    this.message = message;
-    this.tokens = tokens;
-  }
+  @ApiProperty({
+    description: 'User avatar URL',
+    example: 'https://example.com/avatar.jpg',
+  })
+  @Expose()
+  avatar: string | null;
+
+  @ApiProperty({
+    description: 'Token details',
+    type: TokenResponse,
+  })
+  @Expose()
+  @ValidateNested()
+  @Type(() => TokenResponse)
+  token: TokenResponse;
 }

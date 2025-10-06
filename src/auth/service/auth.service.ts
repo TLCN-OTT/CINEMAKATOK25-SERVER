@@ -5,7 +5,12 @@ import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { OTP_PURPOSE } from '@app/common/enums/global.enum';
 import { getConfig } from '@app/common/utils/get-config';
 import { PasswordHash } from '@app/common/utils/hash';
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -13,18 +18,14 @@ import { JwtPayload } from '../constants/jwt-payload';
 import {
   AuthRequest,
   ForgotPasswordRequest,
-  ForgotPasswordResponse,
+  LoginResponse,
+  OTPResponse,
   RegisterRequest,
-  RegisterResponse,
   RegisterWithOtpRequest,
   ResetPasswordRequest,
-  ResetPasswordResponse,
   SocialLoginRequest,
-  SocialLoginResponse,
   TokenRequest,
   TokenResponse,
-  VerifyOtpRequest,
-  VerifyOtpResponse,
 } from '../dtos/auth.dto';
 import { CreateUserDto } from '../dtos/user.dto';
 import { EntityRefreshToken } from '../entities/refreshtoken.entity';
@@ -57,16 +58,26 @@ export class AuthService {
       sub: user.id,
     });
     await this.saveRefreshToken(refreshToken, user.id);
-    return new TokenResponse(accessToken, refreshToken);
+    return {
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar,
+      token: new TokenResponse(accessToken, refreshToken),
+    };
   }
-  async loginGoogle(email: string): Promise<TokenResponse> {
+  async loginGoogle(email: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new BadRequestException({ code: ERROR_CODE.USER_NOT_FOUND });
     const { accessToken, refreshToken } = await this.generateTokens({
       sub: user.id,
     });
     await this.saveRefreshToken(refreshToken, user.id);
-    return new TokenResponse(accessToken, refreshToken);
+    return {
+      id: user.id,
+      name: user.name,
+      avatar: user.avatar,
+      token: new TokenResponse(accessToken, refreshToken),
+    };
   }
 
   async refresh(token: TokenRequest) {
@@ -117,17 +128,16 @@ export class AuthService {
   /**
    * Send OTP for password reset
    */
-  async forgotPassword(forgotPasswordDto: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordRequest): Promise<OTPResponse> {
     const { email } = forgotPasswordDto;
 
     try {
       await this.usersService.findByEmail(email);
     } catch (error) {
-      return new ForgotPasswordResponse(
-        true,
-        'If the email exists, OTP has been sent to your email',
-        5,
-      );
+      throw new NotFoundException({
+        code: ERROR_CODE.USER_NOT_FOUND,
+        message: 'User with this email does not exist',
+      });
     }
 
     try {
@@ -135,17 +145,16 @@ export class AuthService {
 
       await this.emailService.sendOtpEmail(email, otp, 'FORGOT_PASSWORD');
 
-      return new ForgotPasswordResponse(
-        true,
-        'If the email exists, OTP has been sent to your email',
-        5,
-      );
+      return new OTPResponse(5);
     } catch (error) {
-      return new ForgotPasswordResponse(false, 'Failed to send OTP. Please try again', 0);
+      throw new BadRequestException({
+        code: ERROR_CODE.UNEXPECTED_ERROR,
+        message: 'Failed to send OTP. Please try again',
+      });
     }
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordRequest): Promise<ResetPasswordResponse> {
+  async resetPassword(resetPasswordDto: ResetPasswordRequest) {
     const { email, otp, newPassword } = resetPasswordDto;
 
     try {
@@ -153,7 +162,10 @@ export class AuthService {
 
       const isValid = await this.otpService.verifyOtp(email, otp, OTP_PURPOSE.FORGOT_PASSWORD);
       if (!isValid) {
-        return new ResetPasswordResponse(false, 'Invalid or expired OTP');
+        throw new BadRequestException({
+          code: ERROR_CODE.INVALID_OTP,
+          message: 'Invalid or expired OTP',
+        });
       }
 
       const hashedPassword = PasswordHash.hashPassword(newPassword);
@@ -165,16 +177,21 @@ export class AuthService {
       try {
         await this.emailService.sendPasswordResetConfirmation(email);
       } catch (err) {
-        console.error('Failed to send confirmation email:', err);
+        throw new BadRequestException({
+          code: ERROR_CODE.UNEXPECTED_ERROR,
+          message: 'Password changed but failed to send confirmation email',
+        });
       }
-
-      return new ResetPasswordResponse(true, 'Password has been reset successfully');
+      return;
     } catch (error) {
-      return new ResetPasswordResponse(false, 'Failed to reset password. Please try again');
+      throw new NotFoundException({
+        code: ERROR_CODE.USER_NOT_FOUND,
+        message: 'User with this email does not exist',
+      });
     }
   }
 
-  async resendOtp(email: string): Promise<ForgotPasswordResponse> {
+  async resendOtp(email: string): Promise<OTPResponse> {
     try {
       await this.usersService.findByEmail(email);
 
@@ -182,9 +199,12 @@ export class AuthService {
 
       await this.emailService.sendOtpEmail(email, otp, 'FORGOT_PASSWORD');
 
-      return new ForgotPasswordResponse(true, 'New OTP has been sent to your email', 5);
+      return new OTPResponse(5);
     } catch (error) {
-      return new ForgotPasswordResponse(false, 'Failed to resend OTP. Please try again', 0);
+      throw new NotFoundException({
+        code: ERROR_CODE.USER_NOT_FOUND,
+        message: 'User with this email does not exist',
+      });
     }
   }
 
@@ -193,27 +213,30 @@ export class AuthService {
   /**
    * Send OTP for registration
    */
-  async sendRegisterOtp(registerDto: RegisterRequest): Promise<ForgotPasswordResponse> {
-    const { name, email, password } = registerDto;
+  async sendRegisterOtp(registerDto: RegisterRequest): Promise<OTPResponse> {
+    const { email } = registerDto;
 
     const existingUser = await this.userRepository.findOne({
       where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
-      return new ForgotPasswordResponse(false, 'User with this email already exists', 0);
+      throw new BadRequestException({
+        code: ERROR_CODE.ALREADY_EXISTS,
+        message: 'User with this email already exists',
+      });
     }
 
     const otp = await this.otpService.generateOtp(email, OTP_PURPOSE.REGISTRATION);
     await this.emailService.sendOtpEmail(email, otp, 'REGISTRATION');
 
-    return new ForgotPasswordResponse(true, 'OTP sent to your email', 5);
+    return new OTPResponse(5);
   }
 
   /**
    * Complete registration with OTP verification
    */
-  async registerWithOtp(registerWithOtpDto: RegisterWithOtpRequest): Promise<RegisterResponse> {
+  async registerWithOtp(registerWithOtpDto: RegisterWithOtpRequest) {
     const { name, email, password, otp } = registerWithOtpDto;
 
     const existingUser = await this.userRepository.findOne({
@@ -221,13 +244,19 @@ export class AuthService {
     });
 
     if (existingUser) {
-      return new RegisterResponse(false, 'User with this email already exists', null);
+      throw new BadRequestException({
+        code: ERROR_CODE.ALREADY_EXISTS,
+        message: 'User with this email already exists',
+      });
     }
 
     const isOtpValid = await this.otpService.verifyOtp(email, otp, OTP_PURPOSE.REGISTRATION);
 
     if (!isOtpValid) {
-      return new RegisterResponse(false, 'Invalid or expired OTP', null);
+      throw new BadRequestException({
+        code: ERROR_CODE.INVALID_OTP,
+        message: 'Invalid or expired OTP',
+      });
     }
 
     const hashedPassword = PasswordHash.hashPassword(password);
@@ -237,31 +266,27 @@ export class AuthService {
       password: hashedPassword,
       isEmailVerified: true,
     });
-
-    return new RegisterResponse(true, 'Registration successful', {
-      id: user.id,
-      name: user.name,
-      email: user.email ?? null,
-      isEmailVerified: user.isEmailVerified,
-    });
   }
 
   /**
    * Resend OTP for registration
    */
-  async resendRegisterOtp(email: string): Promise<ForgotPasswordResponse> {
+  async resendRegisterOtp(email: string): Promise<OTPResponse> {
     const existingUser = await this.userRepository.findOne({
       where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
-      return new ForgotPasswordResponse(false, 'User with this email already exists', 0);
+      throw new BadRequestException({
+        code: ERROR_CODE.ALREADY_EXISTS,
+        message: 'User with this email already exists',
+      });
     }
 
     const otp = await this.otpService.generateOtp(email, OTP_PURPOSE.REGISTRATION);
     await this.emailService.sendOtpEmail(email, otp, 'REGISTRATION');
 
-    return new ForgotPasswordResponse(true, 'New OTP sent to your email', 5);
+    return new OTPResponse(5);
   }
 
   // ============ SOCIAL LOGIN METHODS ============
@@ -269,7 +294,7 @@ export class AuthService {
   /**
    * Social login (Google/Facebook)
    */
-  async socialLogin(socialLoginDto: SocialLoginRequest): Promise<SocialLoginResponse> {
+  async socialLogin(socialLoginDto: SocialLoginRequest): Promise<LoginResponse> {
     try {
       const { provider, accessToken } = socialLoginDto;
 
@@ -320,10 +345,12 @@ export class AuthService {
       });
       await this.saveRefreshToken(refreshToken, user.id);
 
-      return new SocialLoginResponse(true, 'Login successful', {
-        accessToken: jwtAccessToken,
-        refreshToken,
-      });
+      return {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        token: new TokenResponse(jwtAccessToken, refreshToken),
+      };
     } catch (error) {
       console.error('Social login error:', error);
       if (error.message?.includes('Invalid') && error.message?.includes('access token')) {

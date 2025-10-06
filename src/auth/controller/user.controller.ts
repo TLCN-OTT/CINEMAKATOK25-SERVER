@@ -1,3 +1,5 @@
+import { plainToInstance } from 'class-transformer';
+
 import { IsAdmin } from '@app/common/decorators/admin-role.decorator';
 import { UserSession } from '@app/common/decorators/userSession.decorator';
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
@@ -34,18 +36,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
+import '../dtos/profile.dto';
 import {
-  ChangeEmailRequest,
-  ChangeEmailResponse,
   ChangePasswordRequest,
-  ChangePasswordResponse,
-  GetProfileResponse,
-  ResendEmailChangeOtpResponse,
-  UpdateProfileNameRequest,
-  UpdateProfileResponse,
+  ProfileResponse,
+  UpdateProfileRequest,
   UploadAvatarResponse,
-  VerifyEmailChangeRequest,
-  VerifyEmailChangeResponse,
 } from '../dtos/profile.dto';
 import { CreateUserDto, UpdateUserDto, UserDto, mapToUserDto } from '../dtos/user.dto';
 import { ProfileService } from '../service/profile.service';
@@ -72,7 +68,7 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'Profile retrieved successfully',
-    type: GetProfileResponse,
+    type: ProfileResponse,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
@@ -82,7 +78,7 @@ export class UserController {
   })
   async getProfile(@UserSession('id') userId: string) {
     const result = await this.profileService.getProfile(userId);
-    return ResponseBuilder.createResponse({ data: result });
+    return ResponseBuilder.createResponse({ data: plainToInstance(UserDto, result) });
   }
 
   @Put('profile')
@@ -93,7 +89,7 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'Profile updated successfully',
-    type: UpdateProfileResponse,
+    type: ProfileResponse,
   })
   @ApiNotFoundResponse({
     description: 'User not found',
@@ -103,10 +99,13 @@ export class UserController {
   })
   async updateProfile(
     @UserSession('id') userId: string,
-    @Body() updateProfileDto: UpdateProfileNameRequest,
+    @Body() updateProfileDto: UpdateProfileRequest,
   ) {
     const result = await this.profileService.updateProfile(userId, updateProfileDto);
-    return ResponseBuilder.createResponse({ data: result });
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(UserDto, result, { excludeExtraneousValues: true }),
+      message: 'Profile updated successfully',
+    });
   }
 
   @Post('profile/change-password')
@@ -117,7 +116,7 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'Password changed successfully',
-    type: ChangePasswordResponse,
+    type: ProfileResponse,
   })
   @ApiBadRequestResponse({
     description: 'Invalid current password or passwords do not match',
@@ -133,7 +132,10 @@ export class UserController {
     @Body() changePasswordDto: ChangePasswordRequest,
   ) {
     const result = await this.profileService.changePassword(userId, changePasswordDto);
-    return ResponseBuilder.createResponse({ data: result });
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(UserDto, result, { excludeExtraneousValues: true }),
+      message: 'Password changed successfully',
+    });
   }
 
   @Post('profile/avatar')
@@ -177,7 +179,10 @@ export class UserController {
       throw new BadRequestException('No file uploaded');
     }
     const result = await this.profileService.uploadAvatar(userId, file);
-    return ResponseBuilder.createResponse({ data: result });
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(UploadAvatarResponse, result, { excludeExtraneousValues: true }),
+      message: 'Avatar uploaded successfully',
+    });
   }
 
   @Delete('profile/avatar')
@@ -206,100 +211,8 @@ export class UserController {
     description: 'Unauthorized - Invalid or missing access token',
   })
   async deleteAvatar(@UserSession('id') userId: string) {
-    const result = await this.profileService.deleteAvatar(userId);
-    return ResponseBuilder.createResponse({ data: result });
-  }
-
-  // ============ EMAIL CHANGE WITH OTP ENDPOINTS ============
-
-  @Post('profile/change-email')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: 'Request email change with OTP',
-    description: 'Send OTP to current email address to verify email change request',
-  })
-  @ApiOkResponse({
-    description: 'OTP sent to current email successfully',
-    type: ChangeEmailResponse,
-  })
-  @ApiBadRequestResponse({
-    description: 'New email is same as current email or invalid email format',
-  })
-  @ApiConflictResponse({
-    description: 'Email already exists',
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Invalid or missing access token',
-  })
-  async requestEmailChange(
-    @UserSession('id') userId: string,
-    @Body() changeEmailDto: ChangeEmailRequest,
-  ) {
-    const result = await this.profileService.requestEmailChange(userId, changeEmailDto);
-    return ResponseBuilder.createResponse({ data: result });
-  }
-
-  @Post('profile/verify-email-change')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: 'Verify email change with OTP',
-    description: 'Verify OTP and complete email change process',
-  })
-  @ApiOkResponse({
-    description: 'Email changed successfully',
-    type: VerifyEmailChangeResponse,
-  })
-  @ApiBadRequestResponse({
-    description: 'Invalid or expired OTP',
-  })
-  @ApiConflictResponse({
-    description: 'Email already exists',
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Invalid or missing access token',
-  })
-  async verifyEmailChange(
-    @UserSession('id') userId: string,
-    @Body() verifyDto: VerifyEmailChangeRequest,
-  ) {
-    const result = await this.profileService.verifyEmailChange(userId, verifyDto);
-    return ResponseBuilder.createResponse({ data: result });
-  }
-
-  @Post('profile/resend-email-otp')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: 'Resend OTP for email change',
-    description: 'Resend OTP to the new email address for pending email change',
-  })
-  @ApiOkResponse({
-    description: 'OTP resent successfully',
-    type: ResendEmailChangeOtpResponse,
-  })
-  @ApiBadRequestResponse({
-    description: 'Invalid request or no pending email change',
-  })
-  @ApiConflictResponse({
-    description: 'Email already exists',
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Unauthorized - Invalid or missing access token',
-  })
-  async resendEmailChangeOtp(
-    @UserSession('id') userId: string,
-    @Body('newEmail') newEmail: string,
-  ) {
-    const result = await this.profileService.resendEmailChangeOtp(userId, newEmail);
-    return ResponseBuilder.createResponse({ data: result });
+    await this.profileService.deleteAvatar(userId);
+    return ResponseBuilder.createResponse({ data: null, message: 'Avatar deleted successfully' });
   }
 
   // Admin-only user management endpoints
