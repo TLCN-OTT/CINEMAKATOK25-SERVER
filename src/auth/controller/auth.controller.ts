@@ -1,5 +1,7 @@
 import path from 'path';
 
+import { plainToInstance } from 'class-transformer';
+
 import { SkipAuth } from '@app/common/constants/global.constants';
 import { GoogleAuthGuard } from '@app/common/guards/google-auth.guard';
 import { ApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
@@ -16,18 +18,14 @@ import {
 import {
   AuthRequest,
   ForgotPasswordRequest,
-  ForgotPasswordResponse,
+  LoginResponse,
+  OTPResponse,
   RegisterRequest,
-  RegisterResponse,
   RegisterWithOtpRequest,
   ResetPasswordRequest,
-  ResetPasswordResponse,
   SocialLoginRequest,
-  SocialLoginResponse,
   TokenRequest,
   TokenResponse,
-  VerifyOtpRequest,
-  VerifyOtpResponse,
 } from '../dtos/auth.dto';
 import { AuthService } from '../service/auth.service';
 import { UserService } from '../service/user.service';
@@ -48,10 +46,14 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({ summary: 'User login' })
   @ApiBody({ type: AuthRequest })
-  @ApiOkResponse({ description: 'Login success', type: ApiResponseDto(TokenResponse) })
+  @ApiOkResponse({ description: 'Login success', type: ApiResponseDto(LoginResponse) })
   @ApiResponse({ status: 400, description: 'Invalid credentials' })
   async login(@Body() authRequest: AuthRequest) {
-    return ResponseBuilder.createResponse({ data: await this.authService.auth(authRequest) });
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(LoginResponse, await this.authService.auth(authRequest), {
+        excludeExtraneousValues: true,
+      }),
+    });
   }
   // ============ SOCIAL LOGIN ENDPOINT ============
 
@@ -67,12 +69,14 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Social login successful',
-    type: ApiResponseDto(SocialLoginResponse),
+    type: ApiResponseDto(LoginResponse),
   })
   @ApiResponse({ status: 400, description: 'Invalid social access token' })
   async socialLogin(@Body() socialLoginDto: SocialLoginRequest) {
     const result = await this.authService.socialLogin(socialLoginDto);
-    return ResponseBuilder.createResponse({ data: result });
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(LoginResponse, result, { excludeExtraneousValues: true }),
+    });
   }
 
   @Post('/refresh')
@@ -107,7 +111,9 @@ export class AuthController {
   async googleCallback(@Req() req, @Res() res) {
     const response = await this.authService.loginGoogle(req.user.email);
     // res.redirect(`http://localhost:5173?token=${response.accessToken}`);
-    return ResponseBuilder.createResponse({ data: response });
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(LoginResponse, response, { excludeExtraneousValues: true }),
+    });
   }
   // ============ REGISTER ENDPOINTS ============
   @Post('/register/send-otp')
@@ -122,7 +128,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'OTP sent successfully',
-    type: ApiResponseDto(ForgotPasswordResponse),
+    type: ApiResponseDto(OTPResponse),
   })
   @ApiResponse({ status: 400, description: 'Email already exists or invalid data' })
   async sendRegisterOtp(@Body() registerDto: RegisterRequest) {
@@ -142,12 +148,14 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'User registered successfully',
-    type: ApiResponseDto(RegisterResponse),
   })
   @ApiResponse({ status: 400, description: 'Invalid OTP or registration data' })
   async registerWithOtp(@Body() registerWithOtpDto: RegisterWithOtpRequest) {
-    const result = await this.authService.registerWithOtp(registerWithOtpDto);
-    return ResponseBuilder.createResponse({ data: result });
+    await this.authService.registerWithOtp(registerWithOtpDto);
+    return ResponseBuilder.createResponse({
+      data: null,
+      message: 'User registered successfully. Please login to continue.',
+    });
   }
 
   @Post('/register/resend-otp')
@@ -167,12 +175,15 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'New OTP sent successfully',
-    type: ApiResponseDto(ForgotPasswordResponse),
+    type: ApiResponseDto(OTPResponse),
   })
   @ApiResponse({ status: 400, description: 'Email already exists or failed to resend OTP' })
   async resendRegisterOtp(@Query('email') email: string) {
     const result = await this.authService.resendRegisterOtp(email);
-    return ResponseBuilder.createResponse({ data: result });
+    return ResponseBuilder.createResponse({
+      data: result,
+      message: 'New OTP sent to your email',
+    });
   }
 
   // ============ FORGOT PASSWORD ENDPOINTS ============
@@ -189,12 +200,15 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'OTP sent successfully',
-    type: ApiResponseDto(ForgotPasswordResponse),
+    type: ApiResponseDto(OTPResponse),
   })
   @ApiResponse({ status: 400, description: 'Failed to send OTP' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordRequest) {
     const result = await this.authService.forgotPassword(forgotPasswordDto);
-    return ResponseBuilder.createResponse({ data: result });
+    return ResponseBuilder.createResponse({
+      data: result,
+      message: 'OTP has been sent to your email',
+    });
   }
 
   @Post('/reset-password')
@@ -209,12 +223,11 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Password reset successfully',
-    type: ApiResponseDto(ResetPasswordResponse),
   })
   @ApiResponse({ status: 400, description: 'Invalid OTP or password requirements not met' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordRequest) {
-    const result = await this.authService.resetPassword(resetPasswordDto);
-    return ResponseBuilder.createResponse({ data: result });
+    await this.authService.resetPassword(resetPasswordDto);
+    return ResponseBuilder.createResponse({ data: null });
   }
 
   @Post('/resend-otp')
@@ -233,11 +246,14 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'OTP resent successfully',
-    type: ApiResponseDto(ForgotPasswordResponse),
+    type: ApiResponseDto(OTPResponse),
   })
   @ApiResponse({ status: 400, description: 'Failed to resend OTP' })
   async resendOtp(@Query('email') email: string) {
     const result = await this.authService.resendOtp(email);
-    return ResponseBuilder.createResponse({ data: result });
+    return ResponseBuilder.createResponse({
+      data: result,
+      message: 'New OTP has been sent to your email',
+    });
   }
 }
