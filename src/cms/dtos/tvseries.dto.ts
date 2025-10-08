@@ -4,6 +4,7 @@ import { IsNotEmpty, IsNumber, ValidateNested } from 'class-validator';
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 
+import { ContentDto } from './content.dto';
 import { EpisodeDto } from './episode.dto';
 import { VideoDto } from './video.dto';
 
@@ -37,6 +38,15 @@ export class TVSeriesDto extends BaseEntityDto {
   @IsNotEmpty()
   @Expose()
   title: string;
+
+  @ApiProperty({
+    description: 'Metadata about the TV series',
+    type: ContentDto,
+  })
+  @ValidateNested()
+  @Type(() => ContentDto)
+  @Expose()
+  metaData: ContentDto;
 
   @ApiProperty({
     description: 'List of season information',
