@@ -1,0 +1,179 @@
+import { plainToClass } from 'class-transformer';
+
+import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
+import { ApiResponseDto } from '@app/common/utils/dto';
+import { ResponseBuilder } from '@app/common/utils/dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+
+import { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../dtos/category.dto';
+import { CategoryService } from '../services/category.service';
+
+@Controller({
+  path: 'categories',
+  version: '1',
+})
+@ApiTags('cms / Categories')
+@ApiBearerAuth()
+export class CategoryController {
+  constructor(private readonly categoryService: CategoryService) {}
+
+  @Post()
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @ApiOperation({ summary: '[ADMIN] Create new category' })
+  @ApiResponse({
+    status: 201,
+    description: 'The category has been successfully created.',
+    type: ApiResponseDto(CategoryDto),
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Missing or invalid access token',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - User does not have admin privileges',
+  })
+  async create(@Body() createCategoryDto: CreateCategoryDto) {
+    const category = await this.categoryService.create(createCategoryDto);
+    return ResponseBuilder.createResponse({
+      data: plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
+      message: 'Category created successfully',
+    });
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all categories' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search categories by name',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all categories',
+    type: ApiResponseDto(CategoryDto),
+  })
+  async findAll(@Query('search') search?: string) {
+    const categories = search
+      ? await this.categoryService.search(search)
+      : await this.categoryService.findAll();
+    return ResponseBuilder.createResponse({
+      data: categories.map(category =>
+        plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
+      ),
+      message: 'Categories retrieved successfully',
+    });
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get category by ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'Category ID',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The category details',
+    type: ApiResponseDto(CategoryDto),
+  })
+  @ApiNotFoundResponse({
+    description: 'Category not found',
+  })
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    const category = await this.categoryService.findOne(id);
+    return ResponseBuilder.createResponse({
+      data: plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
+      message: 'Category retrieved successfully',
+    });
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @ApiOperation({ summary: '[ADMIN] Update category' })
+  @ApiParam({
+    name: 'id',
+    description: 'Category ID',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The category has been successfully updated.',
+    type: ApiResponseDto(CategoryDto),
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input data.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Category not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Missing or invalid access token',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - User does not have admin privileges',
+  })
+  async update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto,
+  ) {
+    const category = await this.categoryService.update(id, updateCategoryDto);
+    return ResponseBuilder.createResponse({
+      data: plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
+      message: 'Category updated successfully',
+    });
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @ApiOperation({ summary: '[ADMIN] Delete category' })
+  @ApiParam({
+    name: 'id',
+    description: 'Category ID',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The category has been successfully deleted.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Category not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Unauthorized - Missing or invalid access token',
+  })
+  @ApiForbiddenResponse({
+    description: 'Forbidden - User does not have admin privileges',
+  })
+  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    await this.categoryService.remove(id);
+    return ResponseBuilder.createResponse({
+      data: null,
+      message: 'Category deleted successfully',
+    });
+  }
+}
