@@ -1,10 +1,13 @@
 import { Expose, Type } from 'class-transformer';
 import {
+  IsArray,
   IsDate,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUUID,
   Validate,
   ValidateNested,
 } from 'class-validator';
@@ -122,3 +125,129 @@ export class ContentDto extends BaseEntityDto {
 
 export class CreateContentDto extends OmitType(ContentDto, ['id', 'createdAt', 'updatedAt']) {}
 export class UpdateContentDto extends OmitType(ContentDto, ['id', 'createdAt', 'updatedAt']) {}
+
+export enum ContentSortBy {
+  VIEWS = 'views',
+  TITLE = 'title',
+  DATE = 'date',
+}
+
+export enum SortOrder {
+  ASC = 'ASC',
+  DESC = 'DESC',
+}
+
+export class ContentFilterDto {
+  @ApiProperty({
+    description: 'Content type (MOVIE or TVSERIES)',
+    enum: ContentType,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(ContentType)
+  type?: ContentType;
+
+  @ApiProperty({
+    description: 'Array of tag IDs to filter by',
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  tagIds?: string[];
+
+  @ApiProperty({
+    description: 'Array of category IDs to filter by',
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  categoryIds?: string[];
+
+  @ApiProperty({
+    description: 'Array of actor IDs to filter by',
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  actorIds?: string[];
+
+  @ApiProperty({
+    description: 'Array of director IDs to filter by',
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  directorIds?: string[];
+
+  @ApiProperty({
+    description: 'Release year to filter by',
+    type: Number,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  year?: number;
+
+  @ApiProperty({
+    description: 'Search by title',
+    type: String,
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiProperty({
+    description: 'Sort by field',
+    enum: ContentSortBy,
+    default: ContentSortBy.DATE,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(ContentSortBy)
+  sortBy?: ContentSortBy = ContentSortBy.DATE;
+
+  @ApiProperty({
+    description: 'Sort order',
+    enum: SortOrder,
+    default: SortOrder.DESC,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(SortOrder)
+  order?: SortOrder = SortOrder.DESC;
+
+  @ApiProperty({
+    description: 'Page number for pagination',
+    type: Number,
+    minimum: 1,
+    default: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  page?: number = 1;
+
+  @ApiProperty({
+    description: 'Number of items per page',
+    type: Number,
+    minimum: 1,
+    maximum: 50,
+    default: 10,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  limit?: number = 10;
+}

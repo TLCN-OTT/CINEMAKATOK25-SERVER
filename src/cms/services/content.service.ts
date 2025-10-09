@@ -1,14 +1,18 @@
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { CreateContentDto, UpdateContentDto } from '../dtos/content.dto';
-import { EntityActor, EntityDirector } from '../entities/actor.entity';
-import { EntityCategory } from '../entities/category.entity';
-import { EntityContent } from '../entities/content.entity';
-import { EntityTag } from '../entities/tag.entity';
+import {
+  ContentFilterDto,
+  ContentSortBy,
+  CreateContentDto,
+  SortOrder,
+  UpdateContentDto,
+} from '../dtos/content.dto';
+import { ContentType, EntityContent } from '../entities/content.entity';
 
 @Injectable()
 export class ContentService {
@@ -43,30 +47,6 @@ export class ContentService {
         error: error.message,
       });
     }
-  }
-
-  async findAll() {
-    const contents = await this.contentRepository.find({
-      relations: ['categories', 'actors', 'directors', 'tags'],
-    });
-
-    return contents;
-  }
-
-  async findOne(id: string) {
-    const content = await this.contentRepository.findOne({
-      where: { id },
-      relations: ['categories', 'actors', 'directors', 'tags'],
-    });
-
-    if (!content) {
-      throw new NotFoundException({
-        code: ERROR_CODE.ENTITY_NOT_FOUND,
-        message: 'Content not found',
-      });
-    }
-
-    return content;
   }
 
   async update(id: string, updateDto: UpdateContentDto) {
@@ -115,5 +95,100 @@ export class ContentService {
       });
     }
     await this.contentRepository.remove(content);
+  }
+
+  async findAll(filter: ContentFilterDto) {
+    const queryBuilder = this.contentRepository
+      .createQueryBuilder('content')
+      .leftJoinAndSelect('content.tags', 'tag')
+      .leftJoinAndSelect('content.categories', 'category')
+      .leftJoinAndSelect('content.actors', 'actor')
+      .leftJoinAndSelect('content.directors', 'director');
+
+    // Apply filters
+    if (filter.type) {
+      queryBuilder.andWhere('content.type = :type', { type: filter.type });
+    }
+
+    if (filter.tagIds?.length) {
+      queryBuilder.andWhere('tag.id IN (:...tagIds)', { tagIds: filter.tagIds });
+    }
+
+    if (filter.categoryIds?.length) {
+      queryBuilder.andWhere('category.id IN (:...categoryIds)', {
+        categoryIds: filter.categoryIds,
+      });
+    }
+
+    if (filter.actorIds?.length) {
+      queryBuilder.andWhere('actor.id IN (:...actorIds)', { actorIds: filter.actorIds });
+    }
+
+    if (filter.directorIds?.length) {
+      queryBuilder.andWhere('director.id IN (:...directorIds)', {
+        directorIds: filter.directorIds,
+      });
+    }
+
+    if (filter.year) {
+      queryBuilder.andWhere('EXTRACT(YEAR FROM content.releaseDate) = :year', {
+        year: filter.year,
+      });
+    }
+
+    if (filter.title) {
+      queryBuilder.andWhere('content.title ILIKE :title', { title: `%${filter.title}%` });
+    }
+
+    // Apply sorting
+    switch (filter.sortBy) {
+      case ContentSortBy.VIEWS:
+        queryBuilder.orderBy('content.viewCount', filter.order);
+        break;
+      case ContentSortBy.TITLE:
+        queryBuilder.orderBy('content.title', filter.order);
+        break;
+      case ContentSortBy.DATE:
+      default:
+        queryBuilder.orderBy('content.releaseDate', filter.order || SortOrder.DESC);
+        break;
+    }
+
+    // Apply pagination
+    const page = filter.page || 1;
+    const limit = filter.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await queryBuilder.skip(skip).take(limit).getManyAndCount();
+
+    // Split items into movies and TV series
+    const movies = items.filter(item => item.type === ContentType.MOVIE);
+    const tvSeries = items.filter(item => item.type === ContentType.TVSERIES);
+
+    // Calculate totals for each type
+    const totalMovies = movies.length;
+    const totalTvSeries = tvSeries.length;
+
+    return {
+      items: {
+        movies,
+        tvSeries,
+      },
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        totalMovies,
+        totalTvSeries,
+      },
+    };
+  }
+
+  async findOne(id: string) {
+    return this.contentRepository.findOne({
+      where: { id },
+      relations: ['tags', 'categories', 'actors', 'directors'],
+    });
   }
 }

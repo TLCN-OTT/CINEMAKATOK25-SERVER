@@ -1,3 +1,5 @@
+import { plainToClass } from 'class-transformer';
+
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { ApiResponseDto } from '@app/common/utils/dto';
 import { ResponseBuilder } from '@app/common/utils/dto';
@@ -10,12 +12,12 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
-  ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
@@ -24,7 +26,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { ContentDto, CreateContentDto, UpdateContentDto } from '../dtos/content.dto';
+import {
+  ContentDto,
+  ContentFilterDto,
+  CreateContentDto,
+  UpdateContentDto,
+} from '../dtos/content.dto';
 import { ContentService } from '../services/content.service';
 
 @Controller({
@@ -35,7 +42,6 @@ import { ContentService } from '../services/content.service';
 @ApiBearerAuth()
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
-
   @Post()
   @UseGuards(JwtAuthGuard, IsAdminGuard)
   @ApiOperation({ summary: '[ADMIN] Create new content (movie or TV series)' })
@@ -58,37 +64,6 @@ export class ContentController {
     return ResponseBuilder.createResponse({
       data: result,
       message: 'Content created successfully',
-    });
-  }
-
-  @Get()
-  @ApiOperation({ summary: 'Get all contents with their relationships' })
-  @ApiResponse({
-    status: 200,
-    description: 'List of all contents including categories, actors, directors, and tags',
-    type: ApiResponseDto(ContentDto),
-  })
-  async findAll() {
-    const result = await this.contentService.findAll();
-    return ResponseBuilder.createResponse({
-      data: result,
-    });
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get content by ID with all relationships' })
-  @ApiResponse({
-    status: 200,
-    description: 'Content details including categories, actors, directors, and tags',
-    type: ApiResponseDto(ContentDto),
-  })
-  @ApiNotFoundResponse({
-    description: 'Content not found',
-  })
-  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
-    const result = await this.contentService.findOne(id);
-    return ResponseBuilder.createResponse({
-      data: result,
     });
   }
 
@@ -144,6 +119,51 @@ export class ContentController {
     return ResponseBuilder.createResponse({
       data: null,
       message: 'Content deleted successfully',
+    });
+  }
+  @Get()
+  @ApiOperation({ summary: 'Get movies and TV series with filters' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of movies and TV series',
+    type: ApiResponseDto(ContentDto),
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid filter parameters',
+  })
+  async findAll(@Query() filter: ContentFilterDto) {
+    const contents = await this.contentService.findAll(filter);
+    return ResponseBuilder.createResponse({
+      data: {
+        items: {
+          movies: contents.items.movies.map(content =>
+            plainToClass(ContentDto, content, { excludeExtraneousValues: true }),
+          ),
+          tvSeries: contents.items.tvSeries.map(content =>
+            plainToClass(ContentDto, content, { excludeExtraneousValues: true }),
+          ),
+        },
+        meta: contents.meta,
+      },
+      message: 'Movies and TV series retrieved successfully',
+    });
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get content by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'The content details',
+    type: ApiResponseDto(ContentDto),
+  })
+  @ApiNotFoundResponse({
+    description: 'Content not found',
+  })
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    const content = await this.contentService.findOne(id);
+    return ResponseBuilder.createResponse({
+      data: plainToClass(ContentDto, content, { excludeExtraneousValues: true }),
+      message: 'Content retrieved successfully',
     });
   }
 }
