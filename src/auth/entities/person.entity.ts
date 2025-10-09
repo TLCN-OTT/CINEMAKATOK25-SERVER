@@ -7,9 +7,9 @@ export class PersonEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'date', nullable: true })
   dateOfBirth: Date;
 
-  @Column({ type: 'enum', enum: GENDER })
+  @Column({ type: 'enum', enum: GENDER, nullable: true })
   gender: GENDER;
 }
