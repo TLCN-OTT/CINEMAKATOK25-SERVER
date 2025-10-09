@@ -6,6 +6,7 @@ import { ActorController } from './controllers/actor.controller';
 import { CategoryController } from './controllers/category.controller';
 import { ContentController } from './controllers/content.controller';
 import { DirectorController } from './controllers/director.controller';
+import { MovieController } from './controllers/movie.controller';
 import { TagController } from './controllers/tag.controller';
 import { VideoController } from './controllers/video.controller';
 import { EntityActor, EntityDirector } from './entities/actor.entity';
@@ -19,6 +20,7 @@ import { ActorService } from './services/actor.service';
 import { CategoryService } from './services/category.service';
 import { ContentService } from './services/content.service';
 import { DirectorService } from './services/director.service';
+import { MovieService } from './services/movie.service';
 import { TagService } from './services/tag.service';
 import { VideoService } from './services/video.service';
 
@@ -45,6 +47,7 @@ import { VideoService } from './services/video.service';
     ActorController,
     TagController,
     CategoryController,
+    MovieController,
   ],
   providers: [
     ContentService,
@@ -53,6 +56,7 @@ import { VideoService } from './services/video.service';
     ActorService,
     TagService,
     CategoryService,
+    MovieService,
   ],
 })
 export class CmsModule {}
