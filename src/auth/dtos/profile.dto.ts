@@ -1,5 +1,14 @@
 import { Expose } from 'class-transformer';
-import { IsDate, IsEmail, IsEnum, IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
+import {
+  IsDate,
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
 import { GENDER } from '@app/common/enums/global.enum';
@@ -51,7 +60,7 @@ export class ProfileResponse extends BaseEntityDto {
     description: 'User date of birth',
     example: '1990-01-01',
   })
-  @IsDate()
+  @IsDateString()
   @Expose()
   dateOfBirth: Date | null;
   @ApiProperty({
@@ -64,18 +73,22 @@ export class ProfileResponse extends BaseEntityDto {
   address: string | null;
   @ApiProperty({
     description: 'User phone number',
-    example: '+1 (555) 123-4567',
+    example: '0384912345',
   })
   @IsString()
   @IsNotEmpty()
   @Expose()
-  phone: string | null;
+  phoneNumber: string | null;
 }
 
 export class UpdateProfileRequest extends OmitType(ProfileResponse, [
   'id',
   'createdAt',
   'updatedAt',
+  'email',
+  'provider',
+  'isEmailVerified',
+  'avatar', // avatar should be updated through a separate endpoint
 ]) {}
 
 export class ChangePasswordRequest {
@@ -124,5 +137,3 @@ export class UploadAvatarResponse {
     this.avatarUrl = avatarUrl;
   }
 }
-
-// ============ CHANGE EMAIL WITH OTP DTOs ============

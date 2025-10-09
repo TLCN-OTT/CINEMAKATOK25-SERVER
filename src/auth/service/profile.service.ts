@@ -45,6 +45,9 @@ export class ProfileService {
 
   /**
    * Update user profile
+   * @param userId - The ID of the user to update
+   * @param updateDto - The profile update data
+   * @returns The updated user profile
    */
   async updateProfile(userId: string, updateDto: UpdateProfileRequest) {
     try {
@@ -58,17 +61,47 @@ export class ProfileService {
           message: 'User not found',
         });
       }
-      if (updateDto.name) {
-        user.name = updateDto.name;
+
+      // Update only provided fields
+      if (updateDto.name) user.name = updateDto.name;
+      if (updateDto.gender) user.gender = updateDto.gender;
+
+      // Validate and update date of birth
+      if (updateDto.dateOfBirth) {
+        const dateOfBirth = new Date(updateDto.dateOfBirth);
+        if (isNaN(dateOfBirth.getTime())) {
+          throw new BadRequestException({
+            code: ERROR_CODE.INVALID_BODY,
+            message: 'Invalid date of birth format',
+          });
+        }
+        user.dateOfBirth = dateOfBirth;
+      }
+
+      if (updateDto.address) user.address = updateDto.address;
+
+      // Validate and update phone number
+      if (updateDto.phoneNumber) {
+        const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/;
+        if (!phoneRegex.test(updateDto.phoneNumber)) {
+          throw new BadRequestException({
+            code: ERROR_CODE.INVALID_BODY,
+            message: 'Invalid phone number format',
+          });
+        }
+        user.phoneNumber = updateDto.phoneNumber;
       }
 
       const updatedUser = await this.userRepository.save(user);
-
       return updatedUser;
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       throw new BadRequestException({
         code: ERROR_CODE.UNEXPECTED_ERROR,
         message: 'Failed to update profile',
+        error: error.message,
       });
     }
   }

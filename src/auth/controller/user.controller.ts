@@ -85,11 +85,14 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
     summary: 'Update user profile',
-    description: 'Update the current user profile information (name and/or email)',
+    description: 'Update user basic information (name, gender, date of birth, address, phone)',
   })
   @ApiOkResponse({
     description: 'Profile updated successfully',
     type: ProfileResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid input - Check the error message for details',
   })
   @ApiNotFoundResponse({
     description: 'User not found',
@@ -103,7 +106,7 @@ export class UserController {
   ) {
     const result = await this.profileService.updateProfile(userId, updateProfileDto);
     return ResponseBuilder.createResponse({
-      data: plainToInstance(UserDto, result, { excludeExtraneousValues: true }),
+      data: plainToInstance(ProfileResponse, result, { excludeExtraneousValues: true }),
       message: 'Profile updated successfully',
     });
   }
