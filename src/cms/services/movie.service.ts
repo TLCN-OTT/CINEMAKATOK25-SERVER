@@ -30,16 +30,51 @@ export class MovieService {
     return this.movieRepository.save(movie);
   }
 
-  async findAll(): Promise<EntityMovie[]> {
-    return this.movieRepository.find({
-      relations: [
-        'metaData',
-        'metaData.categories',
-        'metaData.tags',
-        'metaData.actors',
-        'metaData.directors',
-      ],
-    });
+  async findAll(query?: any) {
+    const { page = 1, limit = 10, sort, search } = query || {};
+
+    const queryBuilder = this.movieRepository
+      .createQueryBuilder('movie')
+      .leftJoinAndSelect('movie.metaData', 'metaData')
+      .leftJoinAndSelect('metaData.categories', 'categories')
+      .leftJoinAndSelect('metaData.tags', 'tags')
+      .leftJoinAndSelect('metaData.actors', 'actors')
+      .leftJoinAndSelect('metaData.directors', 'directors');
+
+    if (search) {
+      queryBuilder
+        .where(`similarity(metaData.title, :search) > 0.2`)
+        .orWhere(`similarity(metaData.description, :search) > 0.2`)
+        .setParameter('search', search)
+        // thêm cột rank để sắp xếp kết quả theo độ tương tự
+        .addSelect(
+          `
+        GREATEST(
+          similarity(metaData.title, :search),
+          similarity(metaData.description, :search)
+        )
+      `,
+          'rank',
+        )
+        .orderBy('rank', 'DESC');
+    }
+
+    if (sort) {
+      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
+      Object.keys(sortObj).forEach(key => {
+        const field = key.includes('.') ? key : `movie.${key}`;
+        queryBuilder.addOrderBy(field, sortObj[key]);
+      });
+    } else if (!search) {
+      queryBuilder.orderBy('movie.createdAt', 'DESC');
+    }
+
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findOne(id: string): Promise<EntityMovie> {

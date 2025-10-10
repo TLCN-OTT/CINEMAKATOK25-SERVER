@@ -18,8 +18,46 @@ export class DirectorService {
     return await this.directorRepository.save(director);
   }
 
-  async findAll(): Promise<EntityDirector[]> {
-    return await this.directorRepository.find();
+  async findAll(query?: any) {
+    const { page = 1, limit = 10, sort, search } = query || {};
+
+    const queryBuilder = this.directorRepository
+      .createQueryBuilder('director')
+      .leftJoinAndSelect('director.contents', 'contents');
+
+    if (search) {
+      queryBuilder
+        .where(`similarity(director.name, :search) > 0.2`)
+        .orWhere(`similarity(director.nationality, :search) > 0.2`)
+        .setParameter('search', search)
+        // thêm cột "rank" để sắp xếp theo độ giống cao nhất
+        .addSelect(
+          `
+        GREATEST(
+          similarity(director.name, :search),
+          similarity(director.nationality, :search)
+        )
+      `,
+          'rank',
+        )
+        .orderBy('rank', 'DESC');
+    }
+
+    if (sort) {
+      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
+      Object.keys(sortObj).forEach(key => {
+        queryBuilder.addOrderBy(`director.${key}`, sortObj[key]);
+      });
+    } else if (!search) {
+      queryBuilder.orderBy('director.createdAt', 'DESC');
+    }
+
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findOne(id: string): Promise<EntityDirector> {

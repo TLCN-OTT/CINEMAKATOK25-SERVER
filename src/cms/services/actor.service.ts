@@ -18,8 +18,46 @@ export class ActorService {
     return await this.actorRepository.save(actor);
   }
 
-  async findAll(): Promise<EntityActor[]> {
-    return await this.actorRepository.find();
+  async findAll(query?: any) {
+    const { page = 1, limit = 10, sort, search } = query || {};
+
+    const queryBuilder = this.actorRepository
+      .createQueryBuilder('actor')
+      .leftJoinAndSelect('actor.contents', 'contents');
+
+    if (search) {
+      queryBuilder
+        .where(`similarity(actor.name, :search) > 0.2`)
+        .orWhere(`similarity(actor.nationality, :search) > 0.2`)
+        .setParameter('search', search)
+        // ⚠️ orderBy phải dùng addSelect để tính toán similarity trước
+        .addSelect(
+          `
+        GREATEST(
+          similarity(actor.name, :search),
+          similarity(actor.nationality, :search)
+        )
+      `,
+          'rank',
+        )
+        .orderBy('rank', 'DESC');
+    }
+
+    if (sort) {
+      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
+      Object.keys(sortObj).forEach(key => {
+        queryBuilder.addOrderBy(`actor.${key}`, sortObj[key]);
+      });
+    } else if (!search) {
+      queryBuilder.orderBy('actor.createdAt', 'DESC');
+    }
+
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findOne(id: string): Promise<EntityActor> {

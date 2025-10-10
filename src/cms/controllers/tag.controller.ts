@@ -1,7 +1,8 @@
 import { plainToClass } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
-import { ResponseBuilder } from '@app/common/utils/dto';
+import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -31,14 +32,36 @@ export class TagController {
   @Get()
   @ApiOperation({ summary: 'Get all tags' })
   @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for tags',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
     name: 'search',
     required: false,
     description: 'Search tags by name',
   })
-  async findAll(@Query('search') search?: string) {
-    const tags = search ? await this.tagService.search(search) : await this.tagService.findAll();
-    return ResponseBuilder.createResponse({
-      data: tags.map(tag => plainToClass(TagDto, tag, { excludeExtraneousValues: true })),
+  async findAll(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.tagService.findAll(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: data.map(tag => plainToClass(TagDto, tag, { excludeExtraneousValues: true })),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
       message: 'Tags retrieved successfully',
     });
   }

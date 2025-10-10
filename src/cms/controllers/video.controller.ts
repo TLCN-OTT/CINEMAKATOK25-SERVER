@@ -1,6 +1,6 @@
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
-import { ApiResponseDto } from '@app/common/utils/dto';
-import { ResponseBuilder } from '@app/common/utils/dto';
+import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import {
   Body,
   Controller,
@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -18,6 +19,7 @@ import {
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -62,15 +64,43 @@ export class VideoController {
 
   @Get()
   @ApiOperation({ summary: 'Get all videos' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for videos',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search videos by title',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of all videos',
-    type: ApiResponseDto(VideoDto),
+    type: PaginatedApiResponseDto(VideoDto),
   })
-  async findAll() {
-    const result = await this.videoService.findAll();
-    return ResponseBuilder.createResponse({
-      data: result,
+  async findAll(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.videoService.findAll(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: data,
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Videos retrieved successfully',
     });
   }
 
