@@ -1,8 +1,8 @@
 import { plainToClass } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
-import { ApiResponseDto } from '@app/common/utils/dto';
-import { ResponseBuilder } from '@app/common/utils/dto';
+import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import {
   Body,
   Controller,
@@ -68,6 +68,25 @@ export class CategoryController {
   @Get()
   @ApiOperation({ summary: 'Get all categories' })
   @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for categories',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
     name: 'search',
     required: false,
     description: 'Search categories by name',
@@ -75,16 +94,17 @@ export class CategoryController {
   @ApiResponse({
     status: 200,
     description: 'List of all categories',
-    type: ApiResponseDto(CategoryDto),
+    type: PaginatedApiResponseDto(CategoryDto),
   })
-  async findAll(@Query('search') search?: string) {
-    const categories = search
-      ? await this.categoryService.search(search)
-      : await this.categoryService.findAll();
-    return ResponseBuilder.createResponse({
-      data: categories.map(category =>
+  async findAll(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.categoryService.findAll(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: data.map(category =>
         plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
       ),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
       message: 'Categories retrieved successfully',
     });
   }

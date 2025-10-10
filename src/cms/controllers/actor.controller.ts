@@ -1,7 +1,8 @@
 import { plainToClass } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
-import { ResponseBuilder } from '@app/common/utils/dto';
+import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -29,18 +30,38 @@ export class ActorController {
   @Get()
   @ApiOperation({ summary: 'Get all actors' })
   @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for actors',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
     name: 'search',
     required: false,
     description: 'Search actors by name or nationality',
   })
-  async findAll(@Query('search') search?: string) {
-    const actors = search
-      ? await this.actorService.search(search)
-      : await this.actorService.findAll();
+  async findAll(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.actorService.findAll(query);
 
-    return ResponseBuilder.createResponse({
+    return ResponseBuilder.createPaginatedResponse({
+      data: data.map(actor => plainToClass(ActorDto, actor, { excludeExtraneousValues: true })),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
       message: 'Actors retrieved successfully',
-      data: actors.map(actor => plainToClass(ActorDto, actor, { excludeExtraneousValues: true })),
     });
   }
 

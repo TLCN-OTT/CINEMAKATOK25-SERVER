@@ -18,10 +18,36 @@ export class CategoryService {
     return await this.categoryRepository.save(category);
   }
 
-  async findAll(): Promise<EntityCategory[]> {
-    return await this.categoryRepository.find({
-      relations: ['contents'],
-    });
+  async findAll(query?: any) {
+    const { page = 1, limit = 10, sort, search } = query || {};
+
+    const queryBuilder = this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.contents', 'contents');
+
+    if (search) {
+      queryBuilder
+        .where(`similarity(category.categoryName, :search) > 0.2`)
+        .setParameter('search', search)
+        .addSelect(`similarity(category.categoryName, :search)`, 'rank')
+        .orderBy('rank', 'DESC');
+    }
+
+    if (sort) {
+      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
+      Object.keys(sortObj).forEach(key => {
+        queryBuilder.addOrderBy(`category.${key}`, sortObj[key]);
+      });
+    } else if (!search) {
+      queryBuilder.orderBy('category.createdAt', 'DESC');
+    }
+
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findOne(id: string): Promise<EntityCategory> {

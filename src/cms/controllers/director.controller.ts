@@ -1,7 +1,8 @@
 import { plainToClass } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
-import { ResponseBuilder } from '@app/common/utils/dto';
+import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -28,19 +29,39 @@ export class DirectorController {
   @Get()
   @ApiOperation({ summary: 'Get all directors' })
   @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for directors',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
     name: 'search',
     required: false,
     description: 'Search directors by name or nationality',
   })
-  async findAll(@Query('search') search?: string) {
-    const directors = search
-      ? await this.directorService.search(search)
-      : await this.directorService.findAll();
-    return ResponseBuilder.createResponse({
-      message: 'Directors retrieved successfully',
-      data: directors.map(director =>
+  async findAll(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.directorService.findAll(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: data.map(director =>
         plainToClass(DirectorDto, director, { excludeExtraneousValues: true }),
       ),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Directors retrieved successfully',
     });
   }
 

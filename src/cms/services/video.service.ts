@@ -30,8 +30,34 @@ export class VideoService {
     }
   }
 
-  async findAll() {
-    return await this.videoRepository.find();
+  async findAll(query?: any) {
+    const { page = 1, limit = 10, sort, search } = query || {};
+
+    const queryBuilder = this.videoRepository.createQueryBuilder('video');
+
+    if (search) {
+      queryBuilder
+        .where(`similarity(video.videoUrl, :search) > 0.2`)
+        .setParameter('search', search)
+        .addSelect(`similarity(video.videoUrl, :search)`, 'rank')
+        .orderBy('rank', 'DESC');
+    }
+
+    if (sort) {
+      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
+      Object.keys(sortObj).forEach(key => {
+        queryBuilder.addOrderBy(`video.${key}`, sortObj[key]);
+      });
+    } else if (!search) {
+      queryBuilder.orderBy('video.createdAt', 'DESC');
+    }
+
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findOne(id: string) {

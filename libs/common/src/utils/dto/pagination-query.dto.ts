@@ -29,6 +29,5 @@ export class PaginationQueryDto {
 
   @Expose()
   @IsOptional()
-  @ParseJson()
   search?: string;
 }
