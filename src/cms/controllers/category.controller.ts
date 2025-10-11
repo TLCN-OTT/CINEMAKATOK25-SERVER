@@ -1,4 +1,4 @@
-import { plainToClass } from 'class-transformer';
+import { plainToClass, plainToInstance } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
@@ -60,7 +60,7 @@ export class CategoryController {
   async create(@Body() createCategoryDto: CreateCategoryDto) {
     const category = await this.categoryService.create(createCategoryDto);
     return ResponseBuilder.createResponse({
-      data: plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
+      data: plainToInstance(CategoryDto, category, { excludeExtraneousValues: true }),
       message: 'Category created successfully',
     });
   }
@@ -100,7 +100,7 @@ export class CategoryController {
     const { data, total } = await this.categoryService.findAll(query);
     return ResponseBuilder.createPaginatedResponse({
       data: data.map(category =>
-        plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
+        plainToInstance(CategoryDto, category, { excludeExtraneousValues: true }),
       ),
       totalItems: total,
       currentPage: query.page || 1,
@@ -127,7 +127,7 @@ export class CategoryController {
   async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     const category = await this.categoryService.findOne(id);
     return ResponseBuilder.createResponse({
-      data: plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
+      data: plainToInstance(CategoryDto, category, { excludeExtraneousValues: true }),
       message: 'Category retrieved successfully',
     });
   }
@@ -163,7 +163,7 @@ export class CategoryController {
   ) {
     const category = await this.categoryService.update(id, updateCategoryDto);
     return ResponseBuilder.createResponse({
-      data: plainToClass(CategoryDto, category, { excludeExtraneousValues: true }),
+      data: plainToInstance(CategoryDto, category, { excludeExtraneousValues: true }),
       message: 'Category updated successfully',
     });
   }

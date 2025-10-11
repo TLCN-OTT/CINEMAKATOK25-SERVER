@@ -16,4 +16,4 @@ export class TagDto extends BaseEntityDto {
 
 export class CreateTagDto extends OmitType(TagDto, ['id', 'createdAt', 'updatedAt']) {}
 
-export class UpdateTagDto extends PickType(TagDto, ['tagName']) {}
+export class UpdateTagDto extends PickType(TagDto, ['id', 'tagName']) {}

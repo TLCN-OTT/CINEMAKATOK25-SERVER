@@ -265,7 +265,7 @@ export class UserController {
     const result = await this.userService.findById(id);
     return ResponseBuilder.createResponse({ data: result });
   }
-
+  @Post()
   @ApiBody({ type: CreateUserDto })
   @ApiCreatedResponse({
     description: 'The user has been successfully created.',

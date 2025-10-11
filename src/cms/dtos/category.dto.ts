@@ -17,4 +17,4 @@ export class CategoryDto extends BaseEntityDto {
 
 export class CreateCategoryDto extends OmitType(CategoryDto, ['id', 'createdAt', 'updatedAt']) {}
 
-export class UpdateCategoryDto extends PickType(CategoryDto, ['categoryName']) {}
+export class UpdateCategoryDto extends PickType(CategoryDto, ['id', 'categoryName']) {}

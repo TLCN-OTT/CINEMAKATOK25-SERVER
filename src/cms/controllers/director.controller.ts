@@ -1,4 +1,4 @@
-import { plainToClass } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
@@ -22,7 +22,7 @@ export class DirectorController {
     const director = await this.directorService.create(createDirectorDto);
     return ResponseBuilder.createResponse({
       message: 'Director created successfully',
-      data: plainToClass(DirectorDto, director, { excludeExtraneousValues: true }),
+      data: plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
     });
   }
 
@@ -56,7 +56,7 @@ export class DirectorController {
     const { data, total } = await this.directorService.findAll(query);
     return ResponseBuilder.createPaginatedResponse({
       data: data.map(director =>
-        plainToClass(DirectorDto, director, { excludeExtraneousValues: true }),
+        plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
       ),
       totalItems: total,
       currentPage: query.page || 1,
@@ -76,7 +76,7 @@ export class DirectorController {
     const director = await this.directorService.findOne(id);
     return ResponseBuilder.createResponse({
       message: 'Director retrieved successfully',
-      data: plainToClass(DirectorDto, director, { excludeExtraneousValues: true }),
+      data: plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
     });
   }
 
@@ -92,7 +92,7 @@ export class DirectorController {
     const director = await this.directorService.update(id, updateDirectorDto);
     return ResponseBuilder.createResponse({
       message: 'Director updated successfully',
-      data: plainToClass(DirectorDto, director, { excludeExtraneousValues: true }),
+      data: plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
     });
   }
 

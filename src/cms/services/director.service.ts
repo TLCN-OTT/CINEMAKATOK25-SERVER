@@ -1,5 +1,6 @@
 import { Repository } from 'typeorm';
 
+import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -69,6 +70,32 @@ export class DirectorService {
       throw new NotFoundException(`Director with ID ${id} not found`);
     }
     return director;
+  }
+  async findById(id: string): Promise<EntityDirector> {
+    const director = await this.directorRepository.findOne({
+      where: { id },
+    });
+    if (!director) {
+      throw new NotFoundException({
+        message: `Director with ID ${id} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+    return director;
+  }
+
+  async validateDirectors(directors: any[]): Promise<void> {
+    if (!directors || directors.length === 0) {
+      return;
+    }
+    await Promise.all(
+      directors.map(async directorDto => {
+        if (!directorDto.id || directorDto.id.length === 0) {
+          return;
+        }
+        await this.findById(directorDto.id);
+      }),
+    );
   }
 
   async update(id: string, updateDirectorDto: UpdateDirectorDto): Promise<EntityDirector> {

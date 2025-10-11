@@ -27,4 +27,4 @@ export class VideoDto extends BaseEntityDto {
 }
 
 export class CreateVideoDto extends OmitType(VideoDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateVideoDto extends PickType(VideoDto, ['videoUrl', 'resolution']) {}
+export class UpdateVideoDto extends PickType(VideoDto, ['id', 'videoUrl', 'resolution']) {}

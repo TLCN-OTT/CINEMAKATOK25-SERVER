@@ -13,15 +13,28 @@ import {
   UpdateContentDto,
 } from '../dtos/content.dto';
 import { ContentType, EntityContent } from '../entities/content.entity';
+import { ActorService } from './actor.service';
+import { CategoryService } from './category.service';
+import { DirectorService } from './director.service';
+import { TagService } from './tag.service';
 
 @Injectable()
 export class ContentService {
   constructor(
     @InjectRepository(EntityContent)
     private readonly contentRepository: Repository<EntityContent>,
+    private readonly actorService: ActorService,
+    private readonly tagService: TagService,
+    private readonly categoryService: CategoryService,
+    private readonly directorService: DirectorService,
   ) {}
 
   async create(createDto: CreateContentDto) {
+    // Validate and transform input data
+    await this.actorService.validateActors(createDto.actors);
+    await this.tagService.validateTags(createDto.tags);
+    await this.categoryService.validateCategories(createDto.categories);
+    await this.directorService.validateDirectors(createDto.directors);
     try {
       // Create new content
       const content = this.contentRepository.create({
@@ -58,6 +71,10 @@ export class ContentService {
           message: 'Content not found',
         });
       }
+      // Validate and transform input data
+      await this.actorService.validateActors(updateDto.actors);
+      await this.tagService.validateTags(updateDto.tags);
+      await this.categoryService.validateCategories(updateDto.categories);
 
       Object.assign(content, {
         type: updateDto.type,

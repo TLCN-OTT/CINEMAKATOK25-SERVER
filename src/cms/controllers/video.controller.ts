@@ -1,3 +1,5 @@
+import { plainToInstance } from 'class-transformer';
+
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
@@ -57,7 +59,7 @@ export class VideoController {
   async create(@Body() createVideoDto: CreateVideoDto) {
     const result = await this.videoService.create(createVideoDto);
     return ResponseBuilder.createResponse({
-      data: result,
+      data: plainToInstance(VideoDto, result, { excludeExtraneousValues: true }),
       message: 'Video created successfully',
     });
   }
@@ -96,7 +98,7 @@ export class VideoController {
   async findAll(@Query() query: PaginationQueryDto) {
     const { data, total } = await this.videoService.findAll(query);
     return ResponseBuilder.createPaginatedResponse({
-      data: data,
+      data: data.map(video => plainToInstance(VideoDto, video, { excludeExtraneousValues: true })),
       totalItems: total,
       currentPage: query.page || 1,
       itemsPerPage: query.limit || 10,
@@ -117,7 +119,8 @@ export class VideoController {
   async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     const result = await this.videoService.findOne(id);
     return ResponseBuilder.createResponse({
-      data: result,
+      data: plainToInstance(VideoDto, result, { excludeExtraneousValues: true }),
+      message: 'Video retrieved successfully',
     });
   }
 
@@ -147,7 +150,7 @@ export class VideoController {
   ) {
     const result = await this.videoService.update(id, updateVideoDto);
     return ResponseBuilder.createResponse({
-      data: result,
+      data: plainToInstance(VideoDto, result, { excludeExtraneousValues: true }),
       message: 'Video updated successfully',
     });
   }
