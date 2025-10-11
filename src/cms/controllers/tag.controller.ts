@@ -1,4 +1,4 @@
-import { plainToClass } from 'class-transformer';
+import { plainToClass, plainToInstance } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
@@ -24,7 +24,7 @@ export class TagController {
   async create(@Body() createTagDto: CreateTagDto) {
     const tag = await this.tagService.create(createTagDto);
     return ResponseBuilder.createResponse({
-      data: plainToClass(TagDto, tag, { excludeExtraneousValues: true }),
+      data: plainToInstance(TagDto, tag, { excludeExtraneousValues: true }),
       message: 'Tag created successfully',
     });
   }
@@ -76,7 +76,7 @@ export class TagController {
   async findOne(@Param('id') id: string) {
     const tag = await this.tagService.findOne(id);
     return ResponseBuilder.createResponse({
-      data: plainToClass(TagDto, tag, { excludeExtraneousValues: true }),
+      data: plainToInstance(TagDto, tag, { excludeExtraneousValues: true }),
       message: 'Tag retrieved successfully',
     });
   }
@@ -92,7 +92,7 @@ export class TagController {
   async update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
     const tag = await this.tagService.update(id, updateTagDto);
     return ResponseBuilder.createResponse({
-      data: plainToClass(TagDto, tag, { excludeExtraneousValues: true }),
+      data: plainToInstance(TagDto, tag, { excludeExtraneousValues: true }),
       message: 'Tag updated successfully',
     });
   }

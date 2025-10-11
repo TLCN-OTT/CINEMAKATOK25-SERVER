@@ -1,3 +1,5 @@
+import { plainToInstance } from 'class-transformer';
+
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
@@ -57,7 +59,7 @@ export class MovieController {
   async create(@Body() createMovieDto: CreateMovieDto) {
     const result = await this.movieService.create(createMovieDto);
     return ResponseBuilder.createResponse({
-      data: result,
+      data: plainToInstance(MovieDto, result, { excludeExtraneousValues: true }),
       message: 'Movie created successfully',
     });
   }
@@ -117,7 +119,8 @@ export class MovieController {
   async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     const result = await this.movieService.findOne(id);
     return ResponseBuilder.createResponse({
-      data: result,
+      data: plainToInstance(MovieDto, result, { excludeExtraneousValues: true }),
+      message: 'Movie retrieved successfully',
     });
   }
 
@@ -147,7 +150,7 @@ export class MovieController {
   ) {
     const result = await this.movieService.update(id, updateMovieDto);
     return ResponseBuilder.createResponse({
-      data: result,
+      data: plainToInstance(MovieDto, result, { excludeExtraneousValues: true }),
       message: 'Movie updated successfully',
     });
   }

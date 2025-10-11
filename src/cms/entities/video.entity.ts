@@ -8,7 +8,6 @@ export enum VideoOwnerType {
   EPISODE = 'episode',
 }
 @Entity({ name: 'video' })
-@Index(['ownerType', 'ownerId'])
 export class EntityVideo extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   videoUrl: string;

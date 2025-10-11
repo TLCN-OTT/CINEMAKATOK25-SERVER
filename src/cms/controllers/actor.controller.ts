@@ -1,4 +1,4 @@
-import { plainToClass } from 'class-transformer';
+import { plainToClass, plainToInstance } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
@@ -22,7 +22,7 @@ export class ActorController {
     const actor = await this.actorService.create(createActorDto);
 
     return ResponseBuilder.createResponse({
-      data: plainToClass(ActorDto, actor, { excludeExtraneousValues: true }),
+      data: plainToInstance(ActorDto, actor, { excludeExtraneousValues: true }),
       message: 'Content updated successfully',
     });
   }
@@ -57,7 +57,7 @@ export class ActorController {
     const { data, total } = await this.actorService.findAll(query);
 
     return ResponseBuilder.createPaginatedResponse({
-      data: data.map(actor => plainToClass(ActorDto, actor, { excludeExtraneousValues: true })),
+      data: data.map(actor => plainToInstance(ActorDto, actor, { excludeExtraneousValues: true })),
       totalItems: total,
       currentPage: query.page || 1,
       itemsPerPage: query.limit || 10,
@@ -76,7 +76,7 @@ export class ActorController {
     const actor = await this.actorService.findOne(id);
     return ResponseBuilder.createResponse({
       message: 'Actor retrieved successfully',
-      data: plainToClass(ActorDto, actor, { excludeExtraneousValues: true }),
+      data: plainToInstance(ActorDto, actor, { excludeExtraneousValues: true }),
     });
   }
 
@@ -92,7 +92,7 @@ export class ActorController {
     const actor = await this.actorService.update(id, updateActorDto);
     return ResponseBuilder.createResponse({
       message: 'Actor updated successfully',
-      data: plainToClass(ActorDto, actor, { excludeExtraneousValues: true }),
+      data: plainToInstance(ActorDto, actor, { excludeExtraneousValues: true }),
     });
   }
 

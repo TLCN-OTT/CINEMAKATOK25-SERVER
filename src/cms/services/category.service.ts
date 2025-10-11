@@ -1,9 +1,10 @@
 import { Repository } from 'typeorm';
 
+import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { CreateCategoryDto, UpdateCategoryDto } from '../dtos/category.dto';
+import { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../dtos/category.dto';
 import { EntityCategory } from '../entities/category.entity';
 
 @Injectable()
@@ -57,9 +58,39 @@ export class CategoryService {
     });
 
     if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new NotFoundException({
+        message: `Category with ID ${id} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
     return category;
+  }
+
+  async findById(id: string): Promise<EntityCategory> {
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+    });
+    if (!category) {
+      throw new NotFoundException({
+        message: `Category with ID ${id} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+    return category;
+  }
+
+  async validateCategories(categoryDtos: any[]): Promise<void> {
+    if (!categoryDtos || categoryDtos.length === 0) {
+      return;
+    }
+    await Promise.all(
+      categoryDtos.map(async categoryDto => {
+        if (!categoryDto.id || categoryDto.id.length === 0) {
+          return;
+        }
+        await this.findById(categoryDto.id);
+      }),
+    );
   }
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<EntityCategory> {

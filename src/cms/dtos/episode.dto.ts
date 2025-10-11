@@ -5,7 +5,7 @@ import { BaseEntityDto } from '@app/common/base/base-entity-dto';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 import { SeasonDto } from './tvseries.dto';
-import { VideoDto } from './video.dto';
+import { CreateVideoDto, UpdateVideoDto, VideoDto } from './video.dto';
 
 export class EpisodeDto extends BaseEntityDto {
   @ApiProperty({
@@ -43,15 +43,6 @@ export class EpisodeDto extends BaseEntityDto {
   episodeThumbnail?: string;
 
   @ApiProperty({
-    description: 'Season information',
-    type: SeasonDto,
-  })
-  @Type(() => SeasonDto)
-  @ValidateNested({ each: true })
-  @Expose()
-  season: SeasonDto;
-
-  @ApiProperty({
     description: 'List of video information',
     type: [VideoDto],
   })
@@ -60,5 +51,28 @@ export class EpisodeDto extends BaseEntityDto {
   @Expose()
   videos?: VideoDto[];
 }
-export class CreateEpisodeDto extends OmitType(EpisodeDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateEpisodeDto extends OmitType(EpisodeDto, ['id', 'createdAt', 'updatedAt']) {}
+export class CreateEpisodeDto extends OmitType(EpisodeDto, [
+  'id',
+  'createdAt',
+  'updatedAt',
+  'videos',
+]) {
+  @ApiProperty({
+    description: 'List of video information',
+    type: [CreateVideoDto],
+  })
+  @Type(() => CreateVideoDto)
+  @ValidateNested({ each: true })
+  @Expose()
+  videos?: CreateVideoDto[];
+}
+export class UpdateEpisodeDto extends OmitType(EpisodeDto, ['createdAt', 'updatedAt', 'videos']) {
+  @ApiProperty({
+    description: 'List of video information',
+    type: [UpdateVideoDto],
+  })
+  @Type(() => UpdateVideoDto)
+  @ValidateNested({ each: true })
+  @Expose()
+  videos?: UpdateVideoDto[];
+}

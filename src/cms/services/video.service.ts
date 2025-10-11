@@ -1,11 +1,11 @@
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateVideoDto, UpdateVideoDto } from '../dtos/video.dto';
-import { EntityVideo } from '../entities/video.entity';
+import { EntityVideo, VideoOwnerType } from '../entities/video.entity';
 
 @Injectable()
 export class VideoService {
@@ -112,5 +112,57 @@ export class VideoService {
       });
     }
     await this.videoRepository.remove(video);
+  }
+  async findByEpisodeIds(episodeIds: string[]): Promise<EntityVideo[]> {
+    if (!episodeIds?.length) return [];
+
+    return this.videoRepository.find({
+      where: {
+        ownerType: VideoOwnerType.EPISODE,
+        ownerId: In(episodeIds),
+      },
+    });
+  }
+
+  async findByMovie(movieId: string): Promise<EntityVideo[]> {
+    return this.videoRepository.find({
+      where: {
+        ownerType: VideoOwnerType.MOVIE,
+        ownerId: movieId,
+      },
+    });
+  }
+  async validateVideos(videoIds: UpdateVideoDto[]): Promise<EntityVideo[]> {
+    return this.videoRepository.find({
+      where: { id: In(videoIds.map(v => v.id)) },
+    });
+  }
+
+  async assignVideos(videos: EntityVideo[], id: string, videoType?: VideoOwnerType) {
+    await Promise.all(
+      videos.map(v =>
+        this.videoRepository.update(v.id, {
+          ownerType: videoType || VideoOwnerType.EPISODE,
+          ownerId: id,
+        }),
+      ),
+    );
+  }
+
+  async unassignVideosByEpisodeIds(episodeIds: string[]): Promise<void> {
+    if (!episodeIds.length) {
+      return;
+    }
+
+    await this.videoRepository.update(
+      {
+        ownerType: VideoOwnerType.EPISODE,
+        ownerId: In(episodeIds),
+      },
+      {
+        ownerType: null,
+        ownerId: null,
+      },
+    );
   }
 }

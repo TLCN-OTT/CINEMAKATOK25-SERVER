@@ -16,10 +16,10 @@ import { BaseEntityDto } from '@app/common/base/base-entity-dto';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 import { ContentType } from '../entities/content.entity';
-import { ActorDto } from './actor.dto';
-import { CategoryDto } from './category.dto';
-import { DirectorDto } from './director.dto';
-import { TagDto } from './tag.dto';
+import { ActorDto, UpdateActorDto } from './actor.dto';
+import { CategoryDto, UpdateCategoryDto } from './category.dto';
+import { DirectorDto, UpdateDirectorDto } from './director.dto';
+import { TagDto, UpdateTagDto } from './tag.dto';
 
 export class ContentDto extends BaseEntityDto {
   @ApiProperty({
@@ -123,8 +123,93 @@ export class ContentDto extends BaseEntityDto {
   directors: DirectorDto[];
 }
 
-export class CreateContentDto extends OmitType(ContentDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateContentDto extends OmitType(ContentDto, ['id', 'createdAt', 'updatedAt']) {}
+export class CreateContentDto extends OmitType(ContentDto, [
+  'id',
+  'createdAt',
+  'updatedAt',
+  'actors',
+  'directors',
+  'tags',
+  'categories',
+]) {
+  @ApiProperty({
+    description: 'Categories of the content',
+    type: [UpdateCategoryDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => UpdateCategoryDto)
+  @Expose()
+  categories: UpdateCategoryDto[];
+
+  @ApiProperty({
+    description: 'Tags of the content',
+    type: [UpdateTagDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => UpdateTagDto)
+  @Expose()
+  tags: UpdateTagDto[];
+
+  @ApiProperty({
+    description: 'Actors of the content',
+    type: [ActorDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => UpdateActorDto)
+  @Expose()
+  actors: UpdateActorDto[];
+  @ApiProperty({
+    description: 'Directors of the content',
+    type: [UpdateDirectorDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => UpdateDirectorDto)
+  @Expose()
+  directors: UpdateDirectorDto[];
+}
+export class UpdateContentDto extends OmitType(ContentDto, [
+  'createdAt',
+  'updatedAt',
+  'actors',
+  'directors',
+  'tags',
+  'categories',
+]) {
+  @ApiProperty({
+    description: 'Categories of the content',
+    type: [UpdateCategoryDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => UpdateCategoryDto)
+  @Expose()
+  categories: UpdateCategoryDto[];
+
+  @ApiProperty({
+    description: 'Tags of the content',
+    type: [UpdateTagDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => UpdateTagDto)
+  @Expose()
+  tags: UpdateTagDto[];
+
+  @ApiProperty({
+    description: 'Actors of the content',
+    type: [UpdateActorDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => UpdateActorDto)
+  @Expose()
+  actors: UpdateActorDto[];
+  @ApiProperty({
+    description: 'Directors of the content',
+    type: [UpdateDirectorDto],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => UpdateDirectorDto)
+  @Expose()
+  directors: UpdateDirectorDto[];
+}
 
 export enum ContentSortBy {
   VIEWS = 'views',

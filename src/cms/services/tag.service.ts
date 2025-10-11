@@ -1,9 +1,10 @@
 import { Repository } from 'typeorm';
 
+import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { CreateTagDto, UpdateTagDto } from '../dtos/tag.dto';
+import { CreateTagDto, TagDto, UpdateTagDto } from '../dtos/tag.dto';
 import { EntityTag } from '../entities/tag.entity';
 
 @Injectable()
@@ -31,9 +32,36 @@ export class TagService {
     });
 
     if (!tag) {
-      throw new NotFoundException(`Tag with ID ${id} not found`);
+      throw new NotFoundException({
+        message: `Tag with ID ${id} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
     return tag;
+  }
+  async findById(id: string): Promise<EntityTag> {
+    const tag = await this.tagRepository.findOne({ where: { id } });
+    if (!tag) {
+      throw new NotFoundException({
+        message: `Tag with ID ${id} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+    return tag;
+  }
+
+  async validateTags(tagDtos: any[]): Promise<void> {
+    if (!tagDtos || tagDtos.length === 0) {
+      return;
+    }
+    await Promise.all(
+      tagDtos.map(async tagDto => {
+        if (!tagDto.id || tagDto.id.length === 0) {
+          return;
+        }
+        await this.findById(tagDto.id);
+      }),
+    );
   }
 
   async update(id: string, updateTagDto: UpdateTagDto): Promise<EntityTag> {

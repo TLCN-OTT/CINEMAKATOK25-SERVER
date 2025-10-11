@@ -63,4 +63,4 @@ export class DirectorDto extends BaseEntityDto {
 }
 
 export class CreateDirectorDto extends OmitType(DirectorDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateDirectorDto extends OmitType(DirectorDto, ['id', 'createdAt', 'updatedAt']) {}
+export class UpdateDirectorDto extends OmitType(DirectorDto, ['createdAt', 'updatedAt']) {}

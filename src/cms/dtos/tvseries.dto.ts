@@ -4,8 +4,8 @@ import { IsNotEmpty, IsNumber, ValidateNested } from 'class-validator';
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 
-import { ContentDto } from './content.dto';
-import { EpisodeDto } from './episode.dto';
+import { ContentDto, UpdateContentDto } from './content.dto';
+import { CreateEpisodeDto, EpisodeDto, UpdateEpisodeDto } from './episode.dto';
 import { VideoDto } from './video.dto';
 
 export class SeasonDto extends BaseEntityDto {
@@ -19,6 +19,15 @@ export class SeasonDto extends BaseEntityDto {
   seasonNumber: number;
 
   @ApiProperty({
+    description: 'Total number of episodes in the season',
+    example: 10,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Expose()
+  totalEpisodes: number;
+
+  @ApiProperty({
     description: 'List of episode information',
     type: [EpisodeDto],
   })
@@ -27,18 +36,39 @@ export class SeasonDto extends BaseEntityDto {
   @Expose()
   episodes: EpisodeDto[];
 }
-export class CreateSeasonDto extends OmitType(SeasonDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateSeasonDto extends OmitType(SeasonDto, ['id', 'createdAt', 'updatedAt']) {}
+export class CreateSeasonDto extends OmitType(SeasonDto, [
+  'id',
+  'createdAt',
+  'updatedAt',
+  'totalEpisodes',
+  'episodes',
+]) {
+  @ApiProperty({
+    description: 'List of episode information',
+    type: [UpdateEpisodeDto],
+  })
+  @Type(() => UpdateEpisodeDto)
+  @ValidateNested({ each: true })
+  @Expose()
+  episodes: UpdateEpisodeDto[];
+}
+export class UpdateSeasonDto extends OmitType(SeasonDto, [
+  'totalEpisodes',
+  'createdAt',
+  'updatedAt',
+  'episodes',
+]) {
+  @ApiProperty({
+    description: 'List of episode information',
+    type: [UpdateEpisodeDto],
+  })
+  @Type(() => UpdateEpisodeDto)
+  @ValidateNested({ each: true })
+  @Expose()
+  episodes: UpdateEpisodeDto[];
+}
 
 export class TVSeriesDto extends BaseEntityDto {
-  @ApiProperty({
-    description: 'TV series title',
-    example: 'Breaking Bad',
-  })
-  @IsNotEmpty()
-  @Expose()
-  title: string;
-
   @ApiProperty({
     description: 'Metadata about the TV series',
     type: ContentDto,
@@ -57,5 +87,52 @@ export class TVSeriesDto extends BaseEntityDto {
   @Expose()
   seasons: SeasonDto[];
 }
-export class CreateTVSeriesDto extends OmitType(TVSeriesDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateTVSeriesDto extends OmitType(TVSeriesDto, ['id', 'createdAt', 'updatedAt']) {}
+export class CreateTVSeriesDto extends OmitType(TVSeriesDto, [
+  'id',
+  'createdAt',
+  'updatedAt',
+  'seasons',
+  'metaData',
+]) {
+  @ApiProperty({
+    description: 'List of season information',
+    type: [CreateSeasonDto],
+  })
+  @Type(() => CreateSeasonDto)
+  @ValidateNested({ each: true })
+  @Expose()
+  seasons: CreateSeasonDto[];
+
+  @ApiProperty({
+    description: 'Metadata about the TV series',
+    type: UpdateContentDto,
+  })
+  @ValidateNested()
+  @Type(() => UpdateContentDto)
+  @Expose()
+  metaData: UpdateContentDto;
+}
+export class UpdateTVSeriesDto extends OmitType(TVSeriesDto, [
+  'id',
+  'createdAt',
+  'updatedAt',
+  'seasons',
+  'metaData',
+]) {
+  @ApiProperty({
+    description: 'List of season information',
+    type: [UpdateSeasonDto],
+  })
+  @Type(() => UpdateSeasonDto)
+  @ValidateNested({ each: true })
+  @Expose()
+  seasons: UpdateSeasonDto[];
+  @ApiProperty({
+    description: 'Metadata about the TV series',
+    type: UpdateContentDto,
+  })
+  @ValidateNested()
+  @Type(() => UpdateContentDto)
+  @Expose()
+  metaData: UpdateContentDto;
+}

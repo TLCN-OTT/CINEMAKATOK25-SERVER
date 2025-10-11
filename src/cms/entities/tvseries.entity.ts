@@ -7,15 +7,16 @@ import { EntityVideo } from './video.entity';
 
 @Entity({ name: 'tvseries' })
 export class EntityTVSeries extends BaseEntity {
-  @Column({ type: 'int' })
-  seasons: number;
-
   @OneToOne(() => EntityContent, { cascade: true, eager: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'content_id' })
   metaData: EntityContent;
 
-  @OneToMany(() => EntitySeason, season => season.tvseries, { cascade: true })
-  seasonDetails: EntitySeason[];
+  @OneToMany(() => EntitySeason, season => season.tvseries, {
+    cascade: true,
+    onDelete: 'CASCADE',
+    eager: true,
+  })
+  seasons: EntitySeason[];
 }
 
 @Entity({ name: 'season' })
@@ -26,10 +27,14 @@ export class EntitySeason extends BaseEntity {
   @Column({ type: 'int' })
   totalEpisodes: number;
 
-  @OneToMany(() => EntityEpisode, episode => episode.season, { cascade: true })
-  episodeDetails: EntityEpisode[];
+  @OneToMany(() => EntityEpisode, episode => episode.season, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  episodes: EntityEpisode[];
 
-  @ManyToOne(() => EntityTVSeries, tvseries => tvseries.seasonDetails)
+  @ManyToOne(() => EntityTVSeries, tvseries => tvseries.seasons, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tv_series_id' })
   tvseries: EntityTVSeries;
 }
@@ -48,7 +53,7 @@ export class EntityEpisode extends BaseEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   episodeThumbnail: string;
 
-  @ManyToOne(() => EntitySeason, season => season.episodeDetails)
+  @ManyToOne(() => EntitySeason, season => season.episodes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'season_id' })
   season: EntitySeason;
   // Helper method để lấy videos

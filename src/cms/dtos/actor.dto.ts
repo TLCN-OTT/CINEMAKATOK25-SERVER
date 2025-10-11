@@ -63,4 +63,4 @@ export class ActorDto extends BaseEntityDto {
 }
 
 export class CreateActorDto extends OmitType(ActorDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateActorDto extends OmitType(ActorDto, ['id', 'createdAt', 'updatedAt']) {}
+export class UpdateActorDto extends OmitType(ActorDto, ['createdAt', 'updatedAt']) {}

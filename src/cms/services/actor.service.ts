@@ -1,9 +1,11 @@
 import { Repository } from 'typeorm';
+import { Code } from 'typeorm/browser';
 
+import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { CreateActorDto, UpdateActorDto } from '../dtos/actor.dto';
+import { ActorDto, CreateActorDto, UpdateActorDto } from '../dtos/actor.dto';
 import { EntityActor } from '../entities/actor.entity';
 
 @Injectable()
@@ -66,7 +68,22 @@ export class ActorService {
       relations: ['contents'],
     });
     if (!actor) {
-      throw new NotFoundException(`Actor with ID ${id} not found`);
+      throw new NotFoundException({
+        message: `Actor with ID ${id} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+    return actor;
+  }
+  async findById(id: string): Promise<EntityActor> {
+    const actor = await this.actorRepository.findOne({
+      where: { id },
+    });
+    if (!actor) {
+      throw new NotFoundException({
+        message: `Actor with ID ${id} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
     return actor;
   }
@@ -102,10 +119,22 @@ export class ActorService {
       GREATEST(
         similarity(actor.name, :query),
         similarity(actor.nationality, :query)
-      )
-    `,
+      )`,
         'DESC',
       )
       .getMany();
+  }
+  async validateActors(actorDtos: any[]): Promise<void> {
+    if (!actorDtos || actorDtos.length === 0) {
+      return;
+    }
+    await Promise.all(
+      actorDtos.map(async actorDto => {
+        if (!actorDto.id || actorDto.id.length === 0) {
+          return;
+        }
+        await this.findById(actorDto.id);
+      }),
+    );
   }
 }

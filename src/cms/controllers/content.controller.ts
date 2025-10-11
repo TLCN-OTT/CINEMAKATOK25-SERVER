@@ -1,4 +1,4 @@
-import { plainToClass } from 'class-transformer';
+import { plainToClass, plainToInstance } from 'class-transformer';
 
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { ApiResponseDto } from '@app/common/utils/dto';
@@ -62,7 +62,7 @@ export class ContentController {
   async create(@Body() createContentDto: CreateContentDto) {
     const result = await this.contentService.create(createContentDto);
     return ResponseBuilder.createResponse({
-      data: result,
+      data: plainToInstance(ContentDto, result, { excludeExtraneousValues: true }),
       message: 'Content created successfully',
     });
   }
@@ -137,10 +137,10 @@ export class ContentController {
       data: {
         items: {
           movies: contents.items.movies.map(content =>
-            plainToClass(ContentDto, content, { excludeExtraneousValues: true }),
+            plainToInstance(ContentDto, content, { excludeExtraneousValues: true }),
           ),
           tvSeries: contents.items.tvSeries.map(content =>
-            plainToClass(ContentDto, content, { excludeExtraneousValues: true }),
+            plainToInstance(ContentDto, content, { excludeExtraneousValues: true }),
           ),
         },
         meta: contents.meta,
@@ -162,7 +162,7 @@ export class ContentController {
   async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     const content = await this.contentService.findOne(id);
     return ResponseBuilder.createResponse({
-      data: plainToClass(ContentDto, content, { excludeExtraneousValues: true }),
+      data: plainToInstance(ContentDto, content, { excludeExtraneousValues: true }),
       message: 'Content retrieved successfully',
     });
   }
