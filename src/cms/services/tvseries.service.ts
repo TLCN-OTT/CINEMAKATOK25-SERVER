@@ -41,7 +41,9 @@ export class TvSeriesService {
     tvSeriesList.forEach(tv =>
       tv.seasons?.forEach(season =>
         season.episodes?.forEach(ep => {
-          ep['videos'] = videos.filter(v => v.ownerId === ep.id);
+          // ✅ Chỉ gắn 1 video duy nhất thay vì mảng
+          const video = videos.find(v => v.ownerId === ep.id);
+          ep['video'] = video || null;
         }),
       ),
     );
@@ -154,8 +156,7 @@ export class TvSeriesService {
         await queryRunner.manager.save(seasonEntities);
 
         const episodeEntities: EntityEpisode[] = [];
-        const episodeVideoRequests: Array<{ episode: EntityEpisode; videos: UpdateVideoDto[] }> =
-          [];
+        const episodeVideoRequests: Array<{ episode: EntityEpisode; video: UpdateVideoDto }> = [];
 
         seasonEntities.forEach((seasonEntity, index) => {
           const seasonDto = seasons[index];
@@ -169,10 +170,11 @@ export class TvSeriesService {
 
             episodeEntities.push(episode);
 
-            if (episodeDto.videos?.length) {
+            // ✅ Chỉ xử lý 1 video thay vì mảng
+            if (episodeDto.video) {
               episodeVideoRequests.push({
                 episode,
-                videos: episodeDto.videos,
+                video: episodeDto.video,
               });
             }
           });
@@ -183,25 +185,22 @@ export class TvSeriesService {
         }
 
         if (episodeVideoRequests.length) {
-          const videoDtos = episodeVideoRequests.flatMap(request => request.videos);
+          const videoDtos = episodeVideoRequests.map(request => request.video);
           const validVideos = await this.videoService.validateVideos(videoDtos);
           const videoMap = new Map(validVideos.map(video => [video.id, video]));
 
           for (const request of episodeVideoRequests) {
-            const requestedIds = request.videos.map(video => video.id);
-            const videosToAssign = requestedIds
-              .map(id => videoMap.get(id))
-              .filter((video): video is (typeof validVideos)[number] => Boolean(video));
+            const video = videoMap.get(request.video.id);
 
-            if (videosToAssign.length !== request.videos.length) {
+            if (!video) {
               throw new BadRequestException({
                 code: ERROR_CODE.INVALID_BODY,
-                message: 'Một hoặc nhiều video không tồn tại hoặc không hợp lệ',
+                message: 'Video không tồn tại hoặc không hợp lệ',
               });
             }
 
             await this.videoService.assignVideos(
-              videosToAssign,
+              [video],
               request.episode.id,
               VideoOwnerType.EPISODE,
             );
@@ -249,13 +248,11 @@ export class TvSeriesService {
             where: { season: { id: In(toDeleteSeasonIds) } },
           });
 
-          // Set ownerId của video về null
           const episodeIds = episodesToDelete.map(ep => ep.id);
           if (episodeIds.length) {
             await this.videoService.unassignVideosByEpisodeIds(episodeIds);
           }
 
-          // Xóa season và episode
           await queryRunner.manager.delete(this.episodeRepository.target, episodeIds);
           await queryRunner.manager.delete(this.seasonRepository.target, toDeleteSeasonIds);
         }
@@ -306,68 +303,61 @@ export class TvSeriesService {
               const existingEpisode = await this.episodeRepository.findOne({
                 where: { id: epDto.id },
               });
-              console.log('Existing episode:', existingEpisode);
-              console.log('Updating with data:', epDto);
+
               if (!existingEpisode) {
                 throw new NotFoundException({
                   message: `Episode with id ${epDto.id} not found`,
                   code: ERROR_CODE.ENTITY_NOT_FOUND,
                 });
               }
-              const { videos, ...episodeData } = epDto; // videos sẽ tách ra, episodeData chứa tất cả field còn lại
+
+              // ✅ Tách video ra khỏi episodeData
+              const { video, ...episodeData } = epDto;
 
               await queryRunner.manager.update(this.episodeRepository.target, epDto.id, {
                 ...episodeData,
                 season: seasonEntity,
               });
-              // Assign videos nếu có
-              if (videos?.length) {
-                const existingVideos = await this.videoService.findByEpisodeIds([epDto.id]);
-                const requestVideoIds = (videos ?? []).map(v => v.id);
 
-                // Tất cả video hiện có nhưng không còn trong request → unlink
-                const videosToUnlink = existingVideos.filter(v => !requestVideoIds.includes(v.id));
-                console.log('Videos to unlink:', videosToUnlink);
-                if (videosToUnlink.length) {
-                  await this.videoService.unassignVideosByEpisodeIds(
-                    videosToUnlink.map(v => v.ownerId).filter((id): id is string => id !== null),
-                  );
+              // ✅ Xử lý video (chỉ 1 video)
+              if (video) {
+                // Unlink video cũ trước
+                await this.videoService.unassignVideosByEpisodeIds([epDto.id]);
+
+                // Validate và assign video mới
+                const validVideos = await this.videoService.validateVideos([video]);
+                if (!validVideos.length) {
+                  throw new BadRequestException({
+                    code: ERROR_CODE.INVALID_BODY,
+                    message: 'Video không tồn tại hoặc không hợp lệ',
+                  });
                 }
 
-                // Assign video mới nếu có
-                if (requestVideoIds.length) {
-                  const validVideos = await this.videoService.validateVideos(videos);
-                  if (validVideos.length !== videos.length) {
-                    throw new BadRequestException({
-                      code: ERROR_CODE.INVALID_BODY,
-                      message: 'Một hoặc nhiều video không tồn tại hoặc không hợp lệ',
-                    });
-                  }
-                  await this.videoService.assignVideos(
-                    validVideos,
-                    epDto.id,
-                    VideoOwnerType.EPISODE,
-                  );
-                }
+                await this.videoService.assignVideos(validVideos, epDto.id, VideoOwnerType.EPISODE);
               } else {
+                // Nếu không có video trong request, unlink video hiện tại
                 await this.videoService.unassignVideosByEpisodeIds([epDto.id]);
               }
             } else {
+              // Tạo episode mới
+              const { video, ...episodeData } = epDto;
+
               const newEp = this.episodeRepository.create({
-                ...epDto,
+                ...episodeData,
                 season: seasonEntity,
               });
               const savedEp = await queryRunner.manager.save(newEp);
 
-              // Assign videos nếu có
-              if (epDto.videos?.length) {
-                const validVideos = await this.videoService.validateVideos(epDto.videos);
-                if (validVideos.length !== epDto.videos.length) {
+              // ✅ Assign video nếu có
+              if (video) {
+                const validVideos = await this.videoService.validateVideos([video]);
+                if (!validVideos.length) {
                   throw new BadRequestException({
                     code: ERROR_CODE.INVALID_BODY,
-                    message: 'Một hoặc nhiều video không tồn tại hoặc không hợp lệ',
+                    message: 'Video không tồn tại hoặc không hợp lệ',
                   });
                 }
+
                 await this.videoService.assignVideos(
                   validVideos,
                   savedEp.id,
@@ -378,7 +368,7 @@ export class TvSeriesService {
           }
         }
       } else {
-        // Nếu seasons gửi về là rỗng, nghĩa là xoá hết seasons cũ đi
+        // Nếu seasons gửi về là rỗng, xoá hết seasons cũ
         const existingSeasons = await this.seasonRepository.find({
           where: { tvseries: { id } },
         });

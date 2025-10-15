@@ -1,3 +1,5 @@
+const { aws } = require('./default');
+
 require('dotenv').config();
 
 const number = name => ({ __name: name, __format: 'number' });
@@ -21,11 +23,25 @@ module.exports = {
     fromName: 'FROM_NAME',
     secure: boolean('SMTP_SECURE'),
   },
+  aws: {
+    accessKeyId: 'AWS_ACCESS_KEY_ID',
+    secretAccessKey: 'AWS_SECRET_ACCESS_KEY',
+    region: 'AWS_REGION',
+    bucketName: 'AWS_BUCKET_NAME',
+    s3BucketUrl: 'AWS_S3_BUCKET_URL',
+    cloudfrontDomain: 'AWS_CLOUDFRONT_DOMAIN',
+    cloudfrontKeyPairId: 'AWS_CLOUDFRONT_KEY_PAIR_ID',
+    cloudfrontPrivateKey: 'AWS_CLOUDFRONT_PRIVATE_KEY',
+  },
   jwt: {
     privateKey: 'JWT_PRIVATE_KEY',
     publicKey: 'JWT_PUBLIC_KEY',
     expiresTime: 'ACCESS_TOKEN_EXPIRES_TIME',
     refreshExpiresTime: 'REFRESH_TOKEN_EXPIRES_TIME',
+  },
+  redis: {
+    host: 'REDIS_HOST',
+    port: number('REDIS_PORT'),
   },
   // Core Config
   core: {

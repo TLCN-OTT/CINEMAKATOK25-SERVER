@@ -1,30 +1,37 @@
 import { Expose } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
-import { RESOLUTION } from '@app/common/enums/global.enum';
+import { ToS3FileKey } from '@app/common/decorators/toS3FileKey.decorator';
+import { RESOLUTION, VIDEO_STATUS } from '@app/common/enums/global.enum';
+import { getConfig } from '@app/common/utils/get-config';
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 
+const bucketUrl = getConfig('aws.s3BucketUrl', 'https://your-default-bucket-url.com/');
 export class VideoDto extends BaseEntityDto {
   @ApiProperty({
-    description: 'Video title',
-    example: 'Sample Video',
+    description: 'Video URL',
+    example: '/uploads/video-123/stream_0/playlist.m3u8',
   })
   @IsString()
   @IsNotEmpty()
   @Expose()
+  @ToS3FileKey(bucketUrl)
   videoUrl: string;
 
   @ApiProperty({
-    description: 'Video resolution',
-    example: RESOLUTION.HIGH,
-    enum: RESOLUTION,
+    description: 'Video processing status',
+    example: VIDEO_STATUS.PROCESSING,
+    enum: VIDEO_STATUS,
   })
-  @IsNotEmpty()
-  @IsEnum(RESOLUTION)
+  @IsEnum(VIDEO_STATUS)
+  @IsOptional()
   @Expose()
-  resolution: RESOLUTION;
+  status?: VIDEO_STATUS;
+}
+export interface AbsContentPathParams {
+  s3Key: string;
 }
 
 export class CreateVideoDto extends OmitType(VideoDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateVideoDto extends PickType(VideoDto, ['id', 'videoUrl', 'resolution']) {}
+export class UpdateVideoDto extends PickType(VideoDto, ['id', 'videoUrl', 'status']) {}

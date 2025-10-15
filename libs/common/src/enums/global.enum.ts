@@ -35,3 +35,9 @@ export enum MaturityRating {
   TV_14 = 'TV-14', // Parents Strongly Cautioned
   TV_MA = 'TV-MA', // Mature Audience Only
 }
+
+export enum VIDEO_STATUS {
+  PROCESSING = 'PROCESSING',
+  READY = 'READY',
+  FAILED = 'FAILED',
+}
