@@ -1,5 +1,5 @@
 import { CoreModule } from '@app/core/core.module';
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ActorController } from './controllers/actor.controller';
@@ -22,6 +22,7 @@ import { CategoryService } from './services/category.service';
 import { ContentService } from './services/content.service';
 import { DirectorService } from './services/director.service';
 import { MovieService } from './services/movie.service';
+import { S3Service } from './services/s3.service';
 import { TagService } from './services/tag.service';
 import { TvSeriesService } from './services/tvseries.service';
 import { VideoService } from './services/video.service';
@@ -40,7 +41,7 @@ import { VideoService } from './services/video.service';
       EntityEpisode,
       EntityMovie,
     ]),
-    CoreModule,
+    forwardRef(() => CoreModule), // ✅ Sử dụng forwardRef để tránh circular dependency
   ],
   controllers: [
     ContentController,
@@ -61,6 +62,8 @@ import { VideoService } from './services/video.service';
     CategoryService,
     MovieService,
     TvSeriesService,
+    S3Service,
   ],
+  exports: [VideoService, MovieService, TvSeriesService, S3Service],
 })
 export class CmsModule {}

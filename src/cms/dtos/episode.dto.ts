@@ -59,20 +59,20 @@ export class CreateEpisodeDto extends OmitType(EpisodeDto, [
 ]) {
   @ApiProperty({
     description: 'List of video information',
-    type: [CreateVideoDto],
+    type: CreateVideoDto,
   })
   @Type(() => CreateVideoDto)
   @ValidateNested({ each: true })
   @Expose()
-  videos?: CreateVideoDto[];
+  video?: CreateVideoDto;
 }
 export class UpdateEpisodeDto extends OmitType(EpisodeDto, ['createdAt', 'updatedAt', 'videos']) {
   @ApiProperty({
     description: 'List of video information',
-    type: [UpdateVideoDto],
+    type: UpdateVideoDto,
   })
   @Type(() => UpdateVideoDto)
   @ValidateNested({ each: true })
   @Expose()
-  videos?: UpdateVideoDto[];
+  video?: UpdateVideoDto;
 }

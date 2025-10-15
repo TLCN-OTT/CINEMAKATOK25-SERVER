@@ -56,14 +56,16 @@ export class TagController {
     description: 'Search tags by name',
   })
   async findAll(@Query() query: PaginationQueryDto) {
-    const { data, total } = await this.tagService.findAll(query);
-    return ResponseBuilder.createPaginatedResponse({
-      data: data.map(tag => plainToClass(TagDto, tag, { excludeExtraneousValues: true })),
-      totalItems: total,
-      currentPage: query.page || 1,
-      itemsPerPage: query.limit || 10,
-      message: 'Tags retrieved successfully',
-    });
+    // const { data, total } = await this.tagService.findAll(query);
+    // return ResponseBuilder.createPaginatedResponse({
+    //   data: data.map(tag => plainToClass(TagDto, tag, { excludeExtraneousValues: true })),
+    //   totalItems: total,
+    //   currentPage: query.page || 1,
+    //   itemsPerPage: query.limit || 10,
+    //   message: 'Tags retrieved successfully',
+    // });
+
+    return null;
   }
 
   @Get(':id')

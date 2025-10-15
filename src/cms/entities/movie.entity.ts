@@ -15,8 +15,8 @@ export class EntityMovie extends BaseEntity {
   metaData: EntityContent;
 
   // Helper method để lấy videos
-  async getVideos(videoRepository): Promise<EntityVideo[]> {
-    return videoRepository.find({
+  async getVideos(videoRepository): Promise<EntityVideo> {
+    return videoRepository.findOne({
       where: {
         ownerType: 'movie',
         ownerId: this.id,

@@ -57,8 +57,8 @@ export class EntityEpisode extends BaseEntity {
   @JoinColumn({ name: 'season_id' })
   season: EntitySeason;
   // Helper method để lấy videos
-  async getVideos(videoRepository): Promise<EntityVideo[]> {
-    return videoRepository.find({
+  async getVideos(videoRepository): Promise<EntityVideo> {
+    return videoRepository.findOne({
       where: {
         ownerType: 'episode',
         ownerId: this.id,

@@ -18,7 +18,7 @@ export class VideoService {
     try {
       const video = this.videoRepository.create({
         videoUrl: createDto.videoUrl,
-        resolution: createDto.resolution,
+        status: createDto.status, // Will use default from entity if not provided
       });
       return await this.videoRepository.save(video);
     } catch (error) {
@@ -87,7 +87,7 @@ export class VideoService {
 
       Object.assign(video, {
         videoUrl: updateDto.videoUrl,
-        resolution: updateDto.resolution,
+        status: updateDto.status,
       });
 
       return await this.videoRepository.save(video);
