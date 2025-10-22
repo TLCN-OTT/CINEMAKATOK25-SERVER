@@ -19,10 +19,36 @@ export class TagService {
     return await this.tagRepository.save(tag);
   }
 
-  async findAll(): Promise<EntityTag[]> {
-    return await this.tagRepository.find({
-      relations: ['contents'],
-    });
+  async findAll(query?: any) {
+    const { page = 1, limit = 10, sort, search } = query || {};
+
+    const queryBuilder = this.tagRepository
+      .createQueryBuilder('tag')
+      .leftJoinAndSelect('tag.contents', 'contents');
+
+    if (search) {
+      queryBuilder
+        .where(`similarity(tag.tagName, :search) > 0.2`)
+        .setParameter('search', search)
+        .addSelect(`similarity(tag.tagName, :search)`, 'rank')
+        .orderBy('rank', 'DESC');
+    }
+
+    if (sort) {
+      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
+      Object.keys(sortObj).forEach(key => {
+        queryBuilder.addOrderBy(`tag.${key}`, sortObj[key]);
+      });
+    } else if (!search) {
+      queryBuilder.orderBy('tag.createdAt', 'DESC');
+    }
+
+    const [data, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findOne(id: string): Promise<EntityTag> {
