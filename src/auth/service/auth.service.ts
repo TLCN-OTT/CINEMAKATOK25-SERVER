@@ -62,6 +62,7 @@ export class AuthService {
       id: user.id,
       name: user.name,
       avatar: user.avatar,
+      isAdmin: user.isAdmin,
       token: new TokenResponse(accessToken, refreshToken),
     };
   }
@@ -85,6 +86,7 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens({
       sub: existedToken.userId,
     });
+    await this.saveRefreshToken(refreshToken, existedToken.userId);
     await this.logout(token);
     return new TokenResponse(accessToken, refreshToken);
   }
@@ -349,6 +351,7 @@ export class AuthService {
         id: user.id,
         name: user.name,
         avatar: user.avatar,
+        isAdmin: user.isAdmin,
         token: new TokenResponse(jwtAccessToken, refreshToken),
       };
     } catch (error) {
