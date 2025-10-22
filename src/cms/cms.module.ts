@@ -64,6 +64,6 @@ import { VideoService } from './services/video.service';
     TvSeriesService,
     S3Service,
   ],
-  exports: [VideoService, MovieService, TvSeriesService, S3Service],
+  exports: [VideoService, MovieService, TvSeriesService, S3Service, ContentService],
 })
 export class CmsModule {}

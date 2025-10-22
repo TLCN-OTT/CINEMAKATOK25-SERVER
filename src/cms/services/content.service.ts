@@ -208,4 +208,17 @@ export class ContentService {
       relations: ['tags', 'categories', 'actors', 'directors'],
     });
   }
+
+  async findContentById(id: string) {
+    const content = await this.contentRepository.findOne({
+      where: { id },
+    });
+    if (!content) {
+      throw new NotFoundException({
+        message: `Content with ID ${id} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+    return content;
+  }
 }
