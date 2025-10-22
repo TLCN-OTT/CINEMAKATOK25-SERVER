@@ -57,13 +57,13 @@ export class ReviewController {
     name: 'sort',
     required: false,
     type: String,
-    description: 'Sort order for actors',
+    description: 'Sort order for reviews',
     example: '{ "createdAt": "DESC" }',
   })
   @ApiQuery({
     name: 'search',
     required: false,
-    description: 'Search actors by name or nationality',
+    description: 'Search reviews by content or user name',
   })
   @ApiOkResponse({
     description: 'List of reviews',
@@ -103,13 +103,13 @@ export class ReviewController {
     name: 'sort',
     required: false,
     type: String,
-    description: 'Sort order for actors',
+    description: 'Sort order for reviews',
     example: '{ "createdAt": "DESC" }',
   })
   @ApiQuery({
     name: 'search',
     required: false,
-    description: 'Search actors by name or nationality',
+    description: 'Search reviews by content or user name',
   })
   async findReviewsByUserId(@UserSession('id') userId: string, @Query() query: PaginationQueryDto) {
     const { data, total } = await this.reviewService.findReviews({ ...query, userId });
