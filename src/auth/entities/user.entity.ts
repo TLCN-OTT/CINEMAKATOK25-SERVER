@@ -1,6 +1,7 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { EntityReview } from 'src/pep/entities/review.entity';
 
-import { BaseEntity } from '@app/common/base/base-entity';
+import { Column, Entity, OneToMany, Unique } from 'typeorm';
+
 import { USER_STATUS } from '@app/common/enums/global.enum';
 
 import { PersonEntity } from './person.entity';
@@ -39,4 +40,7 @@ export class EntityUser extends PersonEntity {
 
   @Column({ type: 'enum', enum: USER_STATUS, default: USER_STATUS.ACTIVATED })
   status: USER_STATUS;
+
+  @OneToMany(() => EntityReview, review => review.user)
+  reviews: EntityReview[];
 }

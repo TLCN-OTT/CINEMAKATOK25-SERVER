@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { plainToInstance } from 'class-transformer';
+import { CookieOptions, Response } from 'express';
 
 import { RESOLUTION, VIDEO_STATUS } from '@app/common/enums/global.enum';
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
@@ -299,7 +300,7 @@ export class VideoController {
     // set cookies on response
     Object.keys(result.cookies).forEach(key => {
       const curr = result.cookies[key];
-      response.cookie(key, curr.value, curr.options);
+      response.cookie(key, curr.value, curr.options ?? {});
     });
 
     return result;

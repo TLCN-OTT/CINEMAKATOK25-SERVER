@@ -1,4 +1,6 @@
-import { Column, Entity, JoinTable, ManyToMany } from 'typeorm';
+import { EntityReview } from 'src/pep/entities/review.entity';
+
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 
 import { BaseEntity } from '@app/common/base/base-entity';
 
@@ -71,4 +73,7 @@ export class EntityContent extends BaseEntity {
     inverseJoinColumn: { name: 'tag_id', referencedColumnName: 'id' },
   })
   tags: EntityTag[];
+
+  @OneToMany(() => EntityReview, review => review.content)
+  reviews: EntityReview[];
 }
