@@ -28,6 +28,15 @@ export class VideoDto extends BaseEntityDto {
   @IsOptional()
   @Expose()
   status?: VIDEO_STATUS;
+
+  @ApiProperty({
+    description: 'Thumbnail URL',
+    example: '/uploads/video-123/thumbnail.jpg',
+  })
+  @IsString()
+  @IsOptional()
+  @Expose()
+  thumbnailUrl?: string;
 }
 export interface AbsContentPathParams {
   s3Key: string;

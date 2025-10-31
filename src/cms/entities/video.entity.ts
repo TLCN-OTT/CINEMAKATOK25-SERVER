@@ -20,4 +20,7 @@ export class EntityVideo extends BaseEntity {
 
   @Column({ type: 'enum', enum: VIDEO_STATUS, default: VIDEO_STATUS.PROCESSING })
   status: VIDEO_STATUS;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  thumbnailUrl: string | null;
 }

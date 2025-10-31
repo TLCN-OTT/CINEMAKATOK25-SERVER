@@ -24,8 +24,9 @@ import { NestFactory } from '@nestjs/core';
  */
 
 export const connection = {
-  host: getConfig('REDIS_HOST', 'localhost'),
-  port: parseInt(getConfig('REDIS_PORT', '6379'), 10),
+  host: getConfig('redis.host', 'localhost'),
+  port: parseInt(getConfig('redis.port', '6379'), 10),
+  password: getConfig('redis.password', ''),
 };
 
 console.log('🚀 Starting Video Encoding Worker...');
@@ -123,6 +124,7 @@ async function bootstrap() {
           id: videoId,
           videoUrl: masterResult.url, // ✅ S3 URL thay vì local path
           status: VIDEO_STATUS.READY,
+          thumbnailUrl: hlsResult.thumbnailUrl,
         } as UpdateVideoDto);
 
         console.log(`✅ Updated video ${videoId} successfully in ${duration}s`);
@@ -151,7 +153,7 @@ async function bootstrap() {
     },
     {
       connection,
-      concurrency: 2,
+      concurrency: 4,
       removeOnComplete: { count: 100 },
       removeOnFail: { count: 200 },
     },

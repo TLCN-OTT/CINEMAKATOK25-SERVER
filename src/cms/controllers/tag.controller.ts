@@ -58,7 +58,7 @@ export class TagController {
   async findAll(@Query() query: PaginationQueryDto) {
     const { data, total } = await this.tagService.findAll(query);
     return ResponseBuilder.createPaginatedResponse({
-      data: data.map(tag => plainToClass(TagDto, tag, { excludeExtraneousValues: true })),
+      data: plainToInstance(TagDto, data, { excludeExtraneousValues: true }),
       totalItems: total,
       currentPage: query.page || 1,
       itemsPerPage: query.limit || 10,

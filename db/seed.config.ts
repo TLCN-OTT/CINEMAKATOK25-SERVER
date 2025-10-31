@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { DataSource, DataSourceOptions } from 'typeorm';
 
-import { getConfig } from '@app/common/utils/get-config';
+import { getConfig } from '../libs/common/src/utils/get-config';
 
 const dataSourceOptions: DataSourceOptions = {
   type: getConfig('core.database.type', 'postgres') as any,

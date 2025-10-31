@@ -243,6 +243,7 @@ export class VideoController {
     const createdVideo = await this.videoService.create({
       videoUrl: `/uploads/${fileName}/master.m3u8`, // Placeholder path
       status: VIDEO_STATUS.PROCESSING,
+      thumbnailUrl: `/uploads/${fileName}/thumbnail.jpg`, // Placeholder path
     });
 
     // 2️⃣ Thêm job vào queue với videoId
