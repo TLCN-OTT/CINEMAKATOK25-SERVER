@@ -232,6 +232,13 @@ export class LoginResponse {
   avatar: string | null;
 
   @ApiProperty({
+    description: 'Is user an admin',
+    example: true,
+  })
+  @Expose()
+  isAdmin: boolean;
+
+  @ApiProperty({
     description: 'Token details',
     type: TokenResponse,
   })
