@@ -1,9 +1,11 @@
 import { Queue } from 'bullmq';
+import { get } from 'node_modules/axios/index.cjs';
 import { CreateVideoDto, UpdateVideoDto } from 'src/cms/dtos/video.dto';
 import { EntityVideo } from 'src/cms/entities/video.entity';
 import { VideoService } from 'src/cms/services/video.service';
 
 import { RESOLUTION, VIDEO_STATUS } from '@app/common/enums/global.enum';
+import { getConfig } from '@app/common/utils/get-config/get-config';
 import { processVideoHLS } from '@app/common/utils/hls/video-hls';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,8 +23,9 @@ export class QueueService {
   private async initializeQueue() {
     try {
       const connection = {
-        host: 'localhost',
-        port: 6379,
+        host: getConfig('redis.host', 'localhost'),
+        port: Number(getConfig('redis.port', 6379)),
+        password: getConfig('redis.password', ''),
         maxRetriesPerRequest: 1, // ✅ Giảm retry để tránh spam logs
         retryStrategy: () => null, // ✅ Disable auto-retry khi connection failed
       };
@@ -116,8 +119,8 @@ export class QueueService {
             type: 'exponential',
             delay: 1000,
           },
-          removeOnComplete: false,
-          removeOnFail: false,
+          removeOnComplete: true,
+          removeOnFail: true,
         },
       );
 

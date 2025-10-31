@@ -23,6 +23,7 @@ export class MovieDto extends BaseEntityDto {
   @ValidateNested({ each: true })
   @Type(() => ContentDto)
   @IsNotEmpty()
+  @Expose()
   metaData: ContentDto;
 }
 

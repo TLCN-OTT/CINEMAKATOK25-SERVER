@@ -8,11 +8,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { QueueService } from './queue.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([EntityVideo]), // ✅ Import repository cho VideoService
-    forwardRef(() => CmsModule), // ✅ Sử dụng forwardRef để tránh circular dependency
-  ],
-  providers: [QueueService, VideoService], // ✅ Khai báo VideoService với dependencies đầy đủ
+  imports: [TypeOrmModule.forFeature([EntityVideo]), forwardRef(() => CmsModule)],
+  providers: [QueueService, VideoService],
   exports: [QueueService],
 })
 export class QueueModule {}

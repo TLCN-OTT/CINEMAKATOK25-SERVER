@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
+import { MaturityRating } from '@app/common/enums/global.enum';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 import { ContentType } from '../entities/content.entity';
@@ -58,6 +59,15 @@ export class ContentDto extends BaseEntityDto {
   @IsNotEmpty()
   @Expose()
   releaseDate: Date;
+
+  @ApiProperty({
+    description: 'Maturity rating of the content',
+    example: MaturityRating.PG13,
+  })
+  @IsEnum(MaturityRating)
+  @IsNotEmpty()
+  @Expose()
+  maturityRating: MaturityRating;
 
   @ApiProperty({
     description: 'Thumbnail image URL of the content',

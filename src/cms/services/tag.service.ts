@@ -1,6 +1,7 @@
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -19,10 +20,34 @@ export class TagService {
     return await this.tagRepository.save(tag);
   }
 
-  async findAll(): Promise<EntityTag[]> {
-    return await this.tagRepository.find({
-      relations: ['contents'],
-    });
+  async findAll(query: PaginationQueryDto): Promise<{ data: EntityTag[]; total: number }> {
+    const { page = 1, limit = 10, sort, search } = query;
+
+    const qb = this.tagRepository.createQueryBuilder('tag');
+    qb.leftJoinAndSelect('tag.contents', 'contents');
+
+    if (search) {
+      qb.where(
+        `
+        tag.tagName ILIKE :likeQuery 
+        OR similarity(tag.tagName, :query) > 0.3
+        `,
+        { likeQuery: `%${search}%`, query: search },
+      );
+    }
+    if (sort) {
+      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
+      Object.keys(sortObj).forEach(key => {
+        qb.addOrderBy(`tag.${key}`, sortObj[key]);
+      });
+    } else if (!search) {
+      qb.orderBy('tag.createdAt', 'DESC');
+    }
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data, total };
   }
 
   async findOne(id: string): Promise<EntityTag> {

@@ -3,6 +3,7 @@ import { EntityReview } from 'src/pep/entities/review.entity';
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 
 import { BaseEntity } from '@app/common/base/base-entity';
+import { MaturityRating } from '@app/common/enums/global.enum';
 
 import { EntityActor, EntityDirector } from './actor.entity';
 import { EntityCategory } from './category.entity';
@@ -38,6 +39,9 @@ export class EntityContent extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
   rating: number;
+
+  @Column({ type: 'enum', enum: MaturityRating, default: MaturityRating.G })
+  maturityRating: MaturityRating;
 
   @Column({ type: 'int', default: 0 })
   viewCount: number;

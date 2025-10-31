@@ -98,29 +98,11 @@ export class MovieController {
   async findAll(@Query() query: PaginationQueryDto) {
     const { data, total } = await this.movieService.findAll(query);
     return ResponseBuilder.createPaginatedResponse({
-      data: data,
+      data: plainToInstance(MovieDto, data, { excludeExtraneousValues: true }),
       totalItems: total,
       currentPage: query.page || 1,
       itemsPerPage: query.limit || 10,
       message: 'Movies retrieved successfully',
-    });
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get movie by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'The movie details',
-    type: ApiResponseDto(MovieDto),
-  })
-  @ApiNotFoundResponse({
-    description: 'Movie not found',
-  })
-  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
-    const result = await this.movieService.findOne(id);
-    return ResponseBuilder.createResponse({
-      data: plainToInstance(MovieDto, result, { excludeExtraneousValues: true }),
-      message: 'Movie retrieved successfully',
     });
   }
 
@@ -176,6 +158,129 @@ export class MovieController {
     return ResponseBuilder.createResponse({
       data: null,
       message: 'Movie deleted successfully',
+    });
+  }
+
+  @Get('trending-movies')
+  @ApiOperation({ summary: 'Get trending movies' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of trending movies',
+    type: PaginatedApiResponseDto(MovieDto),
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for movies',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search movies by title',
+  })
+  async getTrendingMovies(@Query() query: PaginationQueryDto) {
+    console.log('Received query:', query);
+    const { data, total } = await this.movieService.getTrendingMovies(query);
+    console.log(data);
+    return ResponseBuilder.createPaginatedResponse({
+      data: plainToInstance(MovieDto, data, { excludeExtraneousValues: true }),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Trending movies retrieved successfully',
+    });
+  }
+  @Get('new-releases')
+  @ApiOperation({ summary: 'Get new release movies' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of new release movies',
+    type: PaginatedApiResponseDto(MovieDto),
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for movies',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search movies by title',
+  })
+  async getNewReleaseMovies(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.movieService.findAll(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: plainToInstance(MovieDto, data, { excludeExtraneousValues: true }),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'New release movies retrieved successfully',
+    });
+  }
+
+  @Get('category/:categoryId')
+  @ApiOperation({ summary: 'Get movies by category' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of movies in the specified category',
+    type: PaginatedApiResponseDto(MovieDto),
+  })
+  async getMoviesByCategory(
+    @Param('categoryId', new ParseUUIDPipe()) categoryId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    const { data, total } = await this.movieService.getMoviesByCategory(categoryId, query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: plainToInstance(MovieDto, data, { excludeExtraneousValues: true }),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Movies by category retrieved successfully',
+    });
+  }
+  @Get(':id')
+  @ApiOperation({ summary: 'Get movie by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'The movie details',
+    type: ApiResponseDto(MovieDto),
+  })
+  @ApiNotFoundResponse({
+    description: 'Movie not found',
+  })
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    const result = await this.movieService.findOne(id);
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(MovieDto, result, { excludeExtraneousValues: true }),
+      message: 'Movie retrieved successfully',
     });
   }
 }

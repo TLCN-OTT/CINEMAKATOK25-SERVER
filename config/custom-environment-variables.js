@@ -1,4 +1,4 @@
-const { aws } = require('./default');
+const { aws, uploadDir } = require('./default');
 
 require('dotenv').config();
 
@@ -33,6 +33,7 @@ module.exports = {
     cloudfrontKeyPairId: 'AWS_CLOUDFRONT_KEY_PAIR_ID',
     cloudfrontPrivateKey: 'AWS_CLOUDFRONT_PRIVATE_KEY',
   },
+  uploadDir: 'UPLOAD_DIR',
   jwt: {
     privateKey: 'JWT_PRIVATE_KEY',
     publicKey: 'JWT_PUBLIC_KEY',
@@ -42,6 +43,7 @@ module.exports = {
   redis: {
     host: 'REDIS_HOST',
     port: number('REDIS_PORT'),
+    password: 'REDIS_PASSWORD',
   },
   // Core Config
   core: {

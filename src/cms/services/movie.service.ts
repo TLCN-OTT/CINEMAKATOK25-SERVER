@@ -30,30 +30,33 @@ export class MovieService {
     return this.movieRepository.save(movie);
   }
 
-  async findAll(query?: any) {
-    const { page = 1, limit = 10, sort, search } = query || {};
-
-    const queryBuilder = this.movieRepository
+  private buildMovieQuery(
+    query: any = {},
+    extraSelect?: string,
+    extraOrder?: string,
+    categoryId?: string,
+  ) {
+    const { sort, search } = query;
+    const qb = this.movieRepository
       .createQueryBuilder('movie')
       .leftJoinAndSelect('movie.metaData', 'metaData')
       .leftJoinAndSelect('metaData.categories', 'categories')
       .leftJoinAndSelect('metaData.tags', 'tags')
       .leftJoinAndSelect('metaData.actors', 'actors')
       .leftJoinAndSelect('metaData.directors', 'directors');
+    if (categoryId) {
+      console.log('Category ID filter:', categoryId);
+      qb.where('categories.id = :categoryId', { categoryId });
+    }
+
+    if (extraSelect) qb.addSelect(extraSelect, extraOrder || undefined);
 
     if (search) {
-      queryBuilder
-        .where(`similarity(metaData.title, :search) > 0.2`)
+      qb.where(`similarity(metaData.title, :search) > 0.2`)
         .orWhere(`similarity(metaData.description, :search) > 0.2`)
         .setParameter('search', search)
-        // thêm cột rank để sắp xếp kết quả theo độ tương tự
         .addSelect(
-          `
-        GREATEST(
-          similarity(metaData.title, :search),
-          similarity(metaData.description, :search)
-        )
-      `,
+          `GREATEST(similarity(metaData.title, :search), similarity(metaData.description, :search))`,
           'rank',
         )
         .orderBy('rank', 'DESC');
@@ -63,36 +66,41 @@ export class MovieService {
       const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
       Object.keys(sortObj).forEach(key => {
         const field = key.includes('.') ? key : `movie.${key}`;
-        queryBuilder.addOrderBy(field, sortObj[key]);
+        qb.addOrderBy(field, sortObj[key]);
       });
-    } else if (!search) {
-      queryBuilder.orderBy('movie.createdAt', 'DESC');
+    } else if (!search && !extraOrder) {
+      qb.orderBy('movie.createdAt', 'DESC');
     }
 
-    const [data, total] = await queryBuilder
+    return qb;
+  }
+
+  async findAll(query?: any) {
+    const { page = 1, limit = 10 } = query || {};
+    const qb = this.buildMovieQuery(query);
+    const [data, total] = await qb
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
-
     return { data, total };
   }
 
   async findOne(id: string): Promise<EntityMovie> {
-    const movie = await this.movieRepository.findOne({
-      where: { id },
-      relations: [
-        'metaData',
-        'metaData.categories',
-        'metaData.tags',
-        'metaData.actors',
-        'metaData.directors',
-      ],
-    });
+    const movie = await this.movieRepository
+      .createQueryBuilder('movie')
+      .leftJoinAndSelect('movie.metaData', 'metaData')
+      .leftJoinAndSelect('metaData.categories', 'categories')
+      .leftJoinAndSelect('metaData.actors', 'actors')
+      .leftJoinAndSelect('metaData.directors', 'directors')
+      .leftJoinAndSelect('metaData.tags', 'tags')
+      .leftJoinAndSelect('metaData.reviews', 'reviews')
+      .where('movie.id = :id', { id })
+      .getOne();
 
     if (!movie) {
       throw new NotFoundException(`Movie with ID "${id}" not found`);
     }
-
+    console.log('Found movie:', movie);
     return movie;
   }
 
@@ -125,5 +133,33 @@ export class MovieService {
 
     // Then delete the movie
     await this.movieRepository.remove(movie);
+  }
+
+  async getTrendingMovies(query?: any) {
+    const { page = 1, limit = 10 } = query || {};
+    const epoch = new Date('2020-01-01T00:00:00Z').getTime() / 1000;
+    const hotness = `
+      LOG(10, COALESCE(metaData.viewCount, 0) + COALESCE(metaData.rating, 0) * 100 + 1) +
+      ((EXTRACT(EPOCH FROM movie.createdAt) - ${epoch}) / 45000)
+    `;
+    const qb = this.buildMovieQuery(query, hotness, 'hotness');
+    qb.orderBy('hotness', 'DESC');
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data, total };
+  }
+
+  async getMoviesByCategory(categoryId: string, query?: any) {
+    const { page = 1, limit = 10 } = query || {};
+    const qb = this.buildMovieQuery(query, undefined, undefined, categoryId);
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    console.log('Movies in category:', data);
+    return { data, total };
   }
 }

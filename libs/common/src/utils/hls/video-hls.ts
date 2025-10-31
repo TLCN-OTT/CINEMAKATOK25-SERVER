@@ -24,9 +24,13 @@ export const processVideoHLS = async (inputFilePath: string): Promise<CreateVide
 
   const fileName = parse(basename(inputFilePath)).name;
   const uploadBaseDir = getConfig('uploadDir', 'E:/uploads');
-  const outputDir = join(uploadBaseDir, fileName);
+  const videoDir = join(uploadBaseDir, 'videos', fileName);
+  const thumbnailDir = join(uploadBaseDir, 'thumbnails');
+  const outputDir = videoDir;
+
   console.log('📂 Creating output directories...');
-  if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
+  if (!existsSync(videoDir)) mkdirSync(videoDir, { recursive: true });
+  if (!existsSync(thumbnailDir)) mkdirSync(thumbnailDir, { recursive: true });
 
   // Ensure variant folders exist ahead of time to prevent FFmpeg failures on Windows
   for (let i = 0; i < 3; i++) {
@@ -164,7 +168,7 @@ export const processVideoHLS = async (inputFilePath: string): Promise<CreateVide
       }
     });
 
-    ffmpegProcess.on('close', code => {
+    ffmpegProcess.on('close', async code => {
       console.log(`\n🏁 FFmpeg process finished with exit code: ${code}`);
 
       if (code === 0 && !hasError) {
@@ -180,9 +184,43 @@ export const processVideoHLS = async (inputFilePath: string): Promise<CreateVide
           reject(new Error(validation.message));
           return;
         }
+        // === Tạo thumbnail ở thư mục riêng ===
+        const thumbnailPath = join(thumbnailDir, `${fileName}.png`);
+        const ffmpegThumbArgs = [
+          '-i',
+          inputFilePath,
+          '-ss',
+          '00:05:05', // lấy frame ở giây thứ 5
+          '-vframes',
+          '1',
+          '-vf',
+          'scale=320:-1',
+          thumbnailPath,
+        ];
+
+        console.log('🖼️ Generating thumbnail...');
+        try {
+          await new Promise<void>((resolveThumb, rejectThumb) => {
+            const ffmpegThumb = spawn(ffmpegExecutable, ffmpegThumbArgs);
+            ffmpegThumb.on('close', thumbCode => {
+              if (thumbCode === 0 && existsSync(thumbnailPath)) {
+                console.log(`✅ Thumbnail generated: ${thumbnailPath}`);
+                resolveThumb();
+              } else {
+                console.error(`❌ Thumbnail generation failed (exit code: ${thumbCode})`);
+                rejectThumb(new Error('Thumbnail generation failed'));
+              }
+            });
+            ffmpegThumb.on('error', rejectThumb);
+          });
+        } catch (err) {
+          console.error('❌ Error generating thumbnail:', err);
+        }
+
         const video: CreateVideoDto = {
-          videoUrl: `/uploads/${fileName}/master.m3u8`,
+          videoUrl: `/uploads/videos/${fileName}/master.m3u8`,
           status: VIDEO_STATUS.READY,
+          thumbnailUrl: `/uploads/thumbnails/${fileName}.png`,
         };
         console.log(`✅ ${validation.message}`);
         console.log(`📁 Output files:`);
