@@ -6,7 +6,7 @@ import { EntityContent } from './content.entity';
 
 @Entity({ name: 'actor' })
 export class EntityActor extends PersonEntity {
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   bio?: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
@@ -21,7 +21,7 @@ export class EntityActor extends PersonEntity {
 
 @Entity({ name: 'director' })
 export class EntityDirector extends PersonEntity {
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   bio?: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
