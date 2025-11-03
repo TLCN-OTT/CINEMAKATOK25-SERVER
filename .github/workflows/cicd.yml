@@ -81,7 +81,6 @@ jobs:
             [ -n "${{ secrets.CORE_DATABASE_DB_NAME }}" ] && echo "✅ CORE_DATABASE_DB_NAME is set" || echo "❌ CORE_DATABASE_DB_NAME is empty"
             [ -n "${{ secrets.JWT_PRIVATE_KEY }}" ] && echo "✅ JWT_PRIVATE_KEY is set" || echo "❌ JWT_PRIVATE_KEY is empty"
             [ -n "${{ secrets.JWT_PUBLIC_KEY }}" ] && echo "✅ JWT_PUBLIC_KEY is set" || echo "❌ JWT_PUBLIC_KEY is empty"
-            [ -n "$AWS_ACCESS_KEY_ID" ] && echo "✅ AWS_ACCESS_KEY_ID is set" || echo "❌ AWS_ACCESS_KEY_ID is empty"
             [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ] && echo "✅ AWS_SECRET_ACCESS_KEY is set" || echo "❌ AWS_SECRET_ACCESS_KEY is empty"
             [ -n "${{ secrets.AWS_REGION }}" ] && echo "✅ AWS_REGION is set" || echo "❌ AWS_REGION is empty"
             [ -n "${{ secrets.AWS_BUCKET_NAME }}" ] && echo "✅ AWS_BUCKET_NAME is set" || echo "❌ AWS_BUCKET_NAME is empty"
@@ -247,7 +246,6 @@ jobs:
               -e CORE_CACHE_TTL=5000 \
               -e CORE_CACHE_MAX=100 \
               -e CORE_AXIOS_TIMEOUT=3000 \
-
               -e PGSSLMODE=require \
               --health-cmd="node -e \"require('http').get('http://localhost:3000/api/hello', (res) => process.exit(res.statusCode === 200 ? 0 : 1))\"" \
               --health-interval=30s \
