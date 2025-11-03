@@ -239,7 +239,7 @@ export class AuthService {
    * Complete registration with OTP verification
    */
   async registerWithOtp(registerWithOtpDto: RegisterWithOtpRequest) {
-    const { name, email, password, otp } = registerWithOtpDto;
+    const { name, email, password, otp, dateOfBirth, gender } = registerWithOtpDto;
 
     const existingUser = await this.userRepository.findOne({
       where: { email: email.toLowerCase() },
@@ -262,12 +262,22 @@ export class AuthService {
     }
 
     const hashedPassword = PasswordHash.hashPassword(password);
-    const user = await this.userRepository.save({
+    const userData: any = {
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
       isEmailVerified: true,
-    });
+    };
+
+    // Add optional fields if provided
+    if (dateOfBirth) {
+      userData.dateOfBirth = new Date(dateOfBirth);
+    }
+    if (gender) {
+      userData.gender = gender;
+    }
+
+    const user = await this.userRepository.save(userData);
   }
 
   /**

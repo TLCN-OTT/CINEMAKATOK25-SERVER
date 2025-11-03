@@ -1,8 +1,10 @@
 import { Expose, Type } from 'class-transformer';
 import {
   IsEmail,
+  IsEnum,
   IsIn,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -11,6 +13,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { GENDER } from '@app/common/enums/global.enum';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AuthRequest {
@@ -174,6 +177,28 @@ export class RegisterRequest {
   })
   @Expose()
   password: string;
+
+  @ApiProperty({
+    description: 'User date of birth',
+    example: '1990-01-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Date of birth must be a valid date string' })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date of birth must be in format YYYY-MM-DD' })
+  @Expose()
+  dateOfBirth?: string;
+
+  @ApiProperty({
+    description: 'User gender',
+    example: 'MALE',
+    enum: GENDER,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(GENDER, { message: 'Gender must be MALE, FEMALE, or OTHER' })
+  @Expose()
+  gender?: GENDER;
 }
 
 export class RegisterWithOtpRequest extends RegisterRequest {
