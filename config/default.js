@@ -1,3 +1,5 @@
+const { aws, redis } = require('./custom-environment-variables');
+
 module.exports = {
   //Server configuration
   port: 3000,
@@ -8,6 +10,16 @@ module.exports = {
     expiresTime: '5m',
     refreshExpiresTime: '7d',
   },
+  aws: {
+    accessKeyId: 'your_access_key_id',
+    secretAccessKey: 'your_secret_access_key',
+    region: 'your_aws_region',
+    bucketName: 'your_bucket_name',
+    s3BucketUrl: 'https://your_bucket_name.s3.amazonaws.com',
+    cloudfrontDomain: 'your_cloudfront_domain',
+    cloudfrontKeyPairId: 'your_cloudfront_key_pair_id',
+    cloudfrontPrivateKey: 'your_cloudfront_private_key',
+  },
   // Email configuration
   email: {
     host: 'smtp.gmail.com',
@@ -16,6 +28,11 @@ module.exports = {
     pass: 'your_email_password',
     fromName: 'your_app_name',
     secure: false,
+  },
+  redis: {
+    host: 'your_redis_host',
+    port: 6379,
+    password: 'your_redis_password',
   },
 
   // Core Config
