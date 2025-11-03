@@ -26,7 +26,7 @@ export interface CookiesData {
  * This does not work on localhost
  */
 const cookiesOptions = {
-  domain: 'veezy.shop',
+  domain: 'distribution.veezy.shop',
   secure: true,
   path: '/',
   sameSite: 'none',
