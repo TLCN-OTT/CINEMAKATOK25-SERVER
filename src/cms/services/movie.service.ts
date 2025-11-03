@@ -1,11 +1,14 @@
 import { Repository } from 'typeorm';
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateMovieDto, UpdateMovieDto } from '../dtos/movies.dto';
 import { EntityContent } from '../entities/content.entity';
 import { EntityMovie } from '../entities/movie.entity';
+import { VideoOwnerType } from '../entities/video.entity';
+import { VideoService } from './video.service';
 
 @Injectable()
 export class MovieService {
@@ -14,20 +17,69 @@ export class MovieService {
     private readonly movieRepository: Repository<EntityMovie>,
     @InjectRepository(EntityContent)
     private readonly contentRepository: Repository<EntityContent>,
+    private readonly videoService: VideoService,
   ) {}
 
-  async create(createMovieDto: CreateMovieDto): Promise<EntityMovie> {
-    // First, create the content metadata
-    const contentMetadata = this.contentRepository.create(createMovieDto.metaData);
-    await this.contentRepository.save(contentMetadata);
+  /**
+   * Helper gắn video vào movies
+   */
+  private async _attachVideosToMovies(movieList: EntityMovie[]) {
+    const movieIds = movieList.map(m => m.id).filter(Boolean);
 
-    // Create the movie with the content metadata
-    const movie = this.movieRepository.create({
-      ...createMovieDto,
-      metaData: contentMetadata,
+    if (!movieIds?.length) return movieList;
+
+    const videos = await this.videoService.findByMovieIds(movieIds);
+
+    movieList.forEach(movie => {
+      // ✅ Chỉ gắn 1 video duy nhất thay vì mảng
+      const video = videos.find(v => v.ownerId === movie.id);
+      movie['video'] = video || null;
     });
 
-    return this.movieRepository.save(movie);
+    return movieList;
+  }
+
+  async create(createMovieDto: CreateMovieDto): Promise<EntityMovie> {
+    const queryRunner = this.movieRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const { video, metaData, ...movieData } = createMovieDto;
+
+      // First, create the content metadata
+      const contentMetadata = this.contentRepository.create(metaData);
+      await queryRunner.manager.save(contentMetadata);
+
+      // Create the movie with the content metadata
+      const movie = this.movieRepository.create({
+        ...movieData,
+        metaData: contentMetadata,
+      });
+      await queryRunner.manager.save(movie);
+
+      // ✅ Xử lý video nếu có
+      if (video) {
+        const validVideos = await this.videoService.validateVideos([video]);
+        if (!validVideos.length) {
+          throw new BadRequestException({
+            code: ERROR_CODE.INVALID_BODY,
+            message: 'Video không tồn tại hoặc không hợp lệ',
+          });
+        }
+
+        await this.videoService.assignVideos(validVideos, movie.id, VideoOwnerType.MOVIE);
+      }
+
+      await queryRunner.commitTransaction();
+
+      return await this.findOne(movie.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   private buildMovieQuery(
@@ -82,7 +134,9 @@ export class MovieService {
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
-    return { data, total };
+
+    const resultWithVideos = await this._attachVideosToMovies(data);
+    return { data: resultWithVideos, total };
   }
 
   async findOne(id: string): Promise<EntityMovie> {
@@ -100,39 +154,92 @@ export class MovieService {
     if (!movie) {
       throw new NotFoundException(`Movie with ID "${id}" not found`);
     }
-    console.log('Found movie:', movie);
-    return movie;
+
+    const [movieWithVideo] = await this._attachVideosToMovies([movie]);
+    return movieWithVideo;
   }
 
   async update(id: string, updateMovieDto: UpdateMovieDto): Promise<EntityMovie> {
-    const movie = await this.findOne(id);
+    const queryRunner = this.movieRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Update content metadata if provided
-    if (updateMovieDto.metaData) {
-      await this.contentRepository.save({
-        ...movie.metaData,
-        ...updateMovieDto.metaData,
-      });
+    try {
+      const movie = await this.findOne(id);
+      const { video, metaData, ...movieData } = updateMovieDto;
+
+      // Update content metadata if provided
+      if (metaData) {
+        await queryRunner.manager.save(this.contentRepository.target, {
+          ...movie.metaData,
+          ...metaData,
+        });
+      }
+
+      // Update movie properties
+      if (Object.keys(movieData).length > 0) {
+        await queryRunner.manager.update(this.movieRepository.target, id, movieData);
+      }
+
+      // ✅ Xử lý video
+      if (video) {
+        // Unlink video cũ trước
+        await this.videoService.unassignVideosByMovieIds([id]);
+
+        // Validate và assign video mới
+        const validVideos = await this.videoService.validateVideos([video]);
+        if (!validVideos.length) {
+          throw new BadRequestException({
+            code: ERROR_CODE.INVALID_BODY,
+            message: 'Video không tồn tại hoặc không hợp lệ',
+          });
+        }
+
+        await this.videoService.assignVideos(validVideos, id, VideoOwnerType.MOVIE);
+      } else if (video === null || updateMovieDto.hasOwnProperty('video')) {
+        // Nếu video = null hoặc được set trong request, unlink video hiện tại
+        await this.videoService.unassignVideosByMovieIds([id]);
+      }
+
+      await queryRunner.commitTransaction();
+
+      return await this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    // Update movie properties
-    const updatedMovie = {
-      ...movie,
-      ...updateMovieDto,
-      metaData: movie.metaData, // Keep the existing metadata reference
-    };
-
-    return this.movieRepository.save(updatedMovie);
   }
 
   async delete(id: string): Promise<void> {
-    const movie = await this.findOne(id);
+    const queryRunner = this.movieRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // First delete the content metadata
-    await this.contentRepository.remove(movie.metaData);
+    try {
+      const movie = await queryRunner.manager.findOne(EntityMovie, {
+        where: { id },
+        relations: ['metaData'],
+      });
 
-    // Then delete the movie
-    await this.movieRepository.remove(movie);
+      if (!movie) {
+        throw new NotFoundException(`Movie with ID "${id}" not found`);
+      }
+
+      // ✅ Unlink videos trước khi xóa movie
+      await this.videoService.unassignVideosByMovieIds([id]);
+
+      // Delete the movie (cascade will delete content metadata)
+      await queryRunner.manager.remove(movie);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async getTrendingMovies(query?: any) {
@@ -148,7 +255,9 @@ export class MovieService {
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
-    return { data, total };
+
+    const resultWithVideos = await this._attachVideosToMovies(data);
+    return { data: resultWithVideos, total };
   }
 
   async getMoviesByCategory(categoryId: string, query?: any) {
@@ -159,7 +268,7 @@ export class MovieService {
       .take(limit)
       .getManyAndCount();
 
-    console.log('Movies in category:', data);
-    return { data, total };
+    const resultWithVideos = await this._attachVideosToMovies(data);
+    return { data: resultWithVideos, total };
   }
 }

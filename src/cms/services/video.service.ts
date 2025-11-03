@@ -165,4 +165,32 @@ export class VideoService {
       },
     );
   }
+
+  async findByMovieIds(movieIds: string[]): Promise<EntityVideo[]> {
+    if (!movieIds?.length) return [];
+
+    return this.videoRepository.find({
+      where: {
+        ownerType: VideoOwnerType.MOVIE,
+        ownerId: In(movieIds),
+      },
+    });
+  }
+
+  async unassignVideosByMovieIds(movieIds: string[]): Promise<void> {
+    if (!movieIds.length) {
+      return;
+    }
+
+    await this.videoRepository.update(
+      {
+        ownerType: VideoOwnerType.MOVIE,
+        ownerId: In(movieIds),
+      },
+      {
+        ownerType: null,
+        ownerId: null,
+      },
+    );
+  }
 }

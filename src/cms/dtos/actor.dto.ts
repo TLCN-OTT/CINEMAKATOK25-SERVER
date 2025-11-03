@@ -22,7 +22,7 @@ export class ActorDto extends BaseEntityDto {
   @IsNotEmpty()
   @IsDate()
   @Expose()
-  birthDate: Date;
+  dateOfBirth: Date;
 
   @ApiProperty({
     description: 'Gender of the actor',
