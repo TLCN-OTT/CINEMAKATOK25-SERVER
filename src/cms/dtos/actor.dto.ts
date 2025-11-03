@@ -1,4 +1,4 @@
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { IsDate, IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
@@ -28,6 +28,7 @@ export class ActorDto extends BaseEntityDto {
     description: 'Gender of the actor',
     example: GENDER.MALE,
     default: GENDER.MALE,
+    enum: GENDER,
   })
   @IsNotEmpty()
   @IsEnum(GENDER)
