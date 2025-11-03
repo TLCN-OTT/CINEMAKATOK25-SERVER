@@ -121,7 +121,17 @@ jobs:
                 expiresTime: 'ACCESS_TOKEN_EXPIRES_TIME',
                 refreshExpiresTime: 'REFRESH_TOKEN_EXPIRES_TIME',
               },
-              //// Email configuration
+              aws: {
+                accessKeyId: 'AWS_ACCESS_KEY_ID',
+                secretAccessKey: 'AWS_SECRET_ACCESS_KEY',
+                region: 'AWS_REGION',
+                bucketName: 'AWS_S3_BUCKET_NAME',
+                s3BucketUrl: 'AWS_S3_BUCKET_URL',
+                cloudfrontDomain: 'AWS_CLOUDFRONT_DOMAIN',
+                cloudfrontKeyPairId: 'AWS_CLOUDFRONT_KEY_PAIR_ID',
+                cloudfrontPrivateKey: 'AWS_CLOUDFRONT_PRIVATE_KEY',
+              },
+              // Email configuration
               email: {
                 host: 'SMTP_HOST',
                 port: number('SMTP_PORT'),
@@ -135,6 +145,11 @@ jobs:
                 clientID: 'GOOGLE_CLIENT_ID',
                 clientSecret: 'GOOGLE_CLIENT_SECRET',
                 callbackURL: 'GOOGLE_CALLBACK_URL',
+              },
+              redis: {
+                host: 'REDIS_HOST',
+                port: number('REDIS_PORT'),
+                password: 'REDIS_PASSWORD',
               },
               // Core Config
               core: {
@@ -209,10 +224,22 @@ jobs:
               -e SMTP_FROM="${{ secrets.SMTP_FROM }}" \
               -e SMTP_PASS="${{ secrets.SMTP_PASS }}" \
               -e SMTP_SECURE=false \
+              -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+              -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+              -e AWS_REGION="${{ secrets.AWS_REGION }}" \
+              -e AWS_S3_BUCKET_NAME="${{ secrets.AWS_S3_BUCKET_NAME }}" \
+              -e AWS_S3_BUCKET_URL="${{ secrets.AWS_S3_BUCKET_URL }}" \
+              -e AWS_CLOUDFRONT_DOMAIN="${{ secrets.AWS_CLOUDFRONT_DOMAIN }}" \
+              -e AWS_CLOUDFRONT_KEY_PAIR_ID="${{ secrets.AWS_CLOUDFRONT_KEY_PAIR_ID }}" \
+              -e AWS_CLOUDFRONT_PRIVATE_KEY="${{ secrets.AWS_CLOUDFRONT_PRIVATE_KEY }}" \
+              -e REDIS_HOST="${{ secrets.REDIS_HOST }}" \
+              -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
+              -e REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}" \
               -e CORE_CACHE_STORE=memory \
               -e CORE_CACHE_TTL=5000 \
               -e CORE_CACHE_MAX=100 \
               -e CORE_AXIOS_TIMEOUT=3000 \
+
               -e PGSSLMODE=require \
               --health-cmd="node -e \"require('http').get('http://localhost:3000/api/hello', (res) => process.exit(res.statusCode === 200 ? 0 : 1))\"" \
               --health-interval=30s \

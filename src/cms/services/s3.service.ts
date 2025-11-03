@@ -25,20 +25,20 @@ export interface CookiesData {
 /**
  * This does not work on localhost
  */
-// const cookiesOptions = {
-//   domain: 'mpcsj.online',
-//   secure: true,
-//   path: '/',
-//   sameSite: 'none',
-// };
-// This works on localhost (for development)
 const cookiesOptions = {
-  // domain: 'mpcsj.online',
-  domain: 'localhost',
-  secure: false,
+  domain: 'veezy.shop',
+  secure: true,
   path: '/',
-  sameSite: 'lax',
+  sameSite: 'none',
 };
+// // This works on localhost (for development)
+// const cookiesOptions = {
+//   // domain: 'mpcsj.online',
+//   domain: 'localhost',
+//   secure: false,
+//   path: '/',
+//   sameSite: 'lax',
+// };
 
 @Injectable()
 export class S3Service {

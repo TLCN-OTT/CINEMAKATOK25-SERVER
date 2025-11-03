@@ -63,6 +63,7 @@ export class ContentDto extends BaseEntityDto {
   @ApiProperty({
     description: 'Maturity rating of the content',
     example: MaturityRating.PG13,
+    enum: MaturityRating,
   })
   @IsEnum(MaturityRating)
   @IsNotEmpty()

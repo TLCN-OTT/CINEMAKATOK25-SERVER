@@ -304,6 +304,9 @@ export class VideoController {
       response.cookie(key, curr.value, curr.options ?? {});
     });
 
-    return result;
+    return ResponseBuilder.createResponse({
+      data: { fileUrl: result.fileUrl },
+      message: 'Signed cookies generated successfully',
+    });
   }
 }

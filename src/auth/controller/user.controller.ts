@@ -150,7 +150,6 @@ export class UserController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Avatar image file',
-    type: 'multipart/form-data',
     schema: {
       type: 'object',
       properties: {

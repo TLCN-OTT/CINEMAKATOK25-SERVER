@@ -52,6 +52,7 @@ export class ProfileResponse extends BaseEntityDto {
   @ApiProperty({
     description: 'User gender',
     example: GENDER.MALE,
+    enum: GENDER,
   })
   @IsEnum(GENDER)
   @Expose()
