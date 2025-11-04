@@ -97,21 +97,44 @@ export class MovieService {
       .leftJoinAndSelect('metaData.actors', 'actors')
       .leftJoinAndSelect('metaData.directors', 'directors');
     if (categoryId) {
-      console.log('Category ID filter:', categoryId);
       qb.where('categories.id = :categoryId', { categoryId });
     }
 
     if (extraSelect) qb.addSelect(extraSelect, extraOrder || undefined);
 
     if (search) {
-      qb.where(`similarity(metaData.title, :search) > 0.2`)
-        .orWhere(`similarity(metaData.description, :search) > 0.2`)
-        .setParameter('search', search)
-        .addSelect(
-          `GREATEST(similarity(metaData.title, :search), similarity(metaData.description, :search))`,
-          'rank',
-        )
-        .orderBy('rank', 'DESC');
+      const searchObj = typeof search === 'string' ? JSON.parse(search) : search;
+      const conditions: string[] = [];
+      const params: Record<string, any> = {};
+
+      Object.entries(searchObj).forEach(([key, value]) => {
+        const field = key.includes('.') ? key : `metaData.${key}`;
+
+        if (['title', 'description'].includes(key)) {
+          // Dùng similarity cho text
+          conditions.push(`similarity(${field}, :${key}) > 0.2`);
+          params[key] = value;
+        } else if (key === 'releaseDate') {
+          // Dùng extract year cho date
+          conditions.push(`EXTRACT(YEAR FROM ${field}) = :${key}`);
+          params[key] = value;
+        }
+      });
+
+      if (conditions.length > 0) {
+        qb.where(conditions.join(' OR '))
+          .setParameters(params)
+          .addSelect(
+            `GREATEST(${
+              Object.keys(searchObj)
+                .filter(k => ['title', 'description'].includes(k))
+                .map(k => `similarity(metaData.${k}, :${k})`)
+                .join(', ') || '0'
+            })`,
+            'rank',
+          )
+          .orderBy('rank', 'DESC');
+      }
     }
 
     if (sort) {

@@ -253,6 +253,32 @@ export class MovieController {
     description: 'List of movies in the specified category',
     type: PaginatedApiResponseDto(MovieDto),
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for movies',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search movies by title, description, etc.',
+    example: '{ "title": "Inception", "description": "dream" }',
+  })
   async getMoviesByCategory(
     @Param('categoryId', new ParseUUIDPipe()) categoryId: string,
     @Query() query: PaginationQueryDto,
