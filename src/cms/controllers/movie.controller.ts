@@ -292,6 +292,52 @@ export class MovieController {
       message: 'Movies by category retrieved successfully',
     });
   }
+  @Get(':movieId/recommendations')
+  @ApiOperation({ summary: 'Get movie recommendations by movie ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of recommended movies',
+    type: PaginatedApiResponseDto(MovieDto),
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for movies',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search movies by title',
+    example: '{ "title": "Inception", "description": "dream" }',
+  })
+  async getRecommendationsByMovieId(
+    @Param('movieId', new ParseUUIDPipe()) movieId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    const { data, total } = await this.movieService.getRecommendationsByMovieId(movieId, query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: plainToInstance(MovieDto, data, { excludeExtraneousValues: true }),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Movie recommendations retrieved successfully',
+    });
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get movie by ID' })
   @ApiResponse({
