@@ -93,6 +93,10 @@ export class ActorContentDto {
   @Expose()
   releaseDate: Date;
 
+  @ApiProperty({ description: 'Duration of the content in minutes' })
+  @Expose()
+  duration: number;
+
   @ApiProperty({ description: 'Content rating' })
   @Expose()
   rating: number;
