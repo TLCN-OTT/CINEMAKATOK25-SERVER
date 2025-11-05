@@ -96,6 +96,7 @@ export class MovieService {
       .leftJoinAndSelect('metaData.tags', 'tags')
       .leftJoinAndSelect('metaData.actors', 'actors')
       .leftJoinAndSelect('metaData.directors', 'directors');
+
     if (categoryId) {
       qb.where('categories.id = :categoryId', { categoryId });
     }
@@ -146,7 +147,12 @@ export class MovieService {
     if (sort) {
       const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
       Object.keys(sortObj).forEach(key => {
-        const field = key.includes('.') ? key : `movie.${key}`;
+        let field;
+        if (['viewCount', 'rating', 'releaseDate'].includes(key)) {
+          field = `metaData.${key}`;
+        } else {
+          field = key.includes('.') ? key : `movie.${key}`;
+        }
         qb.addOrderBy(field, sortObj[key]);
       });
     } else if (!search && !extraOrder) {
