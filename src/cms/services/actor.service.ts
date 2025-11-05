@@ -81,16 +81,17 @@ export class ActorService {
     if (actor.contents && actor.contents.length > 0) {
       const contentIds = actor.contents.map(c => c.id);
 
-      // Query movies
+      // Query movies với duration
       const movies = await this.actorRepository.manager
         .createQueryBuilder()
         .select('movie.id', 'movieId')
         .addSelect('movie.content_id', 'contentId')
+        .addSelect('movie.duration', 'duration')
         .from('movies', 'movie')
         .where('movie.content_id IN (:...contentIds)', { contentIds })
         .getRawMany();
 
-      // Query tvseries
+      // Query tvseries (tạm thời duration = 0 cho tvseries)
       const tvseries = await this.actorRepository.manager
         .createQueryBuilder()
         .select('tvseries.id', 'tvseriesId')
@@ -100,15 +101,24 @@ export class ActorService {
         .getRawMany();
 
       // Create lookup maps
-      const movieMap = new Map(movies.map(m => [m.contentId, m.movieId]));
-      const tvseriesMap = new Map(tvseries.map(t => [t.contentId, t.tvseriesId]));
+      const movieMap = new Map(
+        movies.map(m => [m.contentId, { id: m.movieId, duration: m.duration }]),
+      );
+      const tvseriesMap = new Map(
+        tvseries.map(t => [t.contentId, { id: t.tvseriesId, duration: 0 }]),
+      );
 
       // Attach movie/tvseries IDs to contents
-      (actor as any).contents = actor.contents.map(content => ({
-        ...content,
-        movieOrSeriesId:
-          content.type === 'MOVIE' ? movieMap.get(content.id) : tvseriesMap.get(content.id),
-      }));
+      (actor as any).contents = actor.contents.map(content => {
+        const mediaInfo =
+          content.type === 'MOVIE' ? movieMap.get(content.id) : tvseriesMap.get(content.id);
+
+        return {
+          ...content,
+          movieOrSeriesId: mediaInfo?.id,
+          duration: mediaInfo?.duration || 0,
+        };
+      });
 
       // Sort contents by release date (newest first)
       actor.contents.sort((a: any, b: any) => {

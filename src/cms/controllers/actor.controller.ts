@@ -116,6 +116,7 @@ export class ActorController {
               thumbnail: content.thumbnail,
               releaseDate: content.releaseDate,
               rating: content.rating,
+              duration: content.duration,
             },
             { excludeExtraneousValues: true },
           ),
