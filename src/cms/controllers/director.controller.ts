@@ -6,7 +6,13 @@ import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { CreateDirectorDto, DirectorDto, UpdateDirectorDto } from '../dtos/director.dto';
+import {
+  CreateDirectorDto,
+  DirectorContentDto,
+  DirectorDetailDto,
+  DirectorDto,
+  UpdateDirectorDto,
+} from '../dtos/director.dto';
 import { DirectorService } from '../services/director.service';
 
 @ApiTags('cms/Directors')
@@ -66,7 +72,7 @@ export class DirectorController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a director by ID' })
+  @ApiOperation({ summary: 'Get a director by ID with all contents' })
   @ApiParam({
     name: 'id',
     description: 'Director ID',
@@ -74,9 +80,33 @@ export class DirectorController {
   })
   async findOne(@Param('id') id: string) {
     const director = await this.directorService.findOne(id);
+
+    // Transform response với contents
+    const directorDetail: any = {
+      ...plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
+      contents:
+        director.contents?.map((content: any) =>
+          plainToInstance(
+            DirectorContentDto,
+            {
+              id: content.movieOrSeriesId, // Movie ID hoặc TVSeries ID
+              contentId: content.id, // Content ID (metadata)
+              type: content.type,
+              title: content.title,
+              description: content.description,
+              thumbnail: content.thumbnail,
+              releaseDate: content.releaseDate,
+              rating: content.rating,
+            },
+            { excludeExtraneousValues: true },
+          ),
+        ) || [],
+      contentCount: director.contents?.length || 0,
+    };
+
     return ResponseBuilder.createResponse({
       message: 'Director retrieved successfully',
-      data: plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
+      data: directorDetail,
     });
   }
 

@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { Code } from 'typeorm/browser';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -62,17 +63,69 @@ export class ActorService {
     return { data, total };
   }
 
-  async findOne(id: string): Promise<EntityActor> {
-    const actor = await this.actorRepository.findOne({
-      where: { id },
-      relations: ['contents'],
-    });
+  async findOne(id: string): Promise<any> {
+    const actor = await this.actorRepository
+      .createQueryBuilder('actor')
+      .leftJoinAndSelect('actor.contents', 'content')
+      .where('actor.id = :id', { id })
+      .getOne();
+
     if (!actor) {
       throw new NotFoundException({
         message: `Actor with ID ${id} not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
+
+    // Get movie/tvseries IDs for each content
+    if (actor.contents && actor.contents.length > 0) {
+      const contentIds = actor.contents.map(c => c.id);
+
+      // Query movies với duration
+      const movies = await this.actorRepository.manager
+        .createQueryBuilder()
+        .select('movie.id', 'movieId')
+        .addSelect('movie.content_id', 'contentId')
+        .addSelect('movie.duration', 'duration')
+        .from('movies', 'movie')
+        .where('movie.content_id IN (:...contentIds)', { contentIds })
+        .getRawMany();
+
+      // Query tvseries (tạm thời duration = 0 cho tvseries)
+      const tvseries = await this.actorRepository.manager
+        .createQueryBuilder()
+        .select('tvseries.id', 'tvseriesId')
+        .addSelect('tvseries.content_id', 'contentId')
+        .from('tvseries', 'tvseries')
+        .where('tvseries.content_id IN (:...contentIds)', { contentIds })
+        .getRawMany();
+
+      // Create lookup maps
+      const movieMap = new Map(
+        movies.map(m => [m.contentId, { id: m.movieId, duration: m.duration }]),
+      );
+      const tvseriesMap = new Map(
+        tvseries.map(t => [t.contentId, { id: t.tvseriesId, duration: 0 }]),
+      );
+
+      // Attach movie/tvseries IDs to contents
+      (actor as any).contents = actor.contents.map(content => {
+        const mediaInfo =
+          content.type === 'MOVIE' ? movieMap.get(content.id) : tvseriesMap.get(content.id);
+
+        return {
+          ...content,
+          movieOrSeriesId: mediaInfo?.id,
+          duration: mediaInfo?.duration || 0,
+        };
+      });
+
+      // Sort contents by release date (newest first)
+      actor.contents.sort((a: any, b: any) => {
+        return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
+      });
+    }
+
     return actor;
   }
   async findById(id: string): Promise<EntityActor> {
@@ -136,5 +189,34 @@ export class ActorService {
         await this.findById(actorDto.id);
       }),
     );
+  }
+
+  async getTopActors(query: PaginationQueryDto) {
+    const { page = 1, limit = 10 } = query;
+
+    // QueryBuilder
+    const qb = this.actorRepository
+      .createQueryBuilder('actor')
+      .leftJoin('actor.contents', 'content')
+      .addSelect('COUNT(content.id)', 'content_count') // 👈 alias chữ thường có gạch dưới
+      .groupBy('actor.id')
+      .orderBy('content_count', 'DESC')
+      .addOrderBy('actor.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    // Lấy cả raw lẫn entity
+    const { entities, raw } = await qb.getRawAndEntities();
+
+    // Ánh xạ thủ công giá trị COUNT
+    const mapped = entities.map((actor, index) => ({
+      ...actor,
+      contentCount: Number(raw[index]?.content_count || 0),
+    }));
+
+    // Tổng số actor (dựa trên tổng dòng group)
+    const total = mapped.length;
+
+    return { data: mapped, total };
   }
 }

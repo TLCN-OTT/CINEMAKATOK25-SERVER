@@ -61,14 +61,66 @@ export class DirectorService {
     return { data, total };
   }
 
-  async findOne(id: string): Promise<EntityDirector> {
-    const director = await this.directorRepository.findOne({
-      where: { id },
-      relations: ['contents'],
-    });
+  async findOne(id: string): Promise<any> {
+    const director = await this.directorRepository
+      .createQueryBuilder('director')
+      .leftJoinAndSelect('director.contents', 'content')
+      .where('director.id = :id', { id })
+      .getOne();
+
     if (!director) {
       throw new NotFoundException(`Director with ID ${id} not found`);
     }
+
+    // Get movie/tvseries IDs for each content
+    if (director.contents && director.contents.length > 0) {
+      const contentIds = director.contents.map(c => c.id);
+
+      // Query movies với duration
+      const movies = await this.directorRepository.manager
+        .createQueryBuilder()
+        .select('movie.id', 'movieId')
+        .addSelect('movie.content_id', 'contentId')
+        .addSelect('movie.duration', 'duration')
+        .from('movies', 'movie')
+        .where('movie.content_id IN (:...contentIds)', { contentIds })
+        .getRawMany();
+
+      // Query tvseries (tạm thời duration = 0 cho tvseries)
+      const tvseries = await this.directorRepository.manager
+        .createQueryBuilder()
+        .select('tvseries.id', 'tvseriesId')
+        .addSelect('tvseries.content_id', 'contentId')
+        .from('tvseries', 'tvseries')
+        .where('tvseries.content_id IN (:...contentIds)', { contentIds })
+        .getRawMany();
+
+      // Create lookup maps
+      const movieMap = new Map(
+        movies.map(m => [m.contentId, { id: m.movieId, duration: m.duration }]),
+      );
+      const tvseriesMap = new Map(
+        tvseries.map(t => [t.contentId, { id: t.tvseriesId, duration: 0 }]),
+      );
+
+      // Attach movie/tvseries IDs to contents
+      (director as any).contents = director.contents.map(content => {
+        const mediaInfo =
+          content.type === 'MOVIE' ? movieMap.get(content.id) : tvseriesMap.get(content.id);
+
+        return {
+          ...content,
+          movieOrSeriesId: mediaInfo?.id,
+          duration: mediaInfo?.duration || 0,
+        };
+      });
+
+      // Sort contents by release date (newest first)
+      director.contents.sort((a: any, b: any) => {
+        return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
+      });
+    }
+
     return director;
   }
   async findById(id: string): Promise<EntityDirector> {

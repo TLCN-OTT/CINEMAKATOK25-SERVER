@@ -111,12 +111,18 @@ export class MovieService {
         const field = key.includes('.') ? key : `metaData.${key}`;
 
         if (['title', 'description'].includes(key)) {
-          // Dùng similarity cho text
-          conditions.push(`similarity(${field}, :${key}) > 0.2`);
-          params[key] = value;
+          // ✅ Tìm kiếm không phân biệt hoa thường + chuỗi con + similarity để xếp hạng
+          conditions.push(
+            `(LOWER(${field}) LIKE LOWER(:${key}) OR similarity(LOWER(${field}), LOWER(:${key})) > 0.2)`,
+          );
+          params[key] = `%${value}%`;
         } else if (key === 'releaseDate') {
-          // Dùng extract year cho date
+          // ✅ Tìm theo năm
           conditions.push(`EXTRACT(YEAR FROM ${field}) = :${key}`);
+          params[key] = value;
+        } else {
+          // ✅ fallback cho các field khác (so sánh chính xác)
+          conditions.push(`${field} = :${key}`);
           params[key] = value;
         }
       });
@@ -128,7 +134,7 @@ export class MovieService {
             `GREATEST(${
               Object.keys(searchObj)
                 .filter(k => ['title', 'description'].includes(k))
-                .map(k => `similarity(metaData.${k}, :${k})`)
+                .map(k => `similarity(LOWER(metaData.${k}), LOWER(:${k}))`)
                 .join(', ') || '0'
             })`,
             'rank',
@@ -286,6 +292,107 @@ export class MovieService {
   async getMoviesByCategory(categoryId: string, query?: any) {
     const { page = 1, limit = 10 } = query || {};
     const qb = this.buildMovieQuery(query, undefined, undefined, categoryId);
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const resultWithVideos = await this._attachVideosToMovies(data);
+    return { data: resultWithVideos, total };
+  }
+
+  async getRecommendationsByMovieId(movieId: string, query?: any) {
+    const { page = 1, limit = 10 } = query || {};
+
+    // Lấy thông tin movie hiện tại
+    const currentMovie = await this.movieRepository
+      .createQueryBuilder('movie')
+      .leftJoinAndSelect('movie.metaData', 'metaData')
+      .leftJoinAndSelect('metaData.categories', 'categories')
+      .leftJoinAndSelect('metaData.tags', 'tags')
+      .leftJoinAndSelect('metaData.actors', 'actors')
+      .leftJoinAndSelect('metaData.directors', 'directors')
+      .where('movie.id = :movieId', { movieId })
+      .getOne();
+
+    if (!currentMovie) {
+      throw new NotFoundException(`Movie with ID "${movieId}" not found`);
+    }
+
+    // Tạo query builder với similarity score
+    const qb = this.movieRepository
+      .createQueryBuilder('movie')
+      .leftJoinAndSelect('movie.metaData', 'metaData')
+      .leftJoinAndSelect('metaData.categories', 'categories')
+      .leftJoinAndSelect('metaData.tags', 'tags')
+      .leftJoinAndSelect('metaData.actors', 'actors')
+      .leftJoinAndSelect('metaData.directors', 'directors')
+      .where('movie.id != :movieId', { movieId });
+
+    // Build similarity score
+    const similarityParts: string[] = [];
+    const params: Record<string, any> = { movieId };
+
+    // 1. So sánh description (weight: 0.3)
+    if (currentMovie.metaData?.description) {
+      similarityParts.push(`(similarity(LOWER(metaData.description), LOWER(:description)) * 0.3)`);
+      params.description = currentMovie.metaData.description;
+    }
+
+    // 2. So sánh title (weight: 0.2)
+    if (currentMovie.metaData?.title) {
+      similarityParts.push(`(similarity(LOWER(metaData.title), LOWER(:title)) * 0.2)`);
+      params.title = currentMovie.metaData.title;
+    }
+
+    // 3. Cùng thể loại (weight: 0.25)
+    const categoryIds = currentMovie.metaData?.categories?.map(c => c.id) || [];
+    if (categoryIds.length > 0) {
+      qb.leftJoin('metaData.categories', 'matchCat');
+      similarityParts.push(
+        `(COALESCE(COUNT(DISTINCT CASE WHEN matchCat.id IN (:...categoryIds) THEN matchCat.id END), 0) * 0.25 / :categoryCount)`,
+      );
+      params.categoryIds = categoryIds;
+      params.categoryCount = categoryIds.length;
+    }
+
+    // 4. Cùng diễn viên (weight: 0.15)
+    const actorIds = currentMovie.metaData?.actors?.map(a => a.id) || [];
+    if (actorIds.length > 0) {
+      qb.leftJoin('metaData.actors', 'matchActor');
+      similarityParts.push(
+        `(COALESCE(COUNT(DISTINCT CASE WHEN matchActor.id IN (:...actorIds) THEN matchActor.id END), 0) * 0.15 / :actorCount)`,
+      );
+      params.actorIds = actorIds;
+      params.actorCount = actorIds.length;
+    }
+
+    // 5. Cùng đạo diễn (weight: 0.1)
+    const directorIds = currentMovie.metaData?.directors?.map(d => d.id) || [];
+    if (directorIds.length > 0) {
+      qb.leftJoin('metaData.directors', 'matchDirector');
+      similarityParts.push(
+        `(COALESCE(COUNT(DISTINCT CASE WHEN matchDirector.id IN (:...directorIds) THEN matchDirector.id END), 0) * 0.1 / :directorCount)`,
+      );
+      params.directorIds = directorIds;
+      params.directorCount = directorIds.length;
+    }
+
+    // Tổng hợp similarity score
+    const similarityScore = similarityParts.length > 0 ? similarityParts.join(' + ') : '0';
+
+    qb.addSelect(`(${similarityScore})`, 'similarity_score')
+      .setParameters(params)
+      .groupBy('movie.id')
+      .addGroupBy('metaData.id')
+      .addGroupBy('categories.id')
+      .addGroupBy('tags.id')
+      .addGroupBy('actors.id')
+      .addGroupBy('directors.id')
+      .orderBy('similarity_score', 'DESC')
+      .addOrderBy('metaData.rating', 'DESC') // Sắp xếp phụ theo rating
+      .addOrderBy('metaData.viewCount', 'DESC'); // Và view count
+
     const [data, total] = await qb
       .skip((page - 1) * limit)
       .take(limit)
