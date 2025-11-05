@@ -112,7 +112,7 @@ export class MovieService {
 
         if (['title', 'description'].includes(key)) {
           // Dùng similarity cho text
-          conditions.push(`similarity(${field}, :${key}) > 0.2`);
+          conditions.push(`similarity(${field}, :${key}) > 0.05`);
           params[key] = value;
         } else if (key === 'releaseDate') {
           // Dùng extract year cho date

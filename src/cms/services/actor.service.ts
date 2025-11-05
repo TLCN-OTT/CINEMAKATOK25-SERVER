@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { Code } from 'typeorm/browser';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -136,5 +137,34 @@ export class ActorService {
         await this.findById(actorDto.id);
       }),
     );
+  }
+
+  async getTopActors(query: PaginationQueryDto) {
+    const { page = 1, limit = 10 } = query;
+
+    // QueryBuilder
+    const qb = this.actorRepository
+      .createQueryBuilder('actor')
+      .leftJoin('actor.contents', 'content')
+      .addSelect('COUNT(content.id)', 'content_count') // 👈 alias chữ thường có gạch dưới
+      .groupBy('actor.id')
+      .orderBy('content_count', 'DESC')
+      .addOrderBy('actor.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    // Lấy cả raw lẫn entity
+    const { entities, raw } = await qb.getRawAndEntities();
+
+    // Ánh xạ thủ công giá trị COUNT
+    const mapped = entities.map((actor, index) => ({
+      ...actor,
+      contentCount: Number(raw[index]?.content_count || 0),
+    }));
+
+    // Tổng số actor (dựa trên tổng dòng group)
+    const total = mapped.length;
+
+    return { data: mapped, total };
   }
 }
