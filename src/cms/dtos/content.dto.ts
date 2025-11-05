@@ -98,6 +98,13 @@ export class ContentDto extends BaseEntityDto {
   trailer: string;
 
   @ApiProperty({
+    description: 'Rating of the content',
+    example: 8.5,
+  })
+  @Expose()
+  rating: number;
+
+  @ApiProperty({
     description: 'Categories of the content',
     type: [CategoryDto],
   })
