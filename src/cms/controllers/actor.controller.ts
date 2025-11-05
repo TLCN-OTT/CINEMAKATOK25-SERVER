@@ -6,7 +6,13 @@ import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { ActorDto, CreateActorDto, UpdateActorDto } from '../dtos/actor.dto';
+import {
+  ActorContentDto,
+  ActorDetailDto,
+  ActorDto,
+  CreateActorDto,
+  UpdateActorDto,
+} from '../dtos/actor.dto';
 import { ActorService } from '../services/actor.service';
 
 @ApiTags('cms/Actors')
@@ -85,7 +91,7 @@ export class ActorController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get an actor by ID' })
+  @ApiOperation({ summary: 'Get an actor by ID with all contents' })
   @ApiParam({
     name: 'id',
     description: 'Actor ID',
@@ -93,9 +99,33 @@ export class ActorController {
   })
   async findOne(@Param('id') id: string) {
     const actor = await this.actorService.findOne(id);
+
+    // Transform response với contents
+    const actorDetail: any = {
+      ...plainToInstance(ActorDto, actor, { excludeExtraneousValues: true }),
+      contents:
+        actor.contents?.map((content: any) =>
+          plainToInstance(
+            ActorContentDto,
+            {
+              id: content.movieOrSeriesId, // Movie ID hoặc TVSeries ID
+              contentId: content.id, // Content ID (metadata)
+              type: content.type,
+              title: content.title,
+              description: content.description,
+              thumbnail: content.thumbnail,
+              releaseDate: content.releaseDate,
+              rating: content.rating,
+            },
+            { excludeExtraneousValues: true },
+          ),
+        ) || [],
+      contentCount: actor.contents?.length || 0,
+    };
+
     return ResponseBuilder.createResponse({
       message: 'Actor retrieved successfully',
-      data: plainToInstance(ActorDto, actor, { excludeExtraneousValues: true }),
+      data: actorDetail,
     });
   }
 

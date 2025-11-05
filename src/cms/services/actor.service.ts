@@ -63,17 +63,59 @@ export class ActorService {
     return { data, total };
   }
 
-  async findOne(id: string): Promise<EntityActor> {
-    const actor = await this.actorRepository.findOne({
-      where: { id },
-      relations: ['contents'],
-    });
+  async findOne(id: string): Promise<any> {
+    const actor = await this.actorRepository
+      .createQueryBuilder('actor')
+      .leftJoinAndSelect('actor.contents', 'content')
+      .where('actor.id = :id', { id })
+      .getOne();
+
     if (!actor) {
       throw new NotFoundException({
         message: `Actor with ID ${id} not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
+
+    // Get movie/tvseries IDs for each content
+    if (actor.contents && actor.contents.length > 0) {
+      const contentIds = actor.contents.map(c => c.id);
+
+      // Query movies
+      const movies = await this.actorRepository.manager
+        .createQueryBuilder()
+        .select('movie.id', 'movieId')
+        .addSelect('movie.content_id', 'contentId')
+        .from('movies', 'movie')
+        .where('movie.content_id IN (:...contentIds)', { contentIds })
+        .getRawMany();
+
+      // Query tvseries
+      const tvseries = await this.actorRepository.manager
+        .createQueryBuilder()
+        .select('tvseries.id', 'tvseriesId')
+        .addSelect('tvseries.content_id', 'contentId')
+        .from('tvseries', 'tvseries')
+        .where('tvseries.content_id IN (:...contentIds)', { contentIds })
+        .getRawMany();
+
+      // Create lookup maps
+      const movieMap = new Map(movies.map(m => [m.contentId, m.movieId]));
+      const tvseriesMap = new Map(tvseries.map(t => [t.contentId, t.tvseriesId]));
+
+      // Attach movie/tvseries IDs to contents
+      (actor as any).contents = actor.contents.map(content => ({
+        ...content,
+        movieOrSeriesId:
+          content.type === 'MOVIE' ? movieMap.get(content.id) : tvseriesMap.get(content.id),
+      }));
+
+      // Sort contents by release date (newest first)
+      actor.contents.sort((a: any, b: any) => {
+        return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
+      });
+    }
+
     return actor;
   }
   async findById(id: string): Promise<EntityActor> {
