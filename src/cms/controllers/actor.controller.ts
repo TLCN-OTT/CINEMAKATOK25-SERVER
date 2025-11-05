@@ -65,6 +65,25 @@ export class ActorController {
     });
   }
 
+  @Get('top/list')
+  @ApiOperation({ summary: 'Get top actors by number of contents' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  async getTopActors(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.actorService.getTopActors(query);
+
+    return ResponseBuilder.createPaginatedResponse({
+      data: data.map(actor => ({
+        ...plainToInstance(ActorDto, actor, { excludeExtraneousValues: true }),
+        contentCount: actor.contentCount || 0,
+      })),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Top actors retrieved successfully',
+    });
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get an actor by ID' })
   @ApiParam({
