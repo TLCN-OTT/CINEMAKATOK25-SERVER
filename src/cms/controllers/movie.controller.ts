@@ -193,9 +193,7 @@ export class MovieController {
     description: 'Search movies by title',
   })
   async getTrendingMovies(@Query() query: PaginationQueryDto) {
-    console.log('Received query:', query);
     const { data, total } = await this.movieService.getTrendingMovies(query);
-    console.log(data);
     return ResponseBuilder.createPaginatedResponse({
       data: plainToInstance(MovieDto, data, { excludeExtraneousValues: true }),
       totalItems: total,

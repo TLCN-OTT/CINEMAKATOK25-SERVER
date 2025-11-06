@@ -148,7 +148,7 @@ export class MovieService {
       const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
       Object.keys(sortObj).forEach(key => {
         let field;
-        if (['viewCount', 'rating', 'releaseDate'].includes(key)) {
+        if (['viewCount', 'avgRating'].includes(key)) {
           field = `metaData.${key}`;
         } else {
           field = key.includes('.') ? key : `movie.${key}`;
@@ -281,7 +281,7 @@ export class MovieService {
     const { page = 1, limit = 10 } = query || {};
     const epoch = new Date('2020-01-01T00:00:00Z').getTime() / 1000;
     const hotness = `
-      LOG(10, COALESCE(metaData.viewCount, 0) + COALESCE(metaData.rating, 0) * 100 + 1) +
+      LOG(10, COALESCE(metaData.viewCount, 0) + COALESCE(metaData.avgRating, 0) * 100 + 1) +
       ((EXTRACT(EPOCH FROM movie.createdAt) - ${epoch}) / 45000)
     `;
     const qb = this.buildMovieQuery(query, hotness, 'hotness');
@@ -396,7 +396,7 @@ export class MovieService {
       .addGroupBy('actors.id')
       .addGroupBy('directors.id')
       .orderBy('similarity_score', 'DESC')
-      .addOrderBy('metaData.rating', 'DESC') // Sắp xếp phụ theo rating
+      .addOrderBy('metaData.avgRating', 'DESC') // Sắp xếp phụ theo rating
       .addOrderBy('metaData.viewCount', 'DESC'); // Và view count
 
     const [data, total] = await qb

@@ -177,7 +177,10 @@ export class ReviewController {
   @UseGuards(JwtAuthGuard)
   async createReview(@UserSession('id') userId: string, @Body() createReviewDto: CreateReviewDto) {
     const review = await this.reviewService.createReview(userId, createReviewDto);
-    return plainToInstance(ReviewDto, review, { excludeExtraneousValues: true });
+    return ResponseBuilder.createResponse({
+      message: 'Review created successfully',
+      data: plainToInstance(ReviewDto, review, { excludeExtraneousValues: true }),
+    });
   }
 
   @Put(':id')
