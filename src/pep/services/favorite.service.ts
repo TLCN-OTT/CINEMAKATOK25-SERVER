@@ -1,5 +1,6 @@
 import { ContentType } from 'src/cms/entities/content.entity';
 import { EntityMovie } from 'src/cms/entities/movie.entity';
+import { EntityTVSeries } from 'src/cms/entities/tvseries.entity';
 import { ContentService } from 'src/cms/services/content.service';
 
 import { Repository } from 'typeorm/repository/Repository.js';
@@ -139,20 +140,34 @@ export class FavoriteService {
       favorites.map(async fav => {
         const content = fav.content;
         let duration: number | null = null;
+        let movieId: string | null = null;
+        let tvSeriesId: string | null = null;
 
         if (content.type === ContentType.MOVIE) {
           const movie = await this.favoriteRepository.manager
             .getRepository(EntityMovie)
             .createQueryBuilder('movie')
-            .select(['movie.duration'])
+            .select(['movie.id', 'movie.duration'])
             .where('movie.content_id = :contentId', { contentId: content.id })
             .getOne();
 
           duration = movie?.duration ?? null;
+          movieId = movie?.id ?? null;
+        } else if (content.type === ContentType.TVSERIES) {
+          const tvSeries = await this.favoriteRepository.manager
+            .getRepository(EntityTVSeries)
+            .createQueryBuilder('tvseries')
+            .select(['tvseries.id'])
+            .where('tvseries.content_id = :contentId', { contentId: content.id })
+            .getOne();
+
+          tvSeriesId = tvSeries?.id ?? null;
         }
 
         return {
           id: content.id,
+          movieId,
+          tvSeriesId,
           title: content.title,
           type: content.type,
           releaseDate: content.releaseDate,
