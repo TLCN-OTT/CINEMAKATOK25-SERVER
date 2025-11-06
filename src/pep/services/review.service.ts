@@ -42,7 +42,7 @@ export class ReviewService {
         .createQueryBuilder(EntityReview, 'review')
         .select('AVG(review.rating)', 'avgRating')
         .addSelect('COUNT(review.id)', 'totalReviews')
-        .where('review.contentId = :contentId', { contentId: content.id })
+        .where('review.content_id = :contentId', { contentId: content.id })
         .getRawOne();
 
       // Cập nhật rating vào bảng content
@@ -50,7 +50,7 @@ export class ReviewService {
         EntityContent,
         { id: content.id },
         {
-          rating: parseFloat(ratingStats.avgRating) || 0,
+          avgRating: parseFloat(ratingStats.avgRating) || 0,
           // reviewCount: parseInt(ratingStats.totalReviews) || 0, // Nếu có field này
         },
       );
@@ -82,7 +82,7 @@ export class ReviewService {
         .createQueryBuilder(EntityReview, 'review')
         .select('AVG(review.rating)', 'avgRating')
         .addSelect('COUNT(review.id)', 'totalReviews')
-        .where('review.contentId = :contentId', { contentId: review.content.id })
+        .where('review.content_id = :contentId', { contentId: review.content.id })
         .getRawOne();
 
       // Cập nhật rating
@@ -90,7 +90,7 @@ export class ReviewService {
         EntityContent,
         { id: review.content.id },
         {
-          rating: parseFloat(ratingStats.avgRating) || 0,
+          avgRating: parseFloat(ratingStats.avgRating) || 0,
         },
       );
 
@@ -120,7 +120,7 @@ export class ReviewService {
         .createQueryBuilder(EntityReview, 'review')
         .select('AVG(review.rating)', 'avgRating')
         .addSelect('COUNT(review.id)', 'totalReviews')
-        .where('review.contentId = :contentId', { contentId })
+        .where('review.content_id = :contentId', { contentId })
         .getRawOne();
 
       // Cập nhật rating (nếu không còn review nào thì rating = 0)
@@ -128,7 +128,7 @@ export class ReviewService {
         EntityContent,
         { id: contentId },
         {
-          rating: parseFloat(ratingStats.avgRating) || 0,
+          avgRating: parseFloat(ratingStats.avgRating) || 0,
         },
       );
 

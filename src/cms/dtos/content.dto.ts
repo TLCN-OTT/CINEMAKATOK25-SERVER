@@ -102,7 +102,14 @@ export class ContentDto extends BaseEntityDto {
     example: 8.5,
   })
   @Expose()
-  rating: number;
+  avgRating: number;
+
+  @ApiProperty({
+    description: 'Rating of the content',
+    example: 8.5,
+  })
+  @Expose()
+  imdbRating: number;
 
   @ApiProperty({
     description: 'Categories of the content',
