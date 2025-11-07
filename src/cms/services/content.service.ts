@@ -88,6 +88,8 @@ export class ContentService {
         actors: updateDto.actors,
         directors: updateDto.directors,
         tags: updateDto.tags,
+        imdbRating: updateDto.imdbRating,
+        avgRating: updateDto.avgRating,
       });
 
       return await this.contentRepository.save(content);
