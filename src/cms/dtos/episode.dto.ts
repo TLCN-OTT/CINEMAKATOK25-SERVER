@@ -35,38 +35,30 @@ export class EpisodeDto extends BaseEntityDto {
   episodeTitle: string;
 
   @ApiProperty({
-    description: 'Episode thumbnail URL',
-    example: 'https://example.com/thumbnail.jpg',
-  })
-  @IsNotEmpty()
-  @Expose()
-  episodeThumbnail?: string;
-
-  @ApiProperty({
     description: 'List of video information',
-    type: [VideoDto],
+    type: VideoDto,
   })
   @Type(() => VideoDto)
   @ValidateNested({ each: true })
   @Expose()
-  videos?: VideoDto[];
+  video?: VideoDto;
 }
 export class CreateEpisodeDto extends OmitType(EpisodeDto, [
   'id',
   'createdAt',
   'updatedAt',
-  'videos',
+  'video',
 ]) {
   @ApiProperty({
     description: 'List of video information',
-    type: CreateVideoDto,
+    type: UpdateVideoDto,
   })
-  @Type(() => CreateVideoDto)
+  @Type(() => UpdateVideoDto)
   @ValidateNested({ each: true })
   @Expose()
-  video?: CreateVideoDto;
+  video?: UpdateVideoDto;
 }
-export class UpdateEpisodeDto extends OmitType(EpisodeDto, ['createdAt', 'updatedAt', 'videos']) {
+export class UpdateEpisodeDto extends OmitType(EpisodeDto, ['createdAt', 'updatedAt', 'video']) {
   @ApiProperty({
     description: 'List of video information',
     type: UpdateVideoDto,

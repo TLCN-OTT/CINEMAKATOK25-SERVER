@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -101,6 +102,8 @@ export class ContentDto extends BaseEntityDto {
     description: 'Rating of the content',
     example: 8.5,
   })
+  @IsNotEmpty()
+  @IsNumber()
   @Expose()
   avgRating: number;
 
@@ -109,6 +112,8 @@ export class ContentDto extends BaseEntityDto {
     example: 8.5,
   })
   @Expose()
+  @IsNotEmpty()
+  @IsNumber()
   imdbRating: number;
 
   @ApiProperty({
@@ -177,7 +182,7 @@ export class CreateContentDto extends OmitType(ContentDto, [
 
   @ApiProperty({
     description: 'Actors of the content',
-    type: [ActorDto],
+    type: [UpdateActorDto],
   })
   @ValidateNested({ each: true })
   @Type(() => UpdateActorDto)
