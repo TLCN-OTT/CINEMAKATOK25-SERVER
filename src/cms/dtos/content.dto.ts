@@ -102,8 +102,9 @@ export class ContentDto extends BaseEntityDto {
     description: 'Rating of the content',
     example: 8.5,
   })
-  @IsNotEmpty()
   @IsNumber()
+  @IsOptional())
+  @Type(() => Number)
   @Expose()
   avgRating: number;
 
@@ -111,9 +112,10 @@ export class ContentDto extends BaseEntityDto {
     description: 'Rating of the content',
     example: 8.5,
   })
-  @Expose()
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
+  @Type(() => Number)
+  @Expose()
   imdbRating: number;
 
   @ApiProperty({

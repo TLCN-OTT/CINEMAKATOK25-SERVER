@@ -96,6 +96,7 @@ export class DirectorController {
               description: content.description,
               thumbnail: content.thumbnail,
               releaseDate: content.releaseDate,
+              duration: content.duration,
               rating: content.rating,
             },
             { excludeExtraneousValues: true },
