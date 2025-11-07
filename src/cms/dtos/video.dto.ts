@@ -43,4 +43,9 @@ export interface AbsContentPathParams {
 }
 
 export class CreateVideoDto extends OmitType(VideoDto, ['id', 'createdAt', 'updatedAt']) {}
-export class UpdateVideoDto extends PickType(VideoDto, ['id', 'videoUrl', 'status']) {}
+export class UpdateVideoDto extends PickType(VideoDto, [
+  'id',
+  'videoUrl',
+  'status',
+  'thumbnailUrl',
+]) {}

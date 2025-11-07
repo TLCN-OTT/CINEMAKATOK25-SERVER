@@ -4,7 +4,7 @@ import { IsNotEmpty, IsNumber, ValidateNested } from 'class-validator';
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 
-import { ContentDto, UpdateContentDto } from './content.dto';
+import { ContentDto, CreateContentDto, UpdateContentDto } from './content.dto';
 import { CreateEpisodeDto, EpisodeDto, UpdateEpisodeDto } from './episode.dto';
 import { VideoDto } from './video.dto';
 
@@ -45,12 +45,12 @@ export class CreateSeasonDto extends OmitType(SeasonDto, [
 ]) {
   @ApiProperty({
     description: 'List of episode information',
-    type: [UpdateEpisodeDto],
+    type: [CreateEpisodeDto],
   })
-  @Type(() => UpdateEpisodeDto)
+  @Type(() => CreateEpisodeDto)
   @ValidateNested({ each: true })
   @Expose()
-  episodes: UpdateEpisodeDto[];
+  episodes: CreateEpisodeDto[];
 }
 export class UpdateSeasonDto extends OmitType(SeasonDto, [
   'totalEpisodes',
@@ -105,12 +105,12 @@ export class CreateTVSeriesDto extends OmitType(TVSeriesDto, [
 
   @ApiProperty({
     description: 'Metadata about the TV series',
-    type: UpdateContentDto,
+    type: CreateContentDto,
   })
   @ValidateNested()
-  @Type(() => UpdateContentDto)
+  @Type(() => CreateContentDto)
   @Expose()
-  metaData: UpdateContentDto;
+  metaData: CreateContentDto;
 }
 export class UpdateTVSeriesDto extends OmitType(TVSeriesDto, [
   'id',

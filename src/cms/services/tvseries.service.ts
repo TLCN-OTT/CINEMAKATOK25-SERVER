@@ -433,6 +433,11 @@ export class TvSeriesService {
           .execute();
       }
 
+      // Xoá content liên quan
+      if (tvSeries.metaData) {
+        await this.contentService.delete(tvSeries.metaData.id);
+      }
+
       await queryRunner.manager.remove(tvSeries);
       await queryRunner.commitTransaction();
     } catch (err) {
