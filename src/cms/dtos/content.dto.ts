@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -101,6 +102,9 @@ export class ContentDto extends BaseEntityDto {
     description: 'Rating of the content',
     example: 8.5,
   })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   @Expose()
   avgRating: number;
 
@@ -108,6 +112,9 @@ export class ContentDto extends BaseEntityDto {
     description: 'Rating of the content',
     example: 8.5,
   })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   @Expose()
   imdbRating: number;
 

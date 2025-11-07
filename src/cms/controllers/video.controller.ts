@@ -267,14 +267,14 @@ export class VideoController {
     }
 
     // xoa file temp luu o server sau khi da add job vao queue
-    try {
-      if (fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
-        console.log(`🗑️  Temp file deleted: ${file.path}`);
-      }
-    } catch (err) {
-      console.warn(`⚠️  Failed to delete temp file: ${err.message}`);
-    }
+    // try {
+    //   if (fs.existsSync(file.path)) {
+    //     fs.unlinkSync(file.path);
+    //     console.log(`🗑️  Temp file deleted: ${file.path}`);
+    //   }
+    // } catch (err) {
+    //   console.warn(`⚠️  Failed to delete temp file: ${err.message}`);
+    // }
 
     // 4️⃣ Nếu có Redis → video đang được xử lý ở background
     const videoDtos = plainToInstance(VideoDto, createdVideo, { excludeExtraneousValues: true });
