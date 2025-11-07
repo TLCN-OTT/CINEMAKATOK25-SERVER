@@ -38,10 +38,13 @@ export class EntityContent extends BaseEntity {
   trailer: string;
 
   @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
-  rating: number;
+  avgRating: number;
 
   @Column({ type: 'enum', enum: MaturityRating, default: MaturityRating.G })
   maturityRating: MaturityRating;
+
+  @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })
+  imdbRating: number;
 
   @Column({ type: 'int', default: 0 })
   viewCount: number;

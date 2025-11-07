@@ -22,28 +22,123 @@ export class ReviewService {
   // Define service methods for handling reviews here
 
   async createReview(userId: string, createReviewDto: CreateReviewDto) {
-    const content = await this.contentService.findContentById(createReviewDto.contentId);
-    const review = this.reviewRepository.create({
-      ...createReviewDto,
-      user: { id: userId } as EntityUser,
-      content,
-    });
-    const savedReview = await this.reviewRepository.save(review);
+    const queryRunner = this.reviewRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Load review with relations to get full user and content data
-    return this.findReviewById(savedReview.id);
+    try {
+      const content = await this.contentService.findContentById(createReviewDto.contentId);
+
+      // Tạo review mới
+      const review = this.reviewRepository.create({
+        ...createReviewDto,
+        user: { id: userId } as EntityUser,
+        content,
+      });
+      const savedReview = await queryRunner.manager.save(review);
+
+      // Tính lại rating trung bình cho content
+      const ratingStats = await queryRunner.manager
+        .createQueryBuilder(EntityReview, 'review')
+        .select('AVG(review.rating)', 'avgRating')
+        .addSelect('COUNT(review.id)', 'totalReviews')
+        .where('review.content_id = :contentId', { contentId: content.id })
+        .getRawOne();
+
+      // Cập nhật rating vào bảng content
+      await queryRunner.manager.update(
+        EntityContent,
+        { id: content.id },
+        {
+          avgRating: parseFloat(ratingStats.avgRating) || 0,
+          // reviewCount: parseInt(ratingStats.totalReviews) || 0, // Nếu có field này
+        },
+      );
+
+      await queryRunner.commitTransaction();
+
+      // Load review với relations đầy đủ
+      return this.findReviewById(savedReview.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async updateReview(id: string, updateReviewDto: UpdateReviewDto) {
-    const review = await this.findReviewById(id);
-    Object.assign(review, updateReviewDto);
-    const updatedReview = await this.reviewRepository.save(review);
-    return this.findReviewById(updatedReview.id);
+    const queryRunner = this.reviewRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const review = await this.findReviewById(id);
+      Object.assign(review, updateReviewDto);
+      const updatedReview = await queryRunner.manager.save(review);
+
+      // Tính lại rating trung bình
+      const ratingStats = await queryRunner.manager
+        .createQueryBuilder(EntityReview, 'review')
+        .select('AVG(review.rating)', 'avgRating')
+        .addSelect('COUNT(review.id)', 'totalReviews')
+        .where('review.content_id = :contentId', { contentId: review.content.id })
+        .getRawOne();
+
+      // Cập nhật rating
+      await queryRunner.manager.update(
+        EntityContent,
+        { id: review.content.id },
+        {
+          avgRating: parseFloat(ratingStats.avgRating) || 0,
+        },
+      );
+
+      await queryRunner.commitTransaction();
+      return this.findReviewById(updatedReview.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async deleteReview(id: string) {
-    await this.findReviewById(id);
-    await this.reviewRepository.delete(id);
+    const queryRunner = this.reviewRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const review = await this.findReviewById(id);
+      const contentId = review.content.id;
+
+      await queryRunner.manager.delete(EntityReview, id);
+
+      // Tính lại rating sau khi xóa
+      const ratingStats = await queryRunner.manager
+        .createQueryBuilder(EntityReview, 'review')
+        .select('AVG(review.rating)', 'avgRating')
+        .addSelect('COUNT(review.id)', 'totalReviews')
+        .where('review.content_id = :contentId', { contentId })
+        .getRawOne();
+
+      // Cập nhật rating (nếu không còn review nào thì rating = 0)
+      await queryRunner.manager.update(
+        EntityContent,
+        { id: contentId },
+        {
+          avgRating: parseFloat(ratingStats.avgRating) || 0,
+        },
+      );
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async findReviewById(id: string) {
