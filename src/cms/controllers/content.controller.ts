@@ -166,4 +166,21 @@ export class ContentController {
       message: 'Content retrieved successfully',
     });
   }
+
+  @Post(':id/increase-view')
+  @ApiOperation({ summary: 'Increase view count for content' })
+  @ApiResponse({
+    status: 200,
+    description: 'View count increased successfully',
+  })
+  @ApiNotFoundResponse({
+    description: 'Content not found',
+  })
+  async increaseView(@Param('id', new ParseUUIDPipe()) id: string) {
+    await this.contentService.increaseViewCount(id);
+    return ResponseBuilder.createResponse({
+      data: null,
+      message: 'View count increased successfully',
+    });
+  }
 }

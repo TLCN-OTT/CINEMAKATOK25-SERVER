@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateReviewDto, ReviewDto, UpdateReviewDto } from '../dtos/review.dto';
@@ -67,13 +67,22 @@ export class ReviewService {
     }
   }
 
-  async updateReview(id: string, updateReviewDto: UpdateReviewDto) {
+  async updateReview(id: string, updateReviewDto: UpdateReviewDto, userId?: string) {
     const queryRunner = this.reviewRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
       const review = await this.findReviewById(id);
+
+      // Check ownership if userId is provided
+      if (userId && review.user.id !== userId) {
+        throw new ForbiddenException({
+          message: 'You are not authorized to update this review',
+          code: ERROR_CODE.UNAUTHORIZED,
+        });
+      }
+
       Object.assign(review, updateReviewDto);
       const updatedReview = await queryRunner.manager.save(review);
 
@@ -104,13 +113,22 @@ export class ReviewService {
     }
   }
 
-  async deleteReview(id: string) {
+  async deleteReview(id: string, userId?: string) {
     const queryRunner = this.reviewRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
       const review = await this.findReviewById(id);
+
+      // Check ownership if userId is provided
+      if (userId && review.user.id !== userId) {
+        throw new ForbiddenException({
+          message: 'You are not authorized to delete this review',
+          code: ERROR_CODE.UNAUTHORIZED,
+        });
+      }
+
       const contentId = review.content.id;
 
       await queryRunner.manager.delete(EntityReview, id);
@@ -183,5 +201,24 @@ export class ReviewService {
       .getManyAndCount();
 
     return { data, total };
+  }
+
+  /**
+   * Check if user is the owner of a review
+   */
+  async isReviewOwner(reviewId: string, userId: string): Promise<boolean> {
+    const review = await this.reviewRepository.findOne({
+      where: { id: reviewId },
+      relations: ['user'],
+    });
+
+    if (!review) {
+      throw new NotFoundException({
+        message: `Review with ID ${reviewId} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+
+    return review.user.id === userId;
   }
 }

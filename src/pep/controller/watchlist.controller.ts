@@ -120,4 +120,20 @@ export class WatchListController {
       data: { isInWatchList },
     });
   }
+
+  @Get('favourite-count/:contentId')
+  @ApiOperation({ summary: 'Get count of users who added content to favourites' })
+  @ApiParam({
+    name: 'contentId',
+    description: 'Content ID',
+    type: String,
+  })
+  async getFavouriteCount(@Param('contentId') contentId: string) {
+    const count = await this.watchListService.getFavouriteCount(contentId);
+
+    return ResponseBuilder.createResponse({
+      message: 'Favourite count retrieved successfully',
+      data: { count },
+    });
+  }
 }
