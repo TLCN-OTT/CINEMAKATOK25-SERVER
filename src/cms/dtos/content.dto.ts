@@ -99,18 +99,31 @@ export class ContentDto extends BaseEntityDto {
   trailer: string;
 
   @ApiProperty({
-    description: 'Rating of the content',
+    description: 'Average rating of the content',
     example: 8.5,
+    required: false,
   })
   @IsNumber()
-  @IsOptional())
+  @IsOptional()
   @Type(() => Number)
   @Expose()
   avgRating: number;
 
   @ApiProperty({
-    description: 'Rating of the content',
+    description: 'View count of the content',
+    example: 1000,
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  @Expose()
+  viewCount: number;
+
+  @ApiProperty({
+    description: 'IMDB rating of the content',
     example: 8.5,
+    required: false,
   })
   @IsOptional()
   @IsNumber()
@@ -163,6 +176,8 @@ export class CreateContentDto extends OmitType(ContentDto, [
   'directors',
   'tags',
   'categories',
+  'viewCount',
+  'avgRating',
 ]) {
   @ApiProperty({
     description: 'Categories of the content',
@@ -206,6 +221,7 @@ export class UpdateContentDto extends OmitType(ContentDto, [
   'directors',
   'tags',
   'categories',
+  'viewCount',
 ]) {
   @ApiProperty({
     description: 'Categories of the content',

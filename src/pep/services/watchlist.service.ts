@@ -192,4 +192,17 @@ export class WatchListService {
 
     return await this.isInWatchList(userId, result.contentId);
   }
+
+  /**
+   * Get count of users who added content to their watchlist (favourites)
+   */
+  async getFavouriteCount(contentId: string): Promise<number> {
+    const count = await this.watchListRepository.count({
+      where: {
+        content: { id: contentId },
+      },
+    });
+
+    return count;
+  }
 }

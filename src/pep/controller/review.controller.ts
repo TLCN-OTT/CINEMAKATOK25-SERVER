@@ -194,8 +194,12 @@ export class ReviewController {
     description: 'Review not found',
   })
   @UseGuards(JwtAuthGuard)
-  async updateReview(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
-    const review = await this.reviewService.updateReview(id, updateReviewDto);
+  async updateReview(
+    @Param('id') id: string,
+    @UserSession('id') userId: string,
+    @Body() updateReviewDto: UpdateReviewDto,
+  ) {
+    const review = await this.reviewService.updateReview(id, updateReviewDto, userId);
     return ResponseBuilder.createResponse({
       message: 'Review updated successfully',
       data: plainToInstance(ReviewDto, review, { excludeExtraneousValues: true }),
@@ -212,11 +216,26 @@ export class ReviewController {
     description: 'Review not found',
   })
   @UseGuards(JwtAuthGuard)
-  async deleteReview(@Param('id') id: string) {
-    await this.reviewService.deleteReview(id);
+  async deleteReview(@Param('id') id: string, @UserSession('id') userId: string) {
+    await this.reviewService.deleteReview(id, userId);
     return {
       message: 'Review deleted successfully',
       data: null,
     };
+  }
+
+  @Get('check-owner/:id')
+  @ApiOperation({ summary: 'Check if user is the owner of a review' })
+  @ApiOkResponse({ description: 'Ownership check result' })
+  @ApiNotFoundResponse({
+    description: 'Review not found',
+  })
+  @UseGuards(JwtAuthGuard)
+  async checkReviewOwner(@Param('id') id: string, @UserSession('id') userId: string) {
+    const isOwner = await this.reviewService.isReviewOwner(id, userId);
+    return ResponseBuilder.createResponse({
+      message: 'Ownership check completed',
+      data: { isOwner },
+    });
   }
 }

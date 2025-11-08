@@ -223,4 +223,13 @@ export class ContentService {
     }
     return content;
   }
+
+  /**
+   * Increase view count for content
+   */
+  async increaseViewCount(id: string): Promise<void> {
+    const content = await this.findContentById(id);
+
+    await this.contentRepository.update({ id }, { viewCount: content.viewCount + 1 });
+  }
 }
