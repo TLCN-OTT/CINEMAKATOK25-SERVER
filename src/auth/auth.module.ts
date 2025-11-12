@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import googleOauthConfig from './config/google-oauth.config';
@@ -17,6 +18,7 @@ import { EmailService } from './service/email.service';
 import { OtpService } from './service/otp.service';
 import { ProfileService } from './service/profile.service';
 import { SocialAuthService } from './service/social-auth.service';
+import { UserBanSchedulerService } from './service/user-ban-scheduler.service';
 import { UserService } from './service/user.service';
 import { GoogleStrategy } from './strategy/google.strategy';
 import { JwtStrategy } from './strategy/jwt.strategy';
@@ -25,6 +27,7 @@ import { JwtStrategy } from './strategy/jwt.strategy';
   imports: [
     TypeOrmModule.forFeature([EntityUser, EntityRefreshToken, EntityUserOtp]),
     PassportModule,
+    ScheduleModule.forRoot(),
     CoreModule, // For AxiosService
     JwtModule.register({
       privateKey: getConfig('jwt.privateKey', 'your_jwt_private_key'),
@@ -44,6 +47,7 @@ import { JwtStrategy } from './strategy/jwt.strategy';
     EmailService,
     SocialAuthService,
     ProfileService,
+    UserBanSchedulerService,
     JwtStrategy,
     GoogleStrategy,
   ],
