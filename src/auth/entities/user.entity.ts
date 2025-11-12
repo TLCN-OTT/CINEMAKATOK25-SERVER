@@ -43,6 +43,15 @@ export class EntityUser extends PersonEntity {
   @Column({ type: 'enum', enum: USER_STATUS, default: USER_STATUS.ACTIVATED })
   status: USER_STATUS;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  banReason?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  bannedUntil?: Date;
+
+  @Column({ type: 'boolean', default: false })
+  isBanned: boolean;
+
   @OneToMany(() => EntityReview, review => review.user)
   reviews: EntityReview[];
 

@@ -84,6 +84,54 @@ export class EmailService {
     `;
   }
 
+  private renderUserBanNotification(
+    userName: string,
+    banReason: string,
+    bannedUntil: Date,
+  ): string {
+    const formatDate = (date: Date) => {
+      return new Date(date).toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    };
+
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+        <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">${this.emailConfig.fromName}</h1>
+        </div>
+        <div style="padding: 30px; color: #333;">
+          <h2 style="margin-top: 0; color: #dc2626;">⚠️ Account Suspension Notice</h2>
+          <p>Dear ${userName},</p>
+          <p style="color: #dc2626; font-weight: bold;">Your account has been suspended due to a violation of our Terms of Service.</p>
+          
+          <div style="margin: 20px 0; padding: 15px; background-color: #fee2e2; border: 1px solid #fca5a5; border-radius: 5px;">
+            <h3 style="margin-top: 0; color: #991b1b;">Suspension Details:</h3>
+            <p><strong>Reason:</strong></p>
+            <p style="color: #7f1d1d; margin-left: 10px;">${banReason}</p>
+            
+            <p><strong>Suspension Until:</strong></p>
+            <p style="color: #7f1d1d; margin-left: 10px; font-size: 16px; font-weight: bold;">
+              ${formatDate(bannedUntil)}
+            </p>
+          </div>
+          
+          <p>Your account will be automatically reactivated after the suspension period ends.</p>
+          <p>If you believe this suspension was made in error or would like to appeal, please contact our support team at <strong>support@cinemakatok.com</strong>.</p>
+        </div>
+        <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+          <p>This is an automated message. Please do not reply to this email.</p>
+          <p>© 2025 ${this.emailConfig.fromName}. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+  }
+
   async sendOtpEmail(email: string, otp: string, purpose: string): Promise<void> {
     try {
       const subject = this.getEmailSubject(purpose);
@@ -119,6 +167,30 @@ export class EmailService {
     } catch (error) {
       this.logger.error(`Failed to send confirmation email to ${email}`, error);
       throw new Error('Failed to send confirmation email');
+    }
+  }
+
+  async sendUserBanNotification(
+    email: string,
+    userName: string,
+    banReason: string,
+    bannedUntil: Date,
+  ): Promise<void> {
+    try {
+      const subject = 'Account Suspension Notification';
+      const htmlContent = this.renderUserBanNotification(userName, banReason, bannedUntil);
+
+      await this.transporter.sendMail({
+        from: `"${this.emailConfig.fromName}" <${this.emailConfig.user}>`,
+        to: email,
+        subject,
+        html: htmlContent,
+      });
+
+      this.logger.log(`User ban notification sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send ban notification to ${email}`, error);
+      throw new Error('Failed to send ban notification');
     }
   }
 

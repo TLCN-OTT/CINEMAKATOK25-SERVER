@@ -43,7 +43,15 @@ import {
   UpdateProfileRequest,
   UploadAvatarResponse,
 } from '../dtos/profile.dto';
-import { CreateUserDto, UpdateUserDto, UserDto, mapToUserDto } from '../dtos/user.dto';
+import {
+  BanUserDto,
+  CreateUserDto,
+  UpdateUserDto,
+  UpdateUserInfoDto,
+  UserDetailDto,
+  UserDto,
+  mapToUserDto,
+} from '../dtos/user.dto';
 import { ProfileService } from '../service/profile.service';
 import { UserService } from '../service/user.service';
 
@@ -253,8 +261,14 @@ export class UserController {
     example: 'user01',
   })
   async findAll(@Query() query: PaginationQueryDto, @Query('search') search?: string) {
-    // return this.userService.findAll(query, search);
-    return null;
+    const { data, total } = await this.userService.findAll(query, search);
+    return ResponseBuilder.createPaginatedResponse({
+      data: data.map(user => plainToInstance(UserDto, user, { excludeExtraneousValues: true })),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Users retrieved successfully',
+    });
   }
 
   @ApiOperation({ summary: 'Get user by ID (Admin only)' })
@@ -288,5 +302,74 @@ export class UserController {
   async delete(@Param('id', new ParseUUIDPipe()) id: string) {
     await this.userService.delete(id);
     return ResponseBuilder.createResponse({ data: null });
+  }
+
+  // Admin user management endpoints
+  @Get(':id/detail')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @IsAdmin()
+  @ApiOperation({ summary: 'Get user detail (Admin only)' })
+  @ApiOkResponse({ description: 'User detail', type: ApiResponseDto(UserDetailDto) })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing access token' })
+  async getUserDetail(@Param('id', new ParseUUIDPipe()) id: string) {
+    const result = await this.userService.getUserDetail(id);
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(UserDetailDto, result, { excludeExtraneousValues: true }),
+      message: 'User detail retrieved successfully',
+    });
+  }
+
+  @Post(':id/ban')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @IsAdmin()
+  @ApiOperation({ summary: 'Ban user (Admin only)' })
+  @ApiOkResponse({ description: 'User banned successfully', type: ApiResponseDto(UserDetailDto) })
+  @ApiBody({ type: BanUserDto })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing access token' })
+  async banUser(@Param('id', new ParseUUIDPipe()) id: string, @Body() banUserDto: BanUserDto) {
+    const result = await this.userService.banUser(id, banUserDto);
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(UserDetailDto, result, { excludeExtraneousValues: true }),
+      message: 'User banned successfully',
+    });
+  }
+
+  @Delete(':id/unban')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @IsAdmin()
+  @ApiOperation({ summary: 'Unban user (Admin only)' })
+  @ApiOkResponse({ description: 'User unbanned successfully', type: ApiResponseDto(UserDetailDto) })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing access token' })
+  async unbanUser(@Param('id', new ParseUUIDPipe()) id: string) {
+    const result = await this.userService.unbanUser(id);
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(UserDetailDto, result, { excludeExtraneousValues: true }),
+      message: 'User unbanned successfully',
+    });
+  }
+
+  @Put(':id/info')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @IsAdmin()
+  @ApiOperation({ summary: 'Update user info (Admin only)' })
+  @ApiOkResponse({
+    description: 'User info updated successfully',
+    type: ApiResponseDto(UserDetailDto),
+  })
+  @ApiBody({ type: UpdateUserInfoDto })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing access token' })
+  async updateUserInfo(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateUserInfoDto: UpdateUserInfoDto,
+  ) {
+    const result = await this.userService.updateUserInfo(id, updateUserInfoDto);
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(UserDetailDto, result, { excludeExtraneousValues: true }),
+      message: 'User info updated successfully',
+    });
   }
 }

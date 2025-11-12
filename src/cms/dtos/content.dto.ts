@@ -177,7 +177,6 @@ export class CreateContentDto extends OmitType(ContentDto, [
   'tags',
   'categories',
   'viewCount',
-  'avgRating',
 ]) {
   @ApiProperty({
     description: 'Categories of the content',

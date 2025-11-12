@@ -1,6 +1,7 @@
 export enum USER_STATUS {
   ACTIVATED = 'ACTIVATED',
   DEACTIVATED = 'DEACTIVATED',
+  BANNED = 'BANNED',
 }
 
 export enum OTP_PURPOSE {
