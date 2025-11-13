@@ -190,7 +190,7 @@ export const processVideoHLS = async (inputFilePath: string): Promise<CreateVide
           '-i',
           inputFilePath,
           '-ss',
-          '00:05:05', // lấy frame ở giây thứ 5
+          '00:00:05', // lấy frame ở giây thứ 5
           '-vframes',
           '1',
           '-vf',

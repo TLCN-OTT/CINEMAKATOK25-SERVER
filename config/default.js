@@ -20,6 +20,15 @@ module.exports = {
     cloudfrontKeyPairId: 'your_cloudfront_key_pair_id',
     cloudfrontPrivateKey: 'your_cloudfront_private_key',
   },
+  // R2 Configuration
+  r2: {
+    accessKeyId: 'your_r2_access_key_id',
+    secretAccessKey: 'your_r2_secret_access_key',
+    bucketNameR2: 'your_r2_bucket_name',
+    endpoint: 'https://your_account_id.r2.cloudflarestorage.com',
+    publicUrl: 'https://your_r2_bucket_name.your_account_id.r2.cloudflarestorage.com',
+  },
+  uploadDir: 'uploads/',
   // Email configuration
   email: {
     host: 'smtp.gmail.com',

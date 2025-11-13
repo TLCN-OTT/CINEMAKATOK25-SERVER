@@ -88,6 +88,7 @@ export class VideoService {
       Object.assign(video, {
         videoUrl: updateDto.videoUrl,
         status: updateDto.status,
+        thumbnailUrl: updateDto.thumbnailUrl,
       });
 
       return await this.videoRepository.save(video);

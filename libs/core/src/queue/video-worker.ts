@@ -5,6 +5,7 @@ import * as path from 'path';
 import { AppModule } from 'src/app.module';
 import { UpdateVideoDto } from 'src/cms/dtos/video.dto';
 import { EntityVideo } from 'src/cms/entities/video.entity';
+import { R2StorageService } from 'src/cms/services/r2.service';
 import { S3Service } from 'src/cms/services/s3.service';
 import { VideoService } from 'src/cms/services/video.service';
 
@@ -42,6 +43,7 @@ async function bootstrap() {
   // ✅ Lấy instance của VideoService và S3Service từ DI container
   const videoService = appContext.get(VideoService);
   const s3Service = appContext.get(S3Service);
+  const r2Service = appContext.get(R2StorageService);
 
   // ✅ Worker chạy với DI support
   const worker = new Worker(
@@ -52,12 +54,38 @@ async function bootstrap() {
       const startTime = Date.now();
 
       try {
-        // 1️⃣ Xử lý HLS
+        // Xử lý HLS
         console.log('📹 Processing HLS...');
         const hlsResult = await processVideoHLS(inputPath);
         console.log(`✅ HLS processing completed: ${hlsResult.videoUrl}`);
 
-        // 2️⃣ Upload HLS files lên S3
+        // Upload thumbnail FIRST (before HLS files)
+        let thumbnailUrl = '';
+        if (hlsResult.thumbnailUrl) {
+          console.log('📸 Uploading thumbnail to R2...');
+          console.log(`   Source: ${hlsResult.thumbnailUrl}`);
+
+          try {
+            // ✅ FIX: Ensure R2 bucket name is valid
+            // Check your R2Service configuration for bucket name
+            thumbnailUrl = await r2Service.uploadImage(
+              hlsResult.thumbnailUrl,
+              `videos/${videoId}/thumbnails`,
+            );
+            console.log(`✅ Uploaded thumbnail to R2: ${thumbnailUrl}`);
+
+            // Clean up local thumbnail after successful upload
+            await fsPromises.unlink(hlsResult.thumbnailUrl);
+            console.log(`🗑️  Deleted local thumbnail: ${hlsResult.thumbnailUrl}`);
+          } catch (error) {
+            console.error('❌ Failed to upload thumbnail to R2:', error);
+            console.error('   Error details:', error.message);
+            // Keep local thumbnail as fallback
+            thumbnailUrl = hlsResult.thumbnailUrl;
+          }
+        }
+
+        // Upload HLS files to S3
         console.log('☁️  Uploading HLS files to S3...');
         const hlsDirectory = path.dirname(hlsResult.videoUrl);
         const s3BaseKey = `videos/${videoId}/hls`;
@@ -76,7 +104,7 @@ async function bootstrap() {
         );
         console.log(`✅ Uploaded master.m3u8 to S3: ${masterResult.url}`);
 
-        // ✅ Upload tất cả thư mục stream_0, stream_1, stream_2
+        // Upload tất cả thư mục stream_0, stream_1, stream_2
         const streamDirs = ['stream_0', 'stream_1', 'stream_2'];
 
         for (const streamDir of streamDirs) {
@@ -113,18 +141,26 @@ async function bootstrap() {
           }
         }
 
-        // 3️⃣ Cleanup local HLS files
-        console.log('🗑️  Cleaning up local HLS files...');
+        // 4Cleanup - ONLY after all uploads succeed
+        console.log('🗑️  Cleaning up local files...');
+
+        // Delete HLS directory
         await fsPromises.rm(hlsDirectory, { recursive: true, force: true });
         console.log('✅ Local HLS files deleted');
 
-        // 4️⃣ Update video entity với S3 URL
+        // Delete original input file (moved from earlier)
+        if (fs.existsSync(inputPath)) {
+          await fsPromises.unlink(inputPath);
+          console.log(`🗑️  Deleted original uploaded file: ${inputPath}`);
+        }
+
+        // Update video entity
         const duration = ((Date.now() - startTime) / 1000).toFixed(2);
         const updatedVideo = await videoService.update(videoId, {
           id: videoId,
-          videoUrl: masterResult.url, // ✅ S3 URL thay vì local path
+          videoUrl: masterResult.url,
           status: VIDEO_STATUS.READY,
-          thumbnailUrl: hlsResult.thumbnailUrl,
+          thumbnailUrl: thumbnailUrl,
         } as UpdateVideoDto);
 
         console.log(`✅ Updated video ${videoId} successfully in ${duration}s`);

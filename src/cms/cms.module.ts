@@ -22,6 +22,7 @@ import { CategoryService } from './services/category.service';
 import { ContentService } from './services/content.service';
 import { DirectorService } from './services/director.service';
 import { MovieService } from './services/movie.service';
+import { R2StorageService } from './services/r2.service';
 import { S3Service } from './services/s3.service';
 import { TagService } from './services/tag.service';
 import { TvSeriesService } from './services/tvseries.service';
@@ -63,7 +64,15 @@ import { VideoService } from './services/video.service';
     MovieService,
     TvSeriesService,
     S3Service,
+    R2StorageService,
   ],
-  exports: [VideoService, MovieService, TvSeriesService, S3Service, ContentService],
+  exports: [
+    VideoService,
+    MovieService,
+    TvSeriesService,
+    S3Service,
+    ContentService,
+    R2StorageService,
+  ],
 })
 export class CmsModule {}
