@@ -33,6 +33,13 @@ module.exports = {
     cloudfrontKeyPairId: 'AWS_CLOUDFRONT_KEY_PAIR_ID',
     cloudfrontPrivateKey: 'AWS_CLOUDFRONT_PRIVATE_KEY',
   },
+  r2: {
+    accessKeyId: 'R2_ACCESS_KEY_ID',
+    secretAccessKey: 'R2_SECRET_ACCESS_KEY',
+    bucketNameR2: 'R2_BUCKET_NAME',
+    endpoint: 'R2_ENDPOINT',
+    publicUrl: 'R2_PUBLIC_URL',
+  },
   uploadDir: 'UPLOAD_DIR',
   jwt: {
     privateKey: 'JWT_PRIVATE_KEY',

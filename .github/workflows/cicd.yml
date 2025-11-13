@@ -138,6 +138,13 @@ jobs:
                 cloudfrontKeyPairId: 'AWS_CLOUDFRONT_KEY_PAIR_ID',
                 cloudfrontPrivateKey: 'AWS_CLOUDFRONT_PRIVATE_KEY',
               },
+              r2: {
+                accessKeyId: 'R2_ACCESS_KEY_ID',
+                secretAccessKey: 'R2_SECRET_ACCESS_KEY',
+                bucketNameR2: 'R2_BUCKET_NAME',
+                endpoint: 'R2_ENDPOINT',
+                publicUrl: 'R2_PUBLIC_URL',
+              },
               // Email configuration
               email: {
                 host: 'SMTP_HOST',
@@ -239,6 +246,11 @@ jobs:
               -e AWS_CLOUDFRONT_DOMAIN="${{ secrets.AWS_CLOUDFRONT_DOMAIN }}" \
               -e AWS_CLOUDFRONT_KEY_PAIR_ID="${{ secrets.AWS_CLOUDFRONT_KEY_PAIR_ID }}" \
               -e AWS_CLOUDFRONT_PRIVATE_KEY="${{ secrets.AWS_CLOUDFRONT_PRIVATE_KEY }}" \
+              -e R2_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}" \
+              -e R2_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}" \
+              -e R2_BUCKET_NAME="${{ secrets.R2_BUCKET_NAME }}" \
+              -e R2_ENDPOINT="${{ secrets.R2_ENDPOINT }}" \
+              -e R2_PUBLIC_URL="${{ secrets.R2_PUBLIC_URL }}" \
               -e REDIS_HOST="${{ secrets.REDIS_HOST }}" \
               -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
               -e REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}" \
