@@ -38,17 +38,7 @@ export class ContentService {
     try {
       // Create new content
       const content = this.contentRepository.create({
-        type: createDto.type,
-        title: createDto.title,
-        description: createDto.description,
-        releaseDate: createDto.releaseDate,
-        thumbnail: createDto.thumbnail,
-        banner: createDto.banner,
-        trailer: createDto.trailer,
-        categories: createDto.categories,
-        actors: createDto.actors,
-        directors: createDto.directors,
-        tags: createDto.tags,
+        ...createDto,
       });
 
       return await this.contentRepository.save(content);
@@ -64,17 +54,18 @@ export class ContentService {
 
   async update(id: string, updateDto: UpdateContentDto) {
     try {
-      const content = await this.findOne(id);
-      if (!content) {
+      if (!id) {
         throw new NotFoundException({
           code: ERROR_CODE.ENTITY_NOT_FOUND,
-          message: 'Content not found',
+          message: 'Content Id is required',
         });
       }
+      const content = await this.findContentById(id);
       // Validate and transform input data
       await this.actorService.validateActors(updateDto.actors);
       await this.tagService.validateTags(updateDto.tags);
       await this.categoryService.validateCategories(updateDto.categories);
+      await this.directorService.validateDirectors(updateDto.directors);
 
       Object.assign(content, {
         type: updateDto.type,
@@ -90,6 +81,7 @@ export class ContentService {
         tags: updateDto.tags,
         imdbRating: updateDto.imdbRating,
         avgRating: updateDto.avgRating,
+        viewCount: updateDto.viewCount,
       });
 
       return await this.contentRepository.save(content);

@@ -220,7 +220,6 @@ export class UpdateContentDto extends OmitType(ContentDto, [
   'directors',
   'tags',
   'categories',
-  'viewCount',
 ]) {
   @ApiProperty({
     description: 'Categories of the content',
