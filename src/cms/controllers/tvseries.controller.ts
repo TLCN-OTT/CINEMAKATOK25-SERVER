@@ -103,7 +103,6 @@ export class TvSeriesController {
   })
   async create(@Body() createTvSeriesDto: CreateTVSeriesDto) {
     const result = await this.tvSeriesService.create(createTvSeriesDto);
-    console.log(result);
     return ResponseBuilder.createResponse({
       data: plainToInstance(TVSeriesDto, result, { excludeExtraneousValues: true }),
       message: 'TV series created successfully',
@@ -123,7 +122,6 @@ export class TvSeriesController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
     const result = await this.tvSeriesService.update(id, updateTvSeriesDto);
-    console.log('Updated TV series:', result);
     return ResponseBuilder.createResponse({
       data: plainToInstance(TVSeriesDto, result, { excludeExtraneousValues: true }),
       message: 'TV series updated successfully',
