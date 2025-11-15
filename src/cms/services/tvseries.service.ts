@@ -1,5 +1,5 @@
 import e from 'express';
-import { In, Repository } from 'typeorm';
+import { Brackets, In, Repository, SelectQueryBuilder } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
@@ -25,6 +25,132 @@ export class TvSeriesService {
     private readonly episodeRepository: Repository<EntityEpisode>,
     private readonly videoService: VideoService,
   ) {}
+
+  /**
+   * Áp dụng filter theo thời gian cho releaseDate của TV series
+   */
+  private _applyDateRange(qb: SelectQueryBuilder<EntityTVSeries>, filter) {
+    const filterObj = typeof filter === 'string' ? JSON.parse(filter) : filter;
+    const { range } = filterObj || {};
+    let computedStart: Date | undefined;
+    let computedEnd: Date | undefined;
+
+    if (!computedStart && range) {
+      const now = new Date();
+      const normalizeStart = (date: Date) => {
+        const result = new Date(date);
+        result.setHours(0, 0, 0, 0);
+        return result;
+      };
+
+      const normalizeEnd = (date: Date) => {
+        const result = new Date(date);
+        result.setHours(23, 59, 59, 999);
+        return result;
+      };
+
+      switch (range) {
+        case 'today':
+          computedStart = normalizeStart(now);
+          computedEnd = normalizeEnd(now);
+          break;
+        case 'week':
+          const weekStart = new Date(now);
+          const day = weekStart.getDay();
+          const diff = (day + 6) % 7; // assuming week starts on Monday
+          weekStart.setDate(weekStart.getDate() - diff);
+          computedStart = normalizeStart(weekStart);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          computedEnd = normalizeEnd(weekEnd);
+          break;
+        case 'month':
+          computedStart = normalizeStart(new Date(now.getFullYear(), now.getMonth(), 1));
+          computedEnd = normalizeEnd(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+          break;
+        case 'year':
+          computedStart = normalizeStart(new Date(now.getFullYear(), 0, 1));
+          computedEnd = normalizeEnd(new Date(now.getFullYear(), 11, 31));
+          break;
+      }
+    }
+
+    if (computedStart) {
+      qb.andWhere('metaData.releaseDate >= :startDate', { startDate: computedStart });
+    }
+
+    if (computedEnd) {
+      qb.andWhere('metaData.releaseDate <= :endDate', { endDate: computedEnd });
+    }
+  }
+
+  private _buildSeriesQuery(
+    query: any,
+    options: {
+      includeHotness?: boolean;
+      defaultOrder?: { field: string; direction: 'ASC' | 'DESC' };
+    } = {},
+  ): SelectQueryBuilder<EntityTVSeries> {
+    const { includeHotness, defaultOrder } = options;
+    const { sort, search, filter } = query || {};
+
+    const qb = this.tvSeriesRepository
+      .createQueryBuilder('tvseries')
+      .leftJoinAndSelect('tvseries.metaData', 'metaData')
+      .leftJoinAndSelect('metaData.categories', 'categories')
+      .leftJoinAndSelect('metaData.tags', 'tags')
+      .leftJoinAndSelect('metaData.actors', 'actors')
+      .leftJoinAndSelect('metaData.directors', 'directors')
+      .loadRelationCountAndMap('tvseries.totalSeasons', 'tvseries.seasons');
+
+    if (includeHotness) {
+      const epoch = new Date('2020-01-01T00:00:00Z').getTime() / 1000;
+      const hotness = `
+        LOG(10, COALESCE(metaData.viewCount, 0) + COALESCE(metaData.avgRating, 0) * 100 + 1) +
+        ((EXTRACT(EPOCH FROM tvseries.createdAt) - ${epoch}) / 45000)
+      `;
+      qb.addSelect(hotness, 'hotness');
+    }
+
+    if (search) {
+      qb.andWhere(
+        new Brackets(bracketQb =>
+          bracketQb
+            .where(`similarity(metaData.title, :search) > 0.2`)
+            .orWhere(`similarity(metaData.description, :search) > 0.2`),
+        ),
+      )
+        .setParameter('search', search)
+        .addSelect(
+          `GREATEST(
+            similarity(metaData.title, :search),
+            similarity(metaData.description, :search)
+          )`,
+          'rank',
+        )
+        .orderBy('rank', 'DESC');
+    }
+    if (filter) {
+      this._applyDateRange(qb, filter);
+    }
+
+    if (sort) {
+      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
+      Object.keys(sortObj).forEach(key => {
+        let field;
+        if (['viewCount', 'avgRating', 'releaseDate'].includes(key)) {
+          field = `metaData.${key}`;
+        } else {
+          field = key.includes('.') ? key : `tvseries.${key}`;
+        }
+        qb.addOrderBy(field, sortObj[key]);
+      });
+    } else if (!search && !defaultOrder) {
+      qb.orderBy('tvseries.metaData.releaseDate', 'DESC');
+    }
+
+    return qb;
+  }
 
   /**
    * Helper gắn video vào episodes
@@ -55,48 +181,98 @@ export class TvSeriesService {
    * Lấy danh sách TV series (có gắn videos)
    */
   async findAll(query?: any) {
-    const { page = 1, limit = 10, sort, search } = query || {};
-
-    const qb = this.tvSeriesRepository
-      .createQueryBuilder('tvseries')
-      .leftJoinAndSelect('tvseries.metaData', 'metaData')
-      .leftJoinAndSelect('metaData.categories', 'categories')
-      .leftJoinAndSelect('metaData.tags', 'tags')
-      .leftJoinAndSelect('metaData.actors', 'actors')
-      .leftJoinAndSelect('metaData.directors', 'directors')
-      .leftJoinAndSelect('tvseries.seasons', 'seasons')
-      .leftJoinAndSelect('seasons.episodes', 'episodes');
-
-    if (search) {
-      qb.where(`similarity(metaData.title, :search) > 0.2`)
-        .orWhere(`similarity(metaData.description, :search) > 0.2`)
-        .setParameter('search', search)
-        .addSelect(
-          `GREATEST(
-            similarity(metaData.title, :search),
-            similarity(metaData.description, :search)
-          )`,
-          'rank',
-        )
-        .orderBy('rank', 'DESC');
-    }
-
-    if (sort) {
-      const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
-      Object.entries(sortObj).forEach(([key, dir]) => {
-        const field = key.includes('.') ? key : `tvseries.${key}`;
-        qb.addOrderBy(field, dir as 'ASC' | 'DESC');
-      });
-    } else if (!search) {
-      qb.orderBy('tvseries.createdAt', 'DESC');
-    }
+    const { page = 1, limit = 10 } = query || {};
+    const qb = this._buildSeriesQuery(query, {
+      defaultOrder: { field: 'tvseries.metaData.releaseDate', direction: 'DESC' },
+    });
 
     const [data, total] = await qb
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
-    const resultWithVideos = await this._attachVideosToEpisodes(data);
-    return { data: resultWithVideos, total };
+    return { data: data, total };
+  }
+
+  /**
+   * Lấy list TV series trending
+   */
+  async findTrending(query?: any) {
+    const { page = 1, limit = 10 } = query || {};
+    const qb = this._buildSeriesQuery(query, {
+      includeHotness: true,
+      defaultOrder: { field: 'tvseries.metaData.releaseDate', direction: 'DESC' },
+    });
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data: data, total };
+  }
+
+  async findByCategoryId(categoryId: string, query?: any) {
+    const { page = 1, limit = 10 } = query || {};
+    const qb = this._buildSeriesQuery(query, {
+      defaultOrder: { field: 'tvseries.metaData.releaseDate', direction: 'DESC' },
+    });
+    qb.andWhere('categories.id = :categoryId', { categoryId });
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return { data: data, total };
+  }
+
+  async findTvSeriesWithNewEpisodes(query?: any) {
+    const { page = 1, limit = 10 } = query || {};
+    const qb = this._buildSeriesQuery(query, {
+      defaultOrder: { field: 'metaData.releaseDate', direction: 'DESC' },
+    });
+
+    // Join với seasons và episodes (KHÔNG join video vì không có relation)
+    qb.leftJoinAndSelect('tvseries.seasons', 'seasons').leftJoinAndSelect(
+      'seasons.episodes',
+      'episodes',
+    );
+
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    // Transform data để lấy latestEpisode và attach video
+    const result = await Promise.all(
+      data.map(async series => {
+        let latestEpisode: EntityEpisode | null = null;
+
+        if (series.seasons && series.seasons.length > 0) {
+          // Tìm episode mới nhất dựa trên createdAt
+          const allEpisodes = series.seasons
+            .flatMap(season => season.episodes || [])
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+          latestEpisode = allEpisodes[0] || null;
+
+          // ✅ Load video cho latestEpisode qua ownerId và ownerType
+          if (latestEpisode) {
+            const video = await this.videoService.findByOwner(
+              latestEpisode.id,
+              VideoOwnerType.EPISODE,
+            );
+            latestEpisode['video'] = video || null;
+          }
+        }
+
+        // Remove seasons để match với TVSeriesWithNewEpisode DTO
+        const { seasons, ...seriesWithoutSeasons } = series;
+
+        return {
+          ...seriesWithoutSeasons,
+          latestEpisode,
+        };
+      }),
+    );
+
+    return { data: result, total };
   }
 
   /**

@@ -87,6 +87,27 @@ export class TVSeriesDto extends BaseEntityDto {
   @Expose()
   seasons: SeasonDto[];
 }
+
+export class TVSeriesSummaryDto extends OmitType(TVSeriesDto, ['seasons']) {
+  @ApiProperty({
+    description: 'Total number of seasons in the TV series',
+    example: 42,
+  })
+  @IsNotEmpty()
+  @Expose()
+  totalSeasons: number;
+}
+
+export class TVSeriesWithNewEpisode extends OmitType(TVSeriesDto, ['seasons']) {
+  @ApiProperty({
+    description: 'Latest episode information',
+    type: EpisodeDto,
+  })
+  @Type(() => EpisodeDto)
+  @ValidateNested()
+  @Expose()
+  latestEpisode: EpisodeDto;
+}
 export class CreateTVSeriesDto extends OmitType(TVSeriesDto, [
   'id',
   'createdAt',
@@ -135,4 +156,30 @@ export class UpdateTVSeriesDto extends OmitType(TVSeriesDto, [
   @Type(() => UpdateContentDto)
   @Expose()
   metaData: UpdateContentDto;
+}
+
+export class TVSeriesCategory {
+  @ApiProperty({
+    description: 'Category ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsNotEmpty()
+  @Expose()
+  id: string;
+
+  @ApiProperty({
+    description: 'Category Name',
+    example: 'Drama',
+  })
+  @IsNotEmpty()
+  @Expose()
+  categoryName: string;
+
+  @ApiProperty({
+    description: 'Number of TV series in this category',
+    example: 42,
+  })
+  @IsNotEmpty()
+  @Expose()
+  tvSeriesCount: number;
 }

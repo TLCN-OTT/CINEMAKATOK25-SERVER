@@ -1,5 +1,7 @@
 import { ContentType } from 'src/cms/entities/content.entity';
 
+import e from 'express';
+
 import { MaturityRating } from '@app/common/enums/global.enum';
 
 // ========================= // CATEGORY SEED // =========================
@@ -440,3 +442,94 @@ export const moviesSeed = [
   },
   ...generateMovies(100),
 ];
+
+function generateTVSeries(count: number) {
+  const series: Array<{
+    duration: number;
+    metaData: {
+      type: ContentType.TVSERIES;
+      title: string;
+      description: string;
+      releaseDate: Date;
+      thumbnail: string;
+      banner: string;
+      trailer: string;
+      rating: number;
+      maturityRating: MaturityRating;
+      viewCount: number;
+      categories: typeof categoriesSeed;
+      tags: typeof tagsSeed;
+      actors: typeof actorsSeed;
+      directors: typeof directorsSeed;
+    };
+    seasons: Array<{
+      seasonNumber: number;
+      totalEpisodes: number;
+      episodes: Array<{
+        episodeNumber: number;
+        episodeDuration: number;
+        episodeTitle: string;
+        video: {
+          videoUrl: string;
+          duration: number;
+        };
+      }>;
+    }>;
+  }> = [];
+  for (let i = 0; i < count; i++) {
+    series.push({
+      duration: 40 + Math.floor(Math.random() * 20),
+      metaData: {
+        type: ContentType.TVSERIES,
+        title: `TV Series ${i + 1}`,
+        description: `Description for TV Series ${i + 1}. Auto-generated for testing.`,
+        releaseDate: new Date(
+          2000 + Math.floor(Math.random() * 25),
+          Math.floor(Math.random() * 12),
+          Math.floor(Math.random() * 28) + 1,
+        ),
+        thumbnail: `https://yourdomain.com/thumbnails/tvseries${i + 1}.png`,
+        banner: `https://yourdomain.com/banners/tvseries${i + 1}.jpg`,
+        trailer: `https://yourdomain.com/trailers/tvseries${i + 1}.mp4`,
+        rating: +(6 + Math.random() * 3.5).toFixed(1),
+        maturityRating: Object.values(MaturityRating)[
+          Math.floor(Math.random() * Object.values(MaturityRating).length)
+        ] as MaturityRating,
+        viewCount: 500000 + Math.floor(Math.random() * 1500000),
+        categories: [categoriesSeed[i % categoriesSeed.length]],
+        tags: [tagsSeed[i % tagsSeed.length]],
+        actors: [actorsSeed[i % actorsSeed.length]],
+        directors: [directorsSeed[i % directorsSeed.length]],
+      },
+      seasons: [
+        {
+          seasonNumber: 1,
+          totalEpisodes: 2,
+          episodes: [
+            {
+              episodeNumber: 1,
+              episodeDuration: 20 + Math.floor(Math.random() * 20),
+              episodeTitle: `Episode 1 of TV Series ${i + 1}`,
+              video: {
+                videoUrl: `https://yourdomain.com/tvseries${i + 1}/s1e1.mp4`,
+                duration: 20 + Math.floor(Math.random() * 20),
+              },
+            },
+            {
+              episodeNumber: 2,
+              episodeDuration: 20 + Math.floor(Math.random() * 20),
+              episodeTitle: `Episode 2 of TV Series ${i + 1}`,
+              video: {
+                videoUrl: `https://yourdomain.com/tvseries${i + 1}/s1e2.mp4`,
+                duration: 20 + Math.floor(Math.random() * 20),
+              },
+            },
+          ],
+        },
+      ],
+    });
+  }
+  return series;
+}
+
+export const tvSeriesSeed = [...generateTVSeries(60)];

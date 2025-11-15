@@ -29,6 +29,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../dtos/category.dto';
+import { TVSeriesCategory } from '../dtos/tvseries.dto';
 import { CategoryService } from '../services/category.service';
 
 @Controller({
@@ -106,6 +107,20 @@ export class CategoryController {
       currentPage: query.page || 1,
       itemsPerPage: query.limit || 10,
       message: 'Categories retrieved successfully',
+    });
+  }
+  @Get('with-count')
+  @ApiOperation({ summary: 'Get all categories with TV series count' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of categories with total TV series',
+    type: PaginatedApiResponseDto(TVSeriesCategory),
+  })
+  async findAllWithCount() {
+    const categories = await this.categoryService.findAllWithTVSeriesCount();
+    return ResponseBuilder.createResponse({
+      data: plainToInstance(TVSeriesCategory, categories, { excludeExtraneousValues: true }),
+      message: 'Categories with count retrieved successfully',
     });
   }
 
