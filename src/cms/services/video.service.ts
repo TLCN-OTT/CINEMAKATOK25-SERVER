@@ -194,4 +194,15 @@ export class VideoService {
       },
     );
   }
+  /**
+   * Tìm video theo ownerId và ownerType
+   */
+  async findByOwner(ownerId: string, ownerType: VideoOwnerType): Promise<EntityVideo | null> {
+    return await this.videoRepository.findOne({
+      where: {
+        ownerId,
+        ownerType,
+      },
+    });
+  }
 }
