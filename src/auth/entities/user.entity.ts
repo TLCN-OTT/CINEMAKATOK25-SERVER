@@ -1,5 +1,6 @@
 import { EntityFavorite } from 'src/pep/entities/favorite.entity';
 import { EntityReview } from 'src/pep/entities/review.entity';
+import { EntityWatchProgress } from 'src/pep/entities/watch-progress.entity';
 import { EntityWatchList } from 'src/pep/entities/watchlist.entity';
 
 import { Column, Entity, OneToMany, Unique } from 'typeorm';
@@ -60,4 +61,7 @@ export class EntityUser extends PersonEntity {
 
   @OneToMany(() => EntityFavorite, favorite => favorite.user)
   favorites: EntityFavorite[];
+
+  @OneToMany(() => EntityWatchProgress, watchProgress => watchProgress.user)
+  watchProgress: EntityWatchProgress[];
 }

@@ -149,10 +149,10 @@ async function bootstrap() {
         console.log('✅ Local HLS files deleted');
 
         // Delete original input file (moved from earlier)
-        if (fs.existsSync(inputPath)) {
-          await fsPromises.unlink(inputPath);
-          console.log(`🗑️  Deleted original uploaded file: ${inputPath}`);
-        }
+        // if (fs.existsSync(inputPath)) {
+        //   await fsPromises.unlink(inputPath);
+        //   console.log(`🗑️  Deleted original uploaded file: ${inputPath}`);
+        // }
 
         // Update video entity
         const duration = ((Date.now() - startTime) / 1000).toFixed(2);
