@@ -250,6 +250,39 @@ export class TvSeriesController {
     });
   }
 
+  @Get('recommendations/:id')
+  @ApiOperation({ summary: 'Get TV series recommendations by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of recommended TV series',
+    type: PaginatedApiResponseDto(TVSeriesSummaryDto),
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  async getRecommendations(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    const result = await this.tvSeriesService.getTVSeriesRecommendationsFromTVSeriesId(id, query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: plainToInstance(TVSeriesSummaryDto, result.data, { excludeExtraneousValues: true }),
+      totalItems: result.total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'TV series recommendations retrieved successfully',
+    });
+  }
+
   @Put(':id')
   @UseGuards(JwtAuthGuard, IsAdminGuard)
   @ApiOperation({ summary: '[ADMIN] Update a TV series' })
