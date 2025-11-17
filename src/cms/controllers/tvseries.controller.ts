@@ -20,7 +20,13 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { CreateTVSeriesDto, TVSeriesDto, UpdateTVSeriesDto } from '../dtos/tvseries.dto';
+import {
+  CreateTVSeriesDto,
+  TVSeriesDto,
+  TVSeriesSummaryDto,
+  TVSeriesWithNewEpisode,
+  UpdateTVSeriesDto,
+} from '../dtos/tvseries.dto';
 import { TvSeriesService } from '../services/tvseries.service';
 
 @Controller({
@@ -59,19 +65,154 @@ export class TvSeriesController {
     required: false,
     description: 'Search movies by title',
   })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    description: 'Filter movies by date range (e.g., {"range":"last_month"})',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of all TV series',
-    type: PaginatedApiResponseDto(TVSeriesDto),
+    type: PaginatedApiResponseDto(TVSeriesSummaryDto),
   })
   async findAll(@Query() query: PaginationQueryDto) {
+    console.log('Fetching all TV series with query:', query);
     const { data, total } = await this.tvSeriesService.findAll(query);
     return ResponseBuilder.createPaginatedResponse({
-      data: plainToInstance(TVSeriesDto, data, { excludeExtraneousValues: true }),
+      data: plainToInstance(TVSeriesSummaryDto, data, { excludeExtraneousValues: true }),
       totalItems: total,
       currentPage: query.page || 1,
       itemsPerPage: query.limit || 10,
       message: 'Movies retrieved successfully',
+    });
+  }
+
+  @Get('/trending')
+  @ApiOperation({ summary: 'Get trending TV series' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of trending TV series',
+    type: PaginatedApiResponseDto(TVSeriesSummaryDto),
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for TV series',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search TV series by title',
+  })
+  async getTrendingSeries(@Query() query: PaginationQueryDto) {
+    const result = await this.tvSeriesService.findTrending(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: plainToInstance(TVSeriesSummaryDto, result.data, { excludeExtraneousValues: true }),
+      totalItems: result.total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Trending TV series retrieved successfully',
+    });
+  }
+
+  @Get('/category/:categoryId')
+  @ApiOperation({ summary: 'Get TV series by category ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of TV series by category',
+    type: PaginatedApiResponseDto(TVSeriesSummaryDto),
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for TV series',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search TV series by title',
+  })
+  async getTvSeriesByCategoryId(
+    @Param('categoryId', new ParseUUIDPipe()) categoryId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    const { data, total } = await this.tvSeriesService.findByCategoryId(categoryId, query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: plainToInstance(TVSeriesDto, data, { excludeExtraneousValues: true }),
+      message: 'TV series by category retrieved successfully',
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+    });
+  }
+
+  @Get('/new-episodes')
+  @ApiOperation({ summary: 'Get TV series with new episodes' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of TV series with new episodes',
+    type: PaginatedApiResponseDto(TVSeriesWithNewEpisode),
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for TV series',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search TV series by title',
+  })
+  async getTvSeriesWithNewEpisodes(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.tvSeriesService.findTvSeriesWithNewEpisodes(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: plainToInstance(TVSeriesWithNewEpisode, data, { excludeExtraneousValues: true }),
+      message: 'TV series with new episodes retrieved successfully',
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
     });
   }
   @Get(':id')

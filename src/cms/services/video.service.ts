@@ -88,6 +88,7 @@ export class VideoService {
       Object.assign(video, {
         videoUrl: updateDto.videoUrl,
         status: updateDto.status,
+        thumbnailUrl: updateDto.thumbnailUrl,
       });
 
       return await this.videoRepository.save(video);
@@ -192,5 +193,16 @@ export class VideoService {
         ownerId: null,
       },
     );
+  }
+  /**
+   * Tìm video theo ownerId và ownerType
+   */
+  async findByOwner(ownerId: string, ownerType: VideoOwnerType): Promise<EntityVideo | null> {
+    return await this.videoRepository.findOne({
+      where: {
+        ownerId,
+        ownerType,
+      },
+    });
   }
 }

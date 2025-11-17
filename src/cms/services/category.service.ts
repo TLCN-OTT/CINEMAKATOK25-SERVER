@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../dtos/category.dto';
 import { EntityCategory } from '../entities/category.entity';
+import { ContentType } from '../entities/content.entity';
 
 @Injectable()
 export class CategoryService {
@@ -119,5 +120,18 @@ export class CategoryService {
       )
       .orderBy('similarity(category.categoryName, :query)', 'DESC')
       .getMany();
+  }
+
+  async findAllWithTVSeriesCount() {
+    const categories = await this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoin('category.contents', 'contents', 'contents.type = :type', {
+        type: ContentType.TVSERIES,
+      })
+      .loadRelationCountAndMap('category.tvSeriesCount', 'category.contents', 'contents', qb =>
+        qb.where('contents.type = :type', { type: ContentType.TVSERIES }),
+      )
+      .getMany();
+    return categories;
   }
 }
