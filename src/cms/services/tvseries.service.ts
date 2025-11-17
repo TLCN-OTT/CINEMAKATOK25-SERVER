@@ -274,6 +274,93 @@ export class TvSeriesService {
 
     return { data: result, total };
   }
+  async getTVSeriesRecommendationsFromTVSeriesId(tvSeriesId: string, query?: any) {
+    const { page = 1, limit = 10 } = query || {};
+    // lay thong tin tvseries hien tai
+    const tvseries = await this.findOne(tvSeriesId);
+
+    // so sanh the loai va tag de lay danh sach giong nhau
+    //Tạo query builder với similarity score
+    const qb = this.tvSeriesRepository
+      .createQueryBuilder('tvseries')
+      .leftJoinAndSelect('tvseries.metaData', 'metaData')
+      .leftJoinAndSelect('metaData.categories', 'categories')
+      .leftJoinAndSelect('metaData.tags', 'tags')
+      .leftJoinAndSelect('metaData.actors', 'actors')
+      .leftJoinAndSelect('metaData.directors', 'directors')
+      .where('tvseries.id != :tvSeriesId', { tvSeriesId });
+
+    // Build similarity score
+    const similarityParts: string[] = [];
+    const params: Record<string, any> = { tvSeriesId };
+    // 1. So sánh description (weight: 0.3)
+    if (tvseries.metaData?.description) {
+      similarityParts.push(`(similarity(LOWER(metaData.description), LOWER(:description)) * 0.3)`);
+      params.description = tvseries.metaData.description;
+    }
+
+    // 2. So sánh title (weight: 0.2)
+    if (tvseries.metaData?.title) {
+      similarityParts.push(`(similarity(LOWER(metaData.title), LOWER(:title)) * 0.2)`);
+      params.title = tvseries.metaData.title;
+    }
+
+    // 3. Cùng thể loại (weight: 0.25)
+    const categoryIds = tvseries.metaData?.categories?.map(c => c.id) || [];
+    if (categoryIds.length > 0) {
+      qb.leftJoin('metaData.categories', 'matchCat');
+      similarityParts.push(
+        `(COALESCE(COUNT(DISTINCT CASE WHEN matchCat.id IN (:...categoryIds) THEN matchCat.id END), 0) * 0.25 / :categoryCount)`,
+      );
+      params.categoryIds = categoryIds;
+      params.categoryCount = categoryIds.length;
+    }
+
+    // 4. Cùng diễn viên (weight: 0.15)
+    const actorIds = tvseries.metaData?.actors?.map(a => a.id) || [];
+    if (actorIds.length > 0) {
+      qb.leftJoin('metaData.actors', 'matchActor');
+      similarityParts.push(
+        `(COALESCE(COUNT(DISTINCT CASE WHEN matchActor.id IN (:...actorIds) THEN matchActor.id END), 0) * 0.15 / :actorCount)`,
+      );
+      params.actorIds = actorIds;
+      params.actorCount = actorIds.length;
+    }
+
+    // 5. Cùng đạo diễn (weight: 0.1)
+    const directorIds = tvseries.metaData?.directors?.map(d => d.id) || [];
+    if (directorIds.length > 0) {
+      qb.leftJoin('metaData.directors', 'matchDirector');
+      similarityParts.push(
+        `(COALESCE(COUNT(DISTINCT CASE WHEN matchDirector.id IN (:...directorIds) THEN matchDirector.id END), 0) * 0.1 / :directorCount)`,
+      );
+      params.directorIds = directorIds;
+      params.directorCount = directorIds.length;
+    }
+
+    // Tổng hợp similarity score
+    const similarityScore = similarityParts.length > 0 ? similarityParts.join(' + ') : '0';
+
+    qb.addSelect(`(${similarityScore})`, 'similarity_score')
+      .setParameters(params)
+      .groupBy('tvseries.id')
+      .addGroupBy('metaData.id')
+      .addGroupBy('categories.id')
+      .addGroupBy('tags.id')
+      .addGroupBy('actors.id')
+      .addGroupBy('directors.id')
+      .orderBy('similarity_score', 'DESC')
+      .addOrderBy('metaData.avgRating', 'DESC') // Sắp xếp phụ theo rating
+      .addOrderBy('metaData.viewCount', 'DESC') // Và view count
+      .loadRelationCountAndMap('tvseries.totalSeasons', 'tvseries.seasons');
+
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data: data, total };
+  }
 
   /**
    * Lấy 1 TV series chi tiết
