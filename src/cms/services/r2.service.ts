@@ -14,7 +14,7 @@ export class R2StorageService {
   constructor(private configService: ConfigService) {
     const accessKeyId = this.configService.get('r2.accessKeyId');
     const secretAccessKey = this.configService.get('r2.secretAccessKey');
-    this.bucketName = this.configService.get('r2.bucketNameR2', '');
+    this.bucketName = this.configService.get('r2.bucketName', '');
 
     // ✅ R2 endpoint format: https://<ACCOUNT_ID>.r2.cloudflarestorage.com
     const endpoint = this.configService.get(
