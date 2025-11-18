@@ -6,13 +6,13 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 export class WatchProgressDto extends BaseEntityDto {
   @ApiProperty({
-    description: 'ID of the content being watched',
+    description: 'ID of the video being watched',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @Expose()
   @IsUUID()
-  @Transform(({ obj }) => obj.content?.id || obj.contentId)
-  contentId: string;
+  @Transform(({ obj }) => obj.video?.id || obj.videoId)
+  videoId: string;
 
   @ApiProperty({
     description: 'Title of the content being watched',
@@ -21,17 +21,17 @@ export class WatchProgressDto extends BaseEntityDto {
   })
   @Expose()
   @IsString()
-  @Transform(({ obj }) => obj.content?.title)
+  @Transform(({ obj }) => obj.video?.videoUrl || obj.contentTitle)
   contentTitle: string | null;
 
   @ApiProperty({
-    description: 'Thumbnail of the content',
+    description: 'Thumbnail of the video',
     example: 'https://example.com/thumbnail.jpg',
     nullable: true,
   })
   @Expose()
   @IsString()
-  @Transform(({ obj }) => obj.content?.thumbnail)
+  @Transform(({ obj }) => obj.video?.thumbnailUrl || obj.contentThumbnail)
   contentThumbnail: string | null;
 
   @ApiProperty({
@@ -59,17 +59,7 @@ export class WatchProgressDto extends BaseEntityDto {
   isCompleted: boolean;
 
   @ApiProperty({
-    description: 'Episode ID for TV series (if applicable)',
-    example: '550e8400-e29b-41d4-a716-446655440001',
-    nullable: true,
-  })
-  @Expose()
-  @IsOptional()
-  @IsUUID()
-  episodeId: string | null;
-
-  @ApiProperty({
-    description: 'Movie ID (if the content is a movie)',
+    description: 'Movie ID (if the video belongs to a movie)',
     example: '550e8400-e29b-41d4-a716-446655440002',
     nullable: true,
   })
@@ -77,6 +67,16 @@ export class WatchProgressDto extends BaseEntityDto {
   @IsOptional()
   @IsUUID()
   movieId: string | null;
+
+  @ApiProperty({
+    description: 'Episode ID (if the video belongs to an episode)',
+    example: '550e8400-e29b-41d4-a716-446655440001',
+    nullable: true,
+  })
+  @Expose()
+  @IsOptional()
+  @IsUUID()
+  episodeId: string | null;
 
   @ApiProperty({
     description: 'Full content metadata including description, release date, rating, etc.',
@@ -96,15 +96,24 @@ export class WatchProgressDto extends BaseEntityDto {
   @IsOptional()
   @IsNumber()
   duration: number | null;
+
+  @ApiProperty({
+    description: 'Video information',
+    type: Object,
+    nullable: true,
+  })
+  @Expose()
+  @IsOptional()
+  video: Record<string, any> | null;
 }
 
 export class CreateWatchProgressDto {
   @ApiProperty({
-    description: 'ID of the content being watched',
+    description: 'ID of the video being watched',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsUUID()
-  contentId: string;
+  videoId: string;
 
   @ApiProperty({
     description: 'Duration watched in seconds',
@@ -112,16 +121,6 @@ export class CreateWatchProgressDto {
   })
   @IsNumber()
   watchedDuration: number;
-
-  @ApiProperty({
-    description: 'Episode ID for TV series (if applicable)',
-    example: '550e8400-e29b-41d4-a716-446655440001',
-    nullable: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsUUID()
-  episodeId?: string | null;
 }
 
 export class UpdateWatchProgressDto {
@@ -142,23 +141,13 @@ export class UpdateWatchProgressDto {
   @IsOptional()
   @IsBoolean()
   isCompleted?: boolean;
-
-  @ApiProperty({
-    description: 'Episode ID for TV series (if applicable)',
-    example: '550e8400-e29b-41d4-a716-446655440001',
-    nullable: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsUUID()
-  episodeId?: string | null;
 }
 
 export class ResumeWatchDto {
   @ApiProperty({
-    description: 'ID of the content to resume',
+    description: 'ID of the video to resume',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsUUID()
-  contentId: string;
+  videoId: string;
 }

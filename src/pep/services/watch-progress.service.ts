@@ -1,6 +1,6 @@
 import { EntityUser } from 'src/auth/entities/user.entity';
-import { EntityContent } from 'src/cms/entities/content.entity';
-import { ContentService } from 'src/cms/services/content.service';
+import { EntityVideo } from 'src/cms/entities/video.entity';
+import { VideoService } from 'src/cms/services/video.service';
 
 import { Repository } from 'typeorm';
 
@@ -21,42 +21,38 @@ export class WatchProgressService {
   constructor(
     @InjectRepository(EntityWatchProgress)
     private readonly watchProgressRepository: Repository<EntityWatchProgress>,
-    private readonly contentService: ContentService,
+    private readonly videoService: VideoService,
   ) {}
 
   /**
-   * Create or get existing watch progress for a content
+   * Create or get existing watch progress for a video
    */
   async updateWatchProgress(userId: string, createDto: CreateWatchProgressDto) {
-    // Kiểm tra content tồn tại
-    const content = await this.contentService.findContentById(createDto.contentId);
+    // Kiểm tra video tồn tại
+    const video = await this.videoService.findOne(createDto.videoId);
 
     // Tìm watch progress hiện tại
     let watchProgress = await this.watchProgressRepository.findOne({
       where: {
         user: { id: userId },
-        content: { id: createDto.contentId },
+        video: { id: createDto.videoId },
       },
-      relations: ['user', 'content'],
+      relations: ['user', 'video'],
     });
 
     if (!watchProgress) {
       // Tạo mới
       watchProgress = this.watchProgressRepository.create({
         user: { id: userId } as EntityUser,
-        content,
+        video,
         watchedDuration: createDto.watchedDuration,
         lastWatched: new Date(),
-        episodeId: createDto.episodeId || null,
         isCompleted: false,
       });
     } else {
       // Cập nhật
       watchProgress.watchedDuration = createDto.watchedDuration;
       watchProgress.lastWatched = new Date();
-      if (createDto.episodeId) {
-        watchProgress.episodeId = createDto.episodeId;
-      }
     }
 
     return this.watchProgressRepository.save(watchProgress);
@@ -65,18 +61,18 @@ export class WatchProgressService {
   /**
    * Update watch progress with additional fields
    */
-  async updateProgress(userId: string, contentId: string, updateDto: UpdateWatchProgressDto) {
+  async updateProgress(userId: string, videoId: string, updateDto: UpdateWatchProgressDto) {
     let watchProgress = await this.watchProgressRepository.findOne({
       where: {
         user: { id: userId },
-        content: { id: contentId },
+        video: { id: videoId },
       },
-      relations: ['user', 'content'],
+      relations: ['user', 'video'],
     });
 
     if (!watchProgress) {
       throw new NotFoundException({
-        message: `Watch progress for content ${contentId} not found`,
+        message: `Watch progress for video ${videoId} not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -89,30 +85,26 @@ export class WatchProgressService {
       watchProgress.isCompleted = updateDto.isCompleted;
     }
 
-    if (updateDto.episodeId !== undefined) {
-      watchProgress.episodeId = updateDto.episodeId;
-    }
-
     watchProgress.lastWatched = new Date();
 
     return this.watchProgressRepository.save(watchProgress);
   }
 
   /**
-   * Get watch progress for a specific content by user
+   * Get watch progress for a specific video by user
    */
-  async getWatchProgress(userId: string, contentId: string) {
+  async getWatchProgress(userId: string, videoId: string) {
     const watchProgress = await this.watchProgressRepository.findOne({
       where: {
         user: { id: userId },
-        content: { id: contentId },
+        video: { id: videoId },
       },
-      relations: ['user', 'content'],
+      relations: ['user', 'video'],
     });
 
     if (!watchProgress) {
       throw new NotFoundException({
-        message: `Watch progress for content ${contentId} not found`,
+        message: `Watch progress for video ${videoId} not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -121,15 +113,15 @@ export class WatchProgressService {
   }
 
   /**
-   * Get resume data for a content (để tiếp tục xem)
+   * Get resume data for a video (để tiếp tục xem)
    */
-  async getResumeData(userId: string, contentId: string) {
+  async getResumeData(userId: string, videoId: string) {
     const watchProgress = await this.watchProgressRepository.findOne({
       where: {
         user: { id: userId },
-        content: { id: contentId },
+        video: { id: videoId },
       },
-      relations: ['content'],
+      relations: ['video'],
     });
 
     if (!watchProgress) {
@@ -138,13 +130,12 @@ export class WatchProgressService {
     }
 
     return {
-      contentId: watchProgress.content.id,
-      contentTitle: watchProgress.content.title,
-      contentThumbnail: watchProgress.content.thumbnail,
+      videoId: watchProgress.video.id,
+      contentTitle: watchProgress.video.videoUrl, // Placeholder, need to get from owner
+      contentThumbnail: watchProgress.video.thumbnailUrl,
       watchedDuration: watchProgress.watchedDuration,
       lastWatched: watchProgress.lastWatched,
       isCompleted: watchProgress.isCompleted,
-      episodeId: watchProgress.episodeId,
     };
   }
 
@@ -159,12 +150,11 @@ export class WatchProgressService {
 
     const queryBuilder = this.watchProgressRepository
       .createQueryBuilder('wp')
-      .leftJoinAndSelect('wp.content', 'content')
+      .leftJoinAndSelect('wp.video', 'video')
       .where('wp.user_id = :userId', { userId });
 
-    if (search) {
-      queryBuilder.andWhere('content.title ILIKE :search', { search: `%${search}%` });
-    }
+    // Note: Search is not applicable for videos directly, as they don't have titles
+    // You might need to join with owner entities if needed
 
     if (isCompleted !== undefined) {
       queryBuilder.andWhere('wp.isCompleted = :isCompleted', { isCompleted });
@@ -184,38 +174,105 @@ export class WatchProgressService {
       .take(limit)
       .getManyAndCount();
 
-    // Enrich data with movie/episode information
+    // Enrich data with video information
     const enrichedData = await Promise.all(
       data.map(async item => {
-        let duration = null;
-        let movieId = null;
+        let duration: number | null = null;
+        let movieId: string | null = null;
+        let episodeId: string | null = null;
+        let contentTitle: string | null = null;
+        let contentThumbnail: string | null = null;
+        let metadata: Record<string, any> | null = null;
 
-        // If episodeId exists, get duration from episode
-        if (item.episodeId) {
-          const episode = await this.watchProgressRepository.manager
-            .createQueryBuilder()
-            .select('episode')
-            .from('EntityEpisode', 'episode')
-            .where('episode.id = :episodeId', { episodeId: item.episodeId })
-            .getOne();
-          duration = episode?.episodeDuration || null;
-        } else {
-          // Otherwise, get duration from movie
-          const movieEntity = await this.watchProgressRepository.manager
-            .createQueryBuilder()
-            .select('movie')
-            .from('EntityMovie', 'movie')
-            .leftJoinAndSelect('movie.metaData', 'metaData')
-            .where('metaData.id = :contentId', { contentId: item.content.id })
-            .getOne();
-          movieId = movieEntity?.id || null;
-          duration = movieEntity?.duration || null;
+        // Get owner info from video
+        try {
+          if (item.video.ownerId && item.video.ownerType) {
+            const ownerInfo = await this.videoService.getMovieOrSeriesIdFromVideo(item.video.id);
+            if (ownerInfo && 'movieId' in ownerInfo && ownerInfo.movieId) {
+              movieId = ownerInfo.movieId;
+              // Get movie metadata
+              const movie = await this.watchProgressRepository.manager
+                .createQueryBuilder()
+                .select('movie')
+                .from('EntityMovie', 'movie')
+                .leftJoinAndSelect('movie.metaData', 'metaData')
+                .where('movie.id = :movieId', { movieId: ownerInfo.movieId })
+                .getOne();
+              if (movie) {
+                contentTitle = movie.metaData?.title || null;
+                contentThumbnail = movie.metaData?.thumbnail || null;
+                duration = movie.duration || null;
+                metadata = movie.metaData
+                  ? {
+                      id: movie.metaData.id,
+                      title: movie.metaData.title,
+                      description: movie.metaData.description,
+                      thumbnail: movie.metaData.thumbnail,
+                      banner: movie.metaData.banner,
+                      trailer: movie.metaData.trailer,
+                      type: movie.metaData.type,
+                      releaseDate: movie.metaData.releaseDate,
+                      avgRating: movie.metaData.avgRating,
+                      imdbRating: movie.metaData.imdbRating,
+                      maturityRating: movie.metaData.maturityRating,
+                      viewCount: movie.metaData.viewCount,
+                    }
+                  : null;
+              }
+            } else if (ownerInfo && 'tvSeriesId' in ownerInfo && ownerInfo.tvSeriesId) {
+              // For TV series, get series metadata and episode duration if applicable
+              const tvSeries = await this.watchProgressRepository.manager
+                .createQueryBuilder()
+                .select('tvseries')
+                .from('EntityTvseries', 'tvseries')
+                .leftJoinAndSelect('tvseries.metaData', 'metaData')
+                .where('tvseries.id = :tvSeriesId', { tvSeriesId: ownerInfo.tvSeriesId })
+                .getOne();
+              if (tvSeries) {
+                contentTitle = tvSeries.metaData?.title || null;
+                contentThumbnail = tvSeries.metaData?.thumbnail || null;
+                metadata = tvSeries.metaData
+                  ? {
+                      id: tvSeries.metaData.id,
+                      title: tvSeries.metaData.title,
+                      description: tvSeries.metaData.description,
+                      thumbnail: tvSeries.metaData.thumbnail,
+                      banner: tvSeries.metaData.banner,
+                      trailer: tvSeries.metaData.trailer,
+                      type: tvSeries.metaData.type,
+                      releaseDate: tvSeries.metaData.releaseDate,
+                      avgRating: tvSeries.metaData.avgRating,
+                      imdbRating: tvSeries.metaData.imdbRating,
+                      maturityRating: tvSeries.metaData.maturityRating,
+                      viewCount: tvSeries.metaData.viewCount,
+                    }
+                  : null;
+              }
+              // Get duration from episode if video is for episode
+              if (item.video.ownerType === 'episode' && item.video.ownerId) {
+                episodeId = item.video.ownerId;
+                const episode = await this.watchProgressRepository.manager
+                  .createQueryBuilder()
+                  .select('episode')
+                  .from('EntityEpisode', 'episode')
+                  .where('episode.id = :episodeId', { episodeId: item.video.ownerId })
+                  .getOne();
+                duration = episode?.episodeDuration || null;
+              }
+            }
+          }
+        } catch (error) {
+          // Ignore if video not found or error
         }
 
         return {
           ...item,
           movieId,
+          episodeId,
           duration,
+          contentTitle,
+          contentThumbnail,
+          metadata,
         };
       }),
     );
@@ -224,14 +281,14 @@ export class WatchProgressService {
   }
 
   /**
-   * Get watch history (các content đã xem)
+   * Get watch history (các video đã xem)
    */
   async getWatchHistory(userId: string, query: PaginationQueryDto) {
     const { page = 1, limit = 10, sort } = query || {};
 
     const queryBuilder = this.watchProgressRepository
       .createQueryBuilder('wp')
-      .leftJoinAndSelect('wp.content', 'content')
+      .leftJoinAndSelect('wp.video', 'video')
       .where('wp.user_id = :userId', { userId })
       .andWhere('wp.lastWatched IS NOT NULL');
 
@@ -253,12 +310,12 @@ export class WatchProgressService {
   }
 
   /**
-   * Get recently watched contents (top 10)
+   * Get recently watched videos (top 10)
    */
   async getRecentlyWatched(userId: string, limit: number = 10) {
     const watchProgress = await this.watchProgressRepository
       .createQueryBuilder('wp')
-      .leftJoinAndSelect('wp.content', 'content')
+      .leftJoinAndSelect('wp.video', 'video')
       .where('wp.user_id = :userId', { userId })
       .andWhere('wp.lastWatched IS NOT NULL')
       .orderBy('wp.lastWatched', 'DESC')
@@ -269,19 +326,19 @@ export class WatchProgressService {
   }
 
   /**
-   * Mark content as completed
+   * Mark video as completed
    */
-  async markAsCompleted(userId: string, contentId: string) {
+  async markAsCompleted(userId: string, videoId: string) {
     const watchProgress = await this.watchProgressRepository.findOne({
       where: {
         user: { id: userId },
-        content: { id: contentId },
+        video: { id: videoId },
       },
     });
 
     if (!watchProgress) {
       throw new NotFoundException({
-        message: `Watch progress for content ${contentId} not found`,
+        message: `Watch progress for video ${videoId} not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -295,24 +352,24 @@ export class WatchProgressService {
   /**
    * Delete watch progress
    */
-  async deleteWatchProgress(userId: string, contentId: string) {
+  async deleteWatchProgress(userId: string, videoId: string) {
     const watchProgress = await this.watchProgressRepository.findOne({
       where: {
         user: { id: userId },
-        content: { id: contentId },
+        video: { id: videoId },
       },
     });
 
     if (!watchProgress) {
       throw new NotFoundException({
-        message: `Watch progress for content ${contentId} not found`,
+        message: `Watch progress for video ${videoId} not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
 
     await this.watchProgressRepository.delete({
       user: { id: userId },
-      content: { id: contentId },
+      video: { id: videoId },
     });
 
     return { message: 'Watch progress deleted successfully' };

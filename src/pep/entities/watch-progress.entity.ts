@@ -1,12 +1,12 @@
 import { EntityUser } from 'src/auth/entities/user.entity';
-import { EntityContent } from 'src/cms/entities/content.entity';
+import { EntityVideo } from 'src/cms/entities/video.entity';
 
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 
 import { BaseEntity } from '@app/common/base/base-entity';
 
 @Entity({ name: 'watch_progress' })
-@Unique(['user', 'content'])
+@Unique(['user', 'video'])
 export class EntityWatchProgress extends BaseEntity {
   @ManyToOne(() => EntityUser, user => user.watchProgress, {
     onDelete: 'CASCADE',
@@ -15,12 +15,12 @@ export class EntityWatchProgress extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user: EntityUser;
 
-  @ManyToOne(() => EntityContent, {
+  @ManyToOne(() => EntityVideo, {
     onDelete: 'CASCADE',
     nullable: false,
   })
-  @JoinColumn({ name: 'content_id' })
-  content: EntityContent;
+  @JoinColumn({ name: 'video_id' })
+  video: EntityVideo;
 
   @Column({ type: 'timestamp', nullable: true })
   lastWatched: Date | null;
@@ -30,7 +30,4 @@ export class EntityWatchProgress extends BaseEntity {
 
   @Column({ type: 'boolean', default: false })
   isCompleted: boolean;
-
-  @Column({ type: 'uuid', nullable: true })
-  episodeId?: string | null; // For TV series - lưu episode hiện tại
 }
