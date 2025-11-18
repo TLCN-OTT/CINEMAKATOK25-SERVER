@@ -1,5 +1,9 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
 import { plainToInstance } from 'class-transformer';
 
+import { UserSession } from '@app/common/decorators/userSession.decorator';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
@@ -19,13 +23,21 @@ import { DirectorService } from '../services/director.service';
 @Controller('directors')
 @ApiBearerAuth()
 export class DirectorController {
-  constructor(private readonly directorService: DirectorService) {}
+  constructor(
+    private readonly directorService: DirectorService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, IsAdminGuard)
   @ApiOperation({ summary: '[ADMIN] Create a new director' })
-  async create(@Body() createDirectorDto: CreateDirectorDto) {
+  async create(@Body() createDirectorDto: CreateDirectorDto, @UserSession('id') userId: string) {
     const director = await this.directorService.create(createDirectorDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.CREATE_DIRECTOR,
+      userId: userId,
+      description: `Created director with ID ${director.id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       message: 'Director created successfully',
       data: plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
@@ -119,8 +131,17 @@ export class DirectorController {
     description: 'Director ID',
     type: String,
   })
-  async update(@Param('id') id: string, @Body() updateDirectorDto: UpdateDirectorDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateDirectorDto: UpdateDirectorDto,
+    @UserSession('id') userId: string,
+  ) {
     const director = await this.directorService.update(id, updateDirectorDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_DIRECTOR,
+      userId: userId,
+      description: `Updated director with ID ${director.id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       message: 'Director updated successfully',
       data: plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
@@ -135,8 +156,13 @@ export class DirectorController {
     description: 'Director ID',
     type: String,
   })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @UserSession('id') userId: string) {
     await this.directorService.remove(id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.DELETE_DIRECTOR,
+      userId: userId,
+      description: `Deleted director with ID ${id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       message: 'Director deleted successfully',
       data: null,

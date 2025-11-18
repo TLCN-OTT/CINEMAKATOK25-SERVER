@@ -1,5 +1,9 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
 import { plainToClass, plainToInstance } from 'class-transformer';
 
+import { UserSession } from '@app/common/decorators';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
@@ -39,7 +43,10 @@ import { CategoryService } from '../services/category.service';
 @ApiTags('cms / Categories')
 @ApiBearerAuth()
 export class CategoryController {
-  constructor(private readonly categoryService: CategoryService) {}
+  constructor(
+    private readonly categoryService: CategoryService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, IsAdminGuard)
@@ -58,8 +65,15 @@ export class CategoryController {
   @ApiForbiddenResponse({
     description: 'Forbidden - User does not have admin privileges',
   })
-  async create(@Body() createCategoryDto: CreateCategoryDto) {
+  async create(@Body() createCategoryDto: CreateCategoryDto, @UserSession('id') userId: string) {
     const category = await this.categoryService.create(createCategoryDto);
+
+    await this.auditLogService.log({
+      action: LOG_ACTION.CREATE_CATEGORY,
+      userId: userId,
+      description: `Created category with ID ${category.id} by admin ${userId}`,
+    });
+
     return ResponseBuilder.createResponse({
       data: plainToInstance(CategoryDto, category, { excludeExtraneousValues: true }),
       message: 'Category created successfully',
@@ -175,8 +189,15 @@ export class CategoryController {
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
+    @UserSession('id') userId: string,
   ) {
     const category = await this.categoryService.update(id, updateCategoryDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_CATEGORY,
+      userId: userId,
+      description: `Updated category with ID ${category.id} by admin ${userId}`,
+    });
+
     return ResponseBuilder.createResponse({
       data: plainToInstance(CategoryDto, category, { excludeExtraneousValues: true }),
       message: 'Category updated successfully',
@@ -204,8 +225,13 @@ export class CategoryController {
   @ApiForbiddenResponse({
     description: 'Forbidden - User does not have admin privileges',
   })
-  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
+  async remove(@Param('id', new ParseUUIDPipe()) id: string, @UserSession('id') userId: string) {
     await this.categoryService.remove(id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.DELETE_CATEGORY,
+      userId: userId,
+      description: `Deleted category with ID ${id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       data: null,
       message: 'Category deleted successfully',

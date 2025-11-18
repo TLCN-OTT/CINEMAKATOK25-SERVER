@@ -1,3 +1,4 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
 import { ContentType } from 'src/cms/entities/content.entity';
 import { EntityMovie } from 'src/cms/entities/movie.entity';
 import { EntityTVSeries } from 'src/cms/entities/tvseries.entity';
@@ -6,6 +7,7 @@ import { ContentService } from 'src/cms/services/content.service';
 import { Repository } from 'typeorm/repository/Repository.js';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,6 +21,7 @@ export class FavoriteService {
     @InjectRepository(EntityFavorite)
     private readonly favoriteRepository: Repository<EntityFavorite>,
     private readonly contentService: ContentService,
+    private readonly auditLogService: AuditLogService,
   ) {}
   async createFavorite(createFavoriteDto: CreateFavoriteDto, userId: string) {
     const content = await this.contentService.findContentById(createFavoriteDto.contentId);
@@ -43,7 +46,11 @@ export class FavoriteService {
       user: { id: userId },
       content,
     });
-
+    await this.logFavoriteAction(
+      userId,
+      content,
+      content.type === ContentType.MOVIE ? LOG_ACTION.LIKE_MOVIE : LOG_ACTION.LIKE_SERIES,
+    );
     await this.favoriteRepository.save(favorite);
 
     return this.getFavoriteStatus(content.id, userId);
@@ -101,6 +108,12 @@ export class FavoriteService {
       throw new NotFoundException('Favorite not found');
     }
 
+    await this.logFavoriteAction(
+      userId,
+      content,
+      content.type === ContentType.MOVIE ? LOG_ACTION.UNLIKE_MOVIE : LOG_ACTION.UNLIKE_SERIES,
+    );
+
     await this.favoriteRepository.remove(favorite);
 
     return { message: 'Content removed from favorites successfully' };
@@ -116,6 +129,12 @@ export class FavoriteService {
       });
       if (favorite) {
         await this.favoriteRepository.remove(favorite);
+        const content = await this.contentService.findContentById(contentId);
+        await this.logFavoriteAction(
+          userId,
+          content,
+          content.type === ContentType.MOVIE ? LOG_ACTION.UNLIKE_MOVIE : LOG_ACTION.UNLIKE_SERIES,
+        );
       } else {
         throw new NotFoundException({
           message: `Favorite with content ID ${contentId} not found`,
@@ -180,5 +199,25 @@ export class FavoriteService {
     );
 
     return result;
+  }
+
+  private async logFavoriteAction(
+    userId: string,
+    content: any,
+    action:
+      | LOG_ACTION.LIKE_MOVIE
+      | LOG_ACTION.LIKE_SERIES
+      | LOG_ACTION.UNLIKE_MOVIE
+      | LOG_ACTION.UNLIKE_SERIES,
+  ) {
+    const isMovie = content.type === ContentType.MOVIE;
+    const contentId = await this.contentService.getIdOfTVOrMovie(content.id);
+    const typeText = isMovie ? 'movie' : 'TV series';
+
+    await this.auditLogService.log({
+      action,
+      userId,
+      description: `User ${userId} ${action === LOG_ACTION.LIKE_MOVIE || action === LOG_ACTION.LIKE_SERIES ? 'liked' : 'unliked'} ${typeText} with ID ${contentId}`,
+    });
   }
 }

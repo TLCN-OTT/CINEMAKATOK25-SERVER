@@ -1,5 +1,9 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
 import { plainToClass, plainToInstance } from 'class-transformer';
 
+import { UserSession } from '@app/common/decorators';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
@@ -16,13 +20,21 @@ import { TagService } from '../services/tag.service';
 @ApiTags('cms / Tags')
 @ApiBearerAuth()
 export class TagController {
-  constructor(private readonly tagService: TagService) {}
+  constructor(
+    private readonly tagService: TagService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, IsAdminGuard)
   @ApiOperation({ summary: '[ADMIN] Create a new tag' })
-  async create(@Body() createTagDto: CreateTagDto) {
+  async create(@Body() createTagDto: CreateTagDto, @UserSession('id') userId: string) {
     const tag = await this.tagService.create(createTagDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.CREATE_TAG,
+      userId: userId,
+      description: `Created tag with ID ${tag.id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       data: plainToInstance(TagDto, tag, { excludeExtraneousValues: true }),
       message: 'Tag created successfully',
@@ -89,8 +101,17 @@ export class TagController {
     description: 'Tag ID',
     type: String,
   })
-  async update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateTagDto: UpdateTagDto,
+    @UserSession('id') userId: string,
+  ) {
     const tag = await this.tagService.update(id, updateTagDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_TAG,
+      userId: userId,
+      description: `Updated tag with ID ${tag.id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       data: plainToInstance(TagDto, tag, { excludeExtraneousValues: true }),
       message: 'Tag updated successfully',
@@ -105,8 +126,13 @@ export class TagController {
     description: 'Tag ID',
     type: String,
   })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @UserSession('id') userId: string) {
     await this.tagService.remove(id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.DELETE_TAG,
+      userId: userId,
+      description: `Deleted tag with ID ${id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       data: null,
       message: 'Tag deleted successfully',
