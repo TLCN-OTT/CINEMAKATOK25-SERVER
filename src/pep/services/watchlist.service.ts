@@ -1,8 +1,11 @@
-import { EntityContent } from 'src/cms/entities/content.entity';
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+import { ContentType, EntityContent } from 'src/cms/entities/content.entity';
+import { ContentService } from 'src/cms/services/content.service';
 
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -15,6 +18,8 @@ export class WatchListService {
     private readonly watchListRepository: Repository<EntityWatchList>,
     @InjectRepository(EntityContent)
     private readonly contentRepository: Repository<EntityContent>,
+    private readonly auditLogService: AuditLogService,
+    private readonly contentService: ContentService,
   ) {}
 
   /**
@@ -53,6 +58,13 @@ export class WatchListService {
       user: { id: userId } as any,
       content: { id: contentId } as any,
     });
+    await this.logWatchListAction(
+      userId,
+      content,
+      content.type === ContentType.MOVIE
+        ? LOG_ACTION.ADD_MOVIE_TO_WATCHLIST
+        : LOG_ACTION.ADD_SERIES_TO_WATCHLIST,
+    );
 
     return await this.watchListRepository.save(watchListItem);
   }
@@ -74,6 +86,13 @@ export class WatchListService {
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
+    await this.logWatchListAction(
+      userId,
+      watchListItem.content,
+      watchListItem.content.type === ContentType.MOVIE
+        ? LOG_ACTION.REMOVE_MOVIE_FROM_WATCHLIST
+        : LOG_ACTION.REMOVE_SERIES_FROM_WATCHLIST,
+    );
 
     await this.watchListRepository.remove(watchListItem);
   }
@@ -204,5 +223,25 @@ export class WatchListService {
     });
 
     return count;
+  }
+
+  private async logWatchListAction(
+    userId: string,
+    content: any,
+    action:
+      | LOG_ACTION.ADD_MOVIE_TO_WATCHLIST
+      | LOG_ACTION.ADD_SERIES_TO_WATCHLIST
+      | LOG_ACTION.REMOVE_MOVIE_FROM_WATCHLIST
+      | LOG_ACTION.REMOVE_SERIES_FROM_WATCHLIST,
+  ) {
+    const isMovie = content.type === ContentType.MOVIE;
+    const contentId = await this.contentService.getIdOfTVOrMovie(content.id);
+    const typeText = isMovie ? 'movie' : 'TV series';
+
+    await this.auditLogService.log({
+      action,
+      userId,
+      description: `User ${userId} ${action === LOG_ACTION.ADD_MOVIE_TO_WATCHLIST || action === LOG_ACTION.ADD_SERIES_TO_WATCHLIST ? 'added' : 'removed'} ${typeText} with ID ${contentId}`,
+    });
   }
 }

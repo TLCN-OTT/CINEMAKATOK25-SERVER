@@ -13,10 +13,13 @@ import {
   UpdateContentDto,
 } from '../dtos/content.dto';
 import { ContentType, EntityContent } from '../entities/content.entity';
+import { EntityTVSeries } from '../entities/tvseries.entity';
 import { ActorService } from './actor.service';
 import { CategoryService } from './category.service';
 import { DirectorService } from './director.service';
+import { MovieService } from './movie.service';
 import { TagService } from './tag.service';
+import { TvSeriesService } from './tvseries.service';
 
 @Injectable()
 export class ContentService {
@@ -27,6 +30,9 @@ export class ContentService {
     private readonly tagService: TagService,
     private readonly categoryService: CategoryService,
     private readonly directorService: DirectorService,
+    private readonly movieService: MovieService,
+    @InjectRepository(EntityTVSeries)
+    private readonly tvSeriesRepository: Repository<EntityTVSeries>,
   ) {}
 
   async create(createDto: CreateContentDto) {
@@ -223,5 +229,28 @@ export class ContentService {
     const content = await this.findContentById(id);
 
     await this.contentRepository.update({ id }, { viewCount: content.viewCount + 1 });
+  }
+
+  async getIdOfTVOrMovie(contentId: string): Promise<string> {
+    const content = await this.findContentById(contentId);
+    if (content.type === ContentType.MOVIE) {
+      const movie = await this.movieService.findByContentId(contentId);
+      return movie.id;
+    } else if (content.type === ContentType.TVSERIES) {
+      const tvSeries = await this.tvSeriesRepository.findOne({
+        where: { metaData: { id: contentId } },
+      });
+      if (!tvSeries) {
+        throw new NotFoundException({
+          message: `TV Series with content ID ${contentId} not found`,
+          code: ERROR_CODE.ENTITY_NOT_FOUND,
+        });
+      }
+      return tvSeries.id;
+    }
+    throw new BadRequestException({
+      message: 'Content type is invalid',
+      code: ERROR_CODE.UNEXPECTED_ERROR,
+    });
   }
 }

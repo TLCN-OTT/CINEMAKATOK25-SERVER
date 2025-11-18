@@ -1,10 +1,12 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
 import { EntityUser } from 'src/auth/entities/user.entity';
-import { EntityContent } from 'src/cms/entities/content.entity';
+import { ContentType, EntityContent } from 'src/cms/entities/content.entity';
 import { ContentService } from 'src/cms/services/content.service';
 
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,6 +20,7 @@ export class ReviewService {
     @InjectRepository(EntityReview)
     private readonly reviewRepository: Repository<EntityReview>,
     private readonly contentService: ContentService,
+    private readonly auditLogService: AuditLogService,
   ) {}
   // Define service methods for handling reviews here
 
@@ -54,6 +57,9 @@ export class ReviewService {
           // reviewCount: parseInt(ratingStats.totalReviews) || 0, // Nếu có field này
         },
       );
+
+      // Ghi log hành động tạo review
+      await this.logReviewAction(userId, content, LOG_ACTION.CREATE_REVIEW);
 
       await queryRunner.commitTransaction();
 
@@ -102,6 +108,8 @@ export class ReviewService {
           avgRating: parseFloat(ratingStats.avgRating) || 0,
         },
       );
+      // Ghi log hành động cập nhật review
+      await this.logReviewAction(userId || 'ADMIN', review.content, LOG_ACTION.UPDATE_REVIEW);
 
       await queryRunner.commitTransaction();
       return this.findReviewById(updatedReview.id);
@@ -149,6 +157,8 @@ export class ReviewService {
           avgRating: parseFloat(ratingStats.avgRating) || 0,
         },
       );
+      // Ghi log hành động xóa review
+      await this.logReviewAction(userId || 'ADMIN', review.content, LOG_ACTION.DELETE_REVIEW);
 
       await queryRunner.commitTransaction();
     } catch (error) {
@@ -220,5 +230,20 @@ export class ReviewService {
     }
 
     return review.user.id === userId;
+  }
+
+  async logReviewAction(
+    userId: string,
+    content: any,
+    action: LOG_ACTION.CREATE_REVIEW | LOG_ACTION.UPDATE_REVIEW | LOG_ACTION.DELETE_REVIEW,
+  ) {
+    const isMovie = content.type === ContentType.MOVIE;
+    const contentId = await this.contentService.getIdOfTVOrMovie(content.id);
+    const typeText = isMovie ? 'movie' : 'TV series';
+    await this.auditLogService.log({
+      action,
+      userId: userId,
+      description: `User ${userId} ${action === LOG_ACTION.CREATE_REVIEW ? 'created' : action === LOG_ACTION.UPDATE_REVIEW ? 'updated' : 'deleted'} review on ${typeText} with ID ${contentId}`,
+    });
   }
 }

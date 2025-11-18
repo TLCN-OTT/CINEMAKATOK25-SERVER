@@ -1,5 +1,9 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
 import { plainToInstance } from 'class-transformer';
 
+import { UserSession } from '@app/common/decorators/userSession.decorator';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
@@ -37,7 +41,10 @@ import { MovieService } from '../services/movie.service';
 @ApiTags('cms / Movie')
 @ApiBearerAuth()
 export class MovieController {
-  constructor(private readonly movieService: MovieService) {}
+  constructor(
+    private readonly movieService: MovieService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, IsAdminGuard)
@@ -56,8 +63,13 @@ export class MovieController {
   @ApiForbiddenResponse({
     description: 'Forbidden - User does not have admin privileges',
   })
-  async create(@Body() createMovieDto: CreateMovieDto) {
+  async create(@Body() createMovieDto: CreateMovieDto, @UserSession('id') userId: string) {
     const result = await this.movieService.create(createMovieDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.CREATE_MOVIE,
+      userId: userId,
+      description: `Created movie with ID ${result.id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       data: plainToInstance(MovieDto, result, { excludeExtraneousValues: true }),
       message: 'Movie created successfully',
@@ -129,8 +141,14 @@ export class MovieController {
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateMovieDto: UpdateMovieDto,
+    @UserSession('id') userId: string,
   ) {
     const result = await this.movieService.update(id, updateMovieDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_MOVIE,
+      userId: userId,
+      description: `Updated movie with ID ${result.id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       data: plainToInstance(MovieDto, result, { excludeExtraneousValues: true }),
       message: 'Movie updated successfully',
@@ -153,8 +171,13 @@ export class MovieController {
   @ApiForbiddenResponse({
     description: 'Forbidden - User does not have admin privileges',
   })
-  async delete(@Param('id', new ParseUUIDPipe()) id: string) {
+  async delete(@Param('id', new ParseUUIDPipe()) id: string, @UserSession('id') userId: string) {
     await this.movieService.delete(id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.DELETE_MOVIE,
+      userId: userId,
+      description: `Deleted movie with ID ${id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       data: null,
       message: 'Movie deleted successfully',

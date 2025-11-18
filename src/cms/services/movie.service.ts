@@ -407,4 +407,18 @@ export class MovieService {
     const resultWithVideos = await this._attachVideosToMovies(data);
     return { data: resultWithVideos, total };
   }
+
+  async findByContentId(contentId: string): Promise<EntityMovie> {
+    const movie = await this.movieRepository.findOne({
+      where: { metaData: { id: contentId } },
+      relations: ['metaData'],
+    });
+    if (!movie) {
+      throw new NotFoundException({
+        message: `Movie with Content ID ${contentId} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+    return movie;
+  }
 }

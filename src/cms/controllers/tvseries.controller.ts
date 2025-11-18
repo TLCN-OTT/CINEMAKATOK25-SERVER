@@ -1,7 +1,11 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
 import { plainToInstance } from 'class-transformer';
 import { UUID } from 'crypto';
 
 import { IsAdmin } from '@app/common/decorators/admin-role.decorator';
+import { UserSession } from '@app/common/decorators/userSession.decorator';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { JwtAuthGuard } from '@app/common/guards/auth.guard';
 import { IsAdminGuard } from '@app/common/guards/is-admin.guard';
 import { ApiResponseDto, PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
@@ -36,7 +40,10 @@ import { TvSeriesService } from '../services/tvseries.service';
 @ApiTags('cms / TV Series')
 @ApiBearerAuth()
 export class TvSeriesController {
-  constructor(private readonly tvSeriesService: TvSeriesService) {}
+  constructor(
+    private readonly tvSeriesService: TvSeriesService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   // Controller methods for TV series management
   @Get()
@@ -242,8 +249,13 @@ export class TvSeriesController {
     description: 'The TV series has been successfully created.',
     type: ApiResponseDto(TVSeriesDto),
   })
-  async create(@Body() createTvSeriesDto: CreateTVSeriesDto) {
+  async create(@Body() createTvSeriesDto: CreateTVSeriesDto, @UserSession('id') userId: string) {
     const result = await this.tvSeriesService.create(createTvSeriesDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.CREATE_SERIES,
+      userId: userId,
+      description: `Created TV series with ID ${result.id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       data: plainToInstance(TVSeriesDto, result, { excludeExtraneousValues: true }),
       message: 'TV series created successfully',
@@ -294,8 +306,15 @@ export class TvSeriesController {
   async update(
     @Body() updateTvSeriesDto: UpdateTVSeriesDto,
     @Param('id', new ParseUUIDPipe()) id: string,
+    @UserSession('id') userId: string,
   ) {
     const result = await this.tvSeriesService.update(id, updateTvSeriesDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_SERIES,
+      userId: userId,
+      description: `Updated TV series with ID ${id} by admin ${userId}`,
+    });
+
     return ResponseBuilder.createResponse({
       data: plainToInstance(TVSeriesDto, result, { excludeExtraneousValues: true }),
       message: 'TV series updated successfully',
@@ -309,8 +328,13 @@ export class TvSeriesController {
     status: 200,
     description: 'The TV series has been successfully deleted.',
   })
-  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
+  async remove(@Param('id', new ParseUUIDPipe()) id: string, @UserSession('id') userId: string) {
     await this.tvSeriesService.delete(id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.DELETE_SERIES,
+      userId: userId,
+      description: `Deleted TV series with ID ${id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       message: 'TV series deleted successfully',
       data: null,

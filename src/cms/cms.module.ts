@@ -71,8 +71,8 @@ import { VideoService } from './services/video.service';
     MovieService,
     TvSeriesService,
     S3Service,
-    ContentService,
     R2StorageService,
+    ContentService,
   ],
 })
 export class CmsModule {}

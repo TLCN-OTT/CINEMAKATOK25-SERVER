@@ -9,7 +9,7 @@ import { QueueService } from './queue.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([EntityVideo]), forwardRef(() => CmsModule)],
-  providers: [QueueService, VideoService],
+  providers: [QueueService],
   exports: [QueueService],
 })
 export class QueueModule {}

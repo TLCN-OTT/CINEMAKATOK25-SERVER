@@ -1,6 +1,9 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
 import { Entity, Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { PasswordHash } from '@app/common/utils/hash';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
@@ -16,6 +19,7 @@ export class UserService {
     @InjectRepository(EntityUser)
     private readonly userRepository: Repository<EntityUser>,
     private readonly emailService: EmailService,
+    private readonly auditLogService: AuditLogService,
   ) {}
   async findById(id: string) {
     // Logic to find a user by ID
@@ -89,11 +93,21 @@ export class UserService {
 
     // Update user properties
     Object.assign(user, updateUserDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_USER,
+      userId: user.id,
+      description: `User ${user.email} updated their profile`,
+    });
     return await this.userRepository.save(user);
   }
 
   async delete(id: string) {
     const user = await this.findById(id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.DELETE_USER,
+      userId: user.id,
+      description: `User ${user.email} was deleted`,
+    });
     await this.userRepository.remove(user);
   }
 
@@ -117,6 +131,11 @@ export class UserService {
     });
 
     const savedUser = await this.userRepository.save(user);
+    await this.auditLogService.log({
+      action: LOG_ACTION.USER_BAN,
+      userId: user.id,
+      description: `User ${user.email} was banned for reason: ${banUserDto.banReason}, until: ${bannedUntil.toISOString()}`,
+    });
 
     // Send ban notification email
     if (user.email) {
@@ -147,6 +166,11 @@ export class UserService {
       banReason: null,
       bannedUntil: null,
     });
+    await this.auditLogService.log({
+      action: LOG_ACTION.USER_UNBAN,
+      userId: user.id,
+      description: `User ${user.email} was unbanned`,
+    });
 
     return await this.userRepository.save(user);
   }
@@ -172,6 +196,11 @@ export class UserService {
     }
 
     Object.assign(user, updateUserInfoDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_USER,
+      userId: user.id,
+      description: `Admin updated user ${user.email} info`,
+    });
     return await this.userRepository.save(user);
   }
 
@@ -201,6 +230,11 @@ export class UserService {
         bannedUntil: null,
       });
       await this.userRepository.save(user);
+      await this.auditLogService.log({
+        action: LOG_ACTION.USER_UNBAN,
+        userId: user.id,
+        description: `User ${user.email} was auto-unbanned after ban period expired`,
+      });
     }
 
     console.log(`Auto-unbanned ${expiredBannedUsers.length} users`);
