@@ -5,6 +5,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateVideoDto, UpdateVideoDto } from '../dtos/video.dto';
+import { EntityEpisode } from '../entities/tvseries.entity';
 import { EntityVideo, VideoOwnerType } from '../entities/video.entity';
 
 @Injectable()
@@ -12,6 +13,8 @@ export class VideoService {
   constructor(
     @InjectRepository(EntityVideo)
     private readonly videoRepository: Repository<EntityVideo>,
+    @InjectRepository(EntityEpisode)
+    private readonly episodeRepository: Repository<EntityEpisode>,
   ) {}
 
   async create(createDto: CreateVideoDto) {
@@ -204,5 +207,33 @@ export class VideoService {
         ownerType,
       },
     });
+  }
+
+  async getMovieOrSeriesIdFromVideo(videoId: string) {
+    const video = await this.videoRepository.findOne({ where: { id: videoId } });
+    if (!video) {
+      throw new NotFoundException({
+        message: `Video with ID ${videoId} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+
+    if (video.ownerType === VideoOwnerType.MOVIE) {
+      return { movieId: video.ownerId };
+    } else if (video.ownerType === 'episode') {
+      // Lấy episode
+      if (!video.ownerId) {
+        throw new NotFoundException({
+          message: `Episode ownerId is null for video with ID ${videoId}`,
+          code: ERROR_CODE.ENTITY_NOT_FOUND,
+        });
+      }
+      const episode = await this.episodeRepository.findOne({
+        where: { id: video.ownerId },
+        relations: ['season', 'season.tvseries'],
+      });
+      const tvSeriesId = episode?.season?.tvseries?.id;
+      return { tvSeriesId };
+    }
   }
 }

@@ -1,5 +1,9 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
 import { plainToClass, plainToInstance } from 'class-transformer';
 
+import { UserSession } from '@app/common/decorators';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
@@ -19,13 +23,21 @@ import { ActorService } from '../services/actor.service';
 @Controller('actors')
 @ApiBearerAuth()
 export class ActorController {
-  constructor(private readonly actorService: ActorService) {}
+  constructor(
+    private readonly actorService: ActorService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, IsAdminGuard)
   @ApiOperation({ summary: '[ADMIN] Create a new actor' })
-  async create(@Body() createActorDto: CreateActorDto) {
+  async create(@Body() createActorDto: CreateActorDto, @UserSession('id') userId: string) {
     const actor = await this.actorService.create(createActorDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.CREATE_ACTOR,
+      userId: userId,
+      description: `Created actor with ID ${actor.id} by admin ${userId}`,
+    });
 
     return ResponseBuilder.createResponse({
       data: plainToInstance(ActorDto, actor, { excludeExtraneousValues: true }),
@@ -138,8 +150,17 @@ export class ActorController {
     description: 'Actor ID',
     type: String,
   })
-  async update(@Param('id') id: string, @Body() updateActorDto: UpdateActorDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateActorDto: UpdateActorDto,
+    @UserSession('id') userId: string,
+  ) {
     const actor = await this.actorService.update(id, updateActorDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_ACTOR,
+      userId: userId,
+      description: `Updated actor with ID ${actor.id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       message: 'Actor updated successfully',
       data: plainToInstance(ActorDto, actor, { excludeExtraneousValues: true }),
@@ -154,8 +175,13 @@ export class ActorController {
     description: 'Actor ID',
     type: String,
   })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @UserSession('id') userId: string) {
     await this.actorService.remove(id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.DELETE_ACTOR,
+      userId: userId,
+      description: `Deleted actor with ID ${id} by admin ${userId}`,
+    });
     return ResponseBuilder.createResponse({
       message: 'Actor deleted successfully',
       data: null,

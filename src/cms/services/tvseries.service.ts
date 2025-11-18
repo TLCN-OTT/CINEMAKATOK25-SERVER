@@ -710,4 +710,18 @@ export class TvSeriesService {
       await queryRunner.release();
     }
   }
+
+  async findByContentId(contentId: string): Promise<EntityTVSeries> {
+    const tvSeries = await this.tvSeriesRepository.findOne({
+      where: { metaData: { id: contentId } },
+      relations: ['metaData'],
+    });
+    if (!tvSeries) {
+      throw new NotFoundException({
+        message: `TV series with content ID ${contentId} not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
+    }
+    return tvSeries;
+  }
 }

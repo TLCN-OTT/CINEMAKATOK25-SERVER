@@ -6,6 +6,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 
+import { AuditLogModule } from './audit-log/audit-log.module';
 import { AuthModule } from './auth/auth.module';
 import { CmsModule } from './cms/cms.module';
 import { PepModule } from './pep/pep.module';
@@ -25,6 +26,7 @@ import { PepModule } from './pep/pep.module';
     AuthModule,
     CmsModule,
     PepModule,
+    AuditLogModule,
   ],
   controllers: [],
   providers: [],

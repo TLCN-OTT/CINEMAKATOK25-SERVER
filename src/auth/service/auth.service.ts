@@ -1,8 +1,11 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
 import * as config from 'config';
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
 import { OTP_PURPOSE } from '@app/common/enums/global.enum';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { getConfig } from '@app/common/utils/get-config';
 import { PasswordHash } from '@app/common/utils/hash';
 import {
@@ -48,6 +51,7 @@ export class AuthService {
     private readonly otpService: OtpService,
     private readonly emailService: EmailService,
     private readonly socialAuthService: SocialAuthService,
+    private readonly auditLogService: AuditLogService,
   ) {}
   async auth(AuthRequest: AuthRequest) {
     const user = await this.usersService.findByEmail(AuthRequest.email);
@@ -58,6 +62,12 @@ export class AuthService {
       sub: user.id,
     });
     await this.saveRefreshToken(refreshToken, user.id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.USER_LOGIN,
+      userId: user.id,
+      description: `User ${user.email} logged in`,
+    });
+
     return {
       id: user.id,
       name: user.name,
@@ -73,6 +83,11 @@ export class AuthService {
       sub: user.id,
     });
     await this.saveRefreshToken(refreshToken, user.id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.USER_LOGIN,
+      userId: user.id,
+      description: `User ${user.email} logged in via Google`,
+    });
     return {
       id: user.id,
       name: user.name,
@@ -172,6 +187,11 @@ export class AuthService {
 
       const hashedPassword = PasswordHash.hashPassword(newPassword);
       await this.userRepository.update(user.id, { password: hashedPassword });
+      await this.auditLogService.log({
+        action: LOG_ACTION.PASSWORD_RESET,
+        userId: user.id,
+        description: `User ${user.email} reset their password`,
+      });
 
       await this.otpService.cleanupExpiredOtpsByEmail(email);
       await this.otpService.cleanupExpiredOtps();
@@ -278,6 +298,12 @@ export class AuthService {
     }
 
     const user = await this.userRepository.save(userData);
+    await this.auditLogService.log({
+      action: LOG_ACTION.USER_REGISTRATION,
+      userId: user.id,
+      description: `New user registered with email ${user.email}`,
+    });
+    return;
   }
 
   /**
@@ -356,6 +382,11 @@ export class AuthService {
         sub: user.id,
       });
       await this.saveRefreshToken(refreshToken, user.id);
+      await this.auditLogService.log({
+        action: LOG_ACTION.USER_LOGIN,
+        userId: user.id,
+        description: `User ${user.email} logged in via ${provider}`,
+      });
 
       return {
         id: user.id,
