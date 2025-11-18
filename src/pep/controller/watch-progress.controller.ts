@@ -58,8 +58,8 @@ export class WatchProgressController {
   /**
    * Update specific watch progress
    */
-  @Put(':contentId')
-  @ApiOperation({ summary: 'Update watch progress for a specific content' })
+  @Put(':videoId')
+  @ApiOperation({ summary: 'Update watch progress for a specific video' })
   @ApiOkResponse({
     description: 'Watch progress updated successfully',
     type: ApiResponseDto(WatchProgressDto),
@@ -70,12 +70,12 @@ export class WatchProgressController {
   @UseGuards(JwtAuthGuard)
   async updateProgress(
     @UserSession('id') userId: string,
-    @Param('contentId') contentId: string,
+    @Param('videoId') videoId: string,
     @Body() updateDto: UpdateWatchProgressDto,
   ) {
     const watchProgress = await this.watchProgressService.updateProgress(
       userId,
-      contentId,
+      videoId,
       updateDto,
     );
     return ResponseBuilder.createResponse({
@@ -85,16 +85,16 @@ export class WatchProgressController {
   }
 
   /**
-   * Get resume data for a content
+   * Get resume data for a video
    */
-  @Get('resume/:contentId')
+  @Get('resume/:videoId')
   @ApiOperation({ summary: 'Get resume data to continue watching' })
   @ApiOkResponse({ description: 'Resume data retrieved successfully' })
   @ApiNotFoundResponse({ description: 'Watch progress not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing access token' })
   @UseGuards(JwtAuthGuard)
-  async getResumeData(@UserSession('id') userId: string, @Param('contentId') contentId: string) {
-    const resumeData = await this.watchProgressService.getResumeData(userId, contentId);
+  async getResumeData(@UserSession('id') userId: string, @Param('videoId') videoId: string) {
+    const resumeData = await this.watchProgressService.getResumeData(userId, videoId);
     return ResponseBuilder.createResponse({
       message: 'Resume data retrieved successfully',
       data: resumeData,
@@ -102,16 +102,16 @@ export class WatchProgressController {
   }
 
   /**
-   * Get watch progress for a specific content
+   * Get watch progress for a specific video
    */
-  @Get(':contentId')
-  @ApiOperation({ summary: 'Get watch progress for a specific content' })
+  @Get(':videoId')
+  @ApiOperation({ summary: 'Get watch progress for a specific video' })
   @ApiOkResponse({ description: 'Watch progress retrieved successfully', type: WatchProgressDto })
   @ApiNotFoundResponse({ description: 'Watch progress not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing access token' })
   @UseGuards(JwtAuthGuard)
-  async getWatchProgress(@UserSession('id') userId: string, @Param('contentId') contentId: string) {
-    const watchProgress = await this.watchProgressService.getWatchProgress(userId, contentId);
+  async getWatchProgress(@UserSession('id') userId: string, @Param('videoId') videoId: string) {
+    const watchProgress = await this.watchProgressService.getWatchProgress(userId, videoId);
     return ResponseBuilder.createResponse({
       message: 'Watch progress retrieved successfully',
       data: plainToInstance(WatchProgressDto, watchProgress, { excludeExtraneousValues: true }),
@@ -166,23 +166,18 @@ export class WatchProgressController {
     const { data, total } = await this.watchProgressService.getWatchProgressByUser(userId, query);
     const enrichedData = data.map((item: any) => ({
       ...plainToInstance(WatchProgressDto, item, { excludeExtraneousValues: true }),
-      metadata: item.content
+      metadata: item.metadata || null,
+      duration: item.duration || null,
+      video: item.video
         ? {
-            id: item.content.id,
-            title: item.content.title,
-            description: item.content.description,
-            thumbnail: item.content.thumbnail,
-            banner: item.content.banner,
-            trailer: item.content.trailer,
-            type: item.content.type,
-            releaseDate: item.content.releaseDate,
-            avgRating: item.content.avgRating,
-            imdbRating: item.content.imdbRating,
-            maturityRating: item.content.maturityRating,
-            viewCount: item.content.viewCount,
+            id: item.video.id,
+            videoUrl: item.video.videoUrl,
+            thumbnailUrl: item.video.thumbnailUrl,
+            status: item.video.status,
+            ownerType: item.video.ownerType,
+            ownerId: item.video.ownerId,
           }
         : null,
-      duration: item.duration || null,
     }));
     return ResponseBuilder.createPaginatedResponse({
       data: enrichedData,
@@ -249,21 +244,21 @@ export class WatchProgressController {
   }
 
   /**
-   * Mark content as completed
+   * Mark video as completed
    */
-  @Put(':contentId/complete')
-  @ApiOperation({ summary: 'Mark content as completed' })
+  @Put(':videoId/complete')
+  @ApiOperation({ summary: 'Mark video as completed' })
   @ApiOkResponse({
-    description: 'Content marked as completed',
+    description: 'Video marked as completed',
     type: ApiResponseDto(WatchProgressDto),
   })
   @ApiNotFoundResponse({ description: 'Watch progress not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing access token' })
   @UseGuards(JwtAuthGuard)
-  async markAsCompleted(@UserSession('id') userId: string, @Param('contentId') contentId: string) {
-    const watchProgress = await this.watchProgressService.markAsCompleted(userId, contentId);
+  async markAsCompleted(@UserSession('id') userId: string, @Param('videoId') videoId: string) {
+    const watchProgress = await this.watchProgressService.markAsCompleted(userId, videoId);
     return ResponseBuilder.createResponse({
-      message: 'Content marked as completed successfully',
+      message: 'Video marked as completed successfully',
       data: plainToInstance(WatchProgressDto, watchProgress, { excludeExtraneousValues: true }),
     });
   }
@@ -271,16 +266,13 @@ export class WatchProgressController {
   /**
    * Delete watch progress
    */
-  @Delete(':contentId')
-  @ApiOperation({ summary: 'Delete watch progress for a content' })
+  @Delete(':videoId')
+  @ApiOperation({ summary: 'Delete watch progress for a video' })
   @ApiOkResponse({ description: 'Watch progress deleted successfully' })
   @ApiNotFoundResponse({ description: 'Watch progress not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized - Invalid or missing access token' })
   @UseGuards(JwtAuthGuard)
-  async deleteWatchProgress(
-    @UserSession('id') userId: string,
-    @Param('contentId') contentId: string,
-  ) {
-    return this.watchProgressService.deleteWatchProgress(userId, contentId);
+  async deleteWatchProgress(@UserSession('id') userId: string, @Param('videoId') videoId: string) {
+    return this.watchProgressService.deleteWatchProgress(userId, videoId);
   }
 }
