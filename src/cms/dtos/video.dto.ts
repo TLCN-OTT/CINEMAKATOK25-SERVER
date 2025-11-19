@@ -37,6 +37,24 @@ export class VideoDto extends BaseEntityDto {
   @IsOptional()
   @Expose()
   thumbnailUrl?: string;
+
+  @ApiProperty({
+    description: 'Sprite image URLs',
+    example: ['https://r2.example.com/videos/123/sprites/sprite_0.jpg'],
+    type: [String],
+  })
+  @IsOptional()
+  @Expose()
+  sprites?: string[];
+
+  @ApiProperty({
+    description: 'VTT file URLs',
+    example: ['https://r2.example.com/videos/123/sprites/sprite_0.vtt'],
+    type: [String],
+  })
+  @IsOptional()
+  @Expose()
+  vttFiles?: string[];
 }
 export interface AbsContentPathParams {
   s3Key: string;
@@ -48,4 +66,6 @@ export class UpdateVideoDto extends PickType(VideoDto, [
   'videoUrl',
   'status',
   'thumbnailUrl',
+  'sprites',
+  'vttFiles',
 ]) {}

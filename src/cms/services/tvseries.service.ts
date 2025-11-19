@@ -453,6 +453,13 @@ export class TvSeriesService {
           const videoMap = new Map(validVideos.map(video => [video.id, video]));
 
           for (const request of episodeVideoRequests) {
+            if (!request.video.id) {
+              throw new BadRequestException({
+                code: ERROR_CODE.INVALID_BODY,
+                message: 'Video ID is required for episode assignment',
+              });
+            }
+
             const video = videoMap.get(request.video.id);
 
             if (!video) {

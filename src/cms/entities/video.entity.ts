@@ -23,4 +23,10 @@ export class EntityVideo extends BaseEntity {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   thumbnailUrl: string | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  sprites: string[] | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  vttFiles: string[] | null;
 }

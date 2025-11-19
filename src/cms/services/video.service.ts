@@ -88,11 +88,14 @@ export class VideoService {
         });
       }
 
-      Object.assign(video, {
-        videoUrl: updateDto.videoUrl,
-        status: updateDto.status,
-        thumbnailUrl: updateDto.thumbnailUrl,
-      });
+      const updateData: Partial<EntityVideo> = {};
+      if (updateDto.videoUrl !== undefined) updateData.videoUrl = updateDto.videoUrl;
+      if (updateDto.status !== undefined) updateData.status = updateDto.status;
+      if (updateDto.thumbnailUrl !== undefined) updateData.thumbnailUrl = updateDto.thumbnailUrl;
+      if (updateDto.sprites !== undefined) updateData.sprites = updateDto.sprites;
+      if (updateDto.vttFiles !== undefined) updateData.vttFiles = updateDto.vttFiles;
+
+      Object.assign(video, updateData);
 
       return await this.videoRepository.save(video);
     } catch (error) {
