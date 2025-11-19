@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 
 import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
@@ -63,6 +64,40 @@ export class R2StorageService {
     } catch (error) {
       this.logger.error(`❌ R2 upload failed: ${error.message}`);
       this.logger.error(`   Bucket name: ${this.bucketName}`);
+      throw error;
+    }
+  }
+
+  async uploadFile(
+    filePath: string,
+    folder = 'files',
+    contentType = 'application/octet-stream',
+  ): Promise<string> {
+    try {
+      const fileName = `${folder}/${Date.now()}-${path.basename(filePath)}`;
+      const fileBuffer = fs.readFileSync(filePath);
+
+      this.logger.log(`📤 Uploading file to R2: ${fileName}`);
+      this.logger.log(`   Bucket: ${this.bucketName}`);
+
+      const upload = new Upload({
+        client: this.s3Client,
+        params: {
+          Bucket: this.bucketName,
+          Key: fileName,
+          Body: fileBuffer,
+          ContentType: contentType,
+        },
+      });
+
+      await upload.done();
+
+      const publicUrl = `${this.configService.get('r2.publicUrl')}/${fileName}`;
+      this.logger.log(`✅ R2 file upload successful: ${publicUrl}`);
+
+      return publicUrl;
+    } catch (error) {
+      this.logger.error(`❌ R2 file upload failed: ${error.message}`);
       throw error;
     }
   }

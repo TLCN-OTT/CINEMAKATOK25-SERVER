@@ -1,13 +1,20 @@
 import { Worker } from 'bullmq';
+import * as ffmpegStatic from 'ffmpeg-static';
+import * as ffmpeg from 'fluent-ffmpeg';
 import * as fs from 'fs';
 import { promises as fsPromises } from 'fs';
+import { existsSync } from 'fs';
 import * as path from 'path';
+import * as sharp from 'sharp';
 import { AppModule } from 'src/app.module';
 import { UpdateVideoDto } from 'src/cms/dtos/video.dto';
 import { EntityVideo } from 'src/cms/entities/video.entity';
 import { R2StorageService } from 'src/cms/services/r2.service';
 import { S3Service } from 'src/cms/services/s3.service';
 import { VideoService } from 'src/cms/services/video.service';
+
+import { spawn } from 'child_process';
+import { spawnSync } from 'child_process';
 
 import { RESOLUTION, VIDEO_STATUS } from '@app/common/enums/global.enum';
 import { getConfig } from '@app/common/utils/get-config';
@@ -23,6 +30,174 @@ import { NestFactory } from '@nestjs/core';
  * Or add to package.json:
  * "worker:video": "node dist/libs/core/src/queue/video-worker.js"
  */
+
+async function generateSpritesAndVTT(
+  videoId: string,
+  inputPath: string,
+  r2Service: R2StorageService,
+): Promise<{ spriteUrls: string[]; vttUrls: string[] }> {
+  const ffmpegExecutable = resolveFfmpegExecutable();
+  console.log('🎨 Using FFmpeg executable:', ffmpegExecutable);
+  const intervalSec = 10; // 1 thumbnail mỗi 10s
+  const maxThumbsPerSprite = 100;
+  const thumbWidth = 320;
+  const cols = 5;
+
+  // Get duration
+  const probe = spawnSync('ffprobe', [
+    '-v',
+    'error',
+    '-show_entries',
+    'format=duration',
+    '-of',
+    'default=noprint_wrappers=1:nokey=1',
+    inputPath,
+  ]);
+  if (probe.status !== 0) {
+    throw new Error('ffprobe failed: ' + probe.stderr?.toString());
+  }
+  const duration = parseFloat(probe.stdout.toString().trim());
+  const totalThumbs = Math.ceil(duration / intervalSec);
+  const chunks = Math.ceil(totalThumbs / maxThumbsPerSprite);
+
+  const spriteUrls: string[] = [];
+  const vttUrls: string[] = [];
+
+  for (let chunkIndex = 0; chunkIndex < chunks; chunkIndex++) {
+    const startThumbIdx = chunkIndex * maxThumbsPerSprite;
+    const remainingThumbs = totalThumbs - startThumbIdx;
+    const thumbCount = Math.min(remainingThumbs, maxThumbsPerSprite);
+
+    const chunkStartSec = startThumbIdx * intervalSec;
+    const chunkDurationSec = thumbCount * intervalSec;
+
+    const tmpDir = path.join('/tmp', `video_${videoId}`);
+    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+
+    const spritePath = path.join(tmpDir, `sprite_${videoId}_${chunkIndex}.jpg`);
+    const vttPath = path.join(tmpDir, `sprite_${videoId}_${chunkIndex}.vtt`);
+
+    const rows = Math.ceil(thumbCount / cols);
+
+    // Generate sprite using ffmpeg spawn
+    const vf = `fps=1/${intervalSec},scale=${thumbWidth}:-1,tile=${cols}x${rows}`;
+    const ffArgs = [
+      '-ss',
+      `${chunkStartSec}`,
+      '-t',
+      `${chunkDurationSec}`,
+      '-i',
+      inputPath,
+      '-vf',
+      vf,
+      '-qscale:v',
+      '2',
+      '-frames:v',
+      '1',
+      spritePath,
+    ];
+
+    await new Promise<void>((resolve, reject) => {
+      const ff = spawn(ffmpegExecutable, ffArgs);
+      ff.on('close', code => {
+        if (code === 0) resolve();
+        else reject(new Error(`ffmpeg failed with code ${code}`));
+      });
+      ff.on('error', reject);
+    });
+
+    // Get sprite dimensions
+    const meta = await sharp(spritePath).metadata();
+    const spriteWidth = meta.width || 0;
+    const spriteHeight = meta.height || 0;
+    const thumbHeight = Math.floor(spriteHeight / Math.ceil(thumbCount / cols));
+
+    // Generate VTT
+    const lines: string[] = ['WEBVTT\n'];
+    for (let i = 0; i < thumbCount; i++) {
+      const globalThumbIndex = startThumbIdx + i;
+      const startTime = globalThumbIndex * intervalSec;
+      const endTime = Math.min((globalThumbIndex + 1) * intervalSec, duration);
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const x = col * (spriteWidth / cols);
+      const y = row * thumbHeight;
+
+      lines.push(`${formatSeconds(startTime)} --> ${formatSeconds(endTime)}`);
+      lines.push(
+        `${path.basename(spritePath)}#xywh=${Math.floor(x)},${Math.floor(y)},${Math.floor(spriteWidth / cols)},${thumbHeight}\n`,
+      );
+    }
+    fs.writeFileSync(vttPath, lines.join('\n'));
+
+    // Upload to R2
+    const spriteUrl = await r2Service.uploadImage(spritePath, `videos/${videoId}/sprites`);
+    const vttUrl = await r2Service.uploadFile(vttPath, `videos/${videoId}/sprites`, 'text/vtt');
+
+    spriteUrls.push(spriteUrl);
+    vttUrls.push(vttUrl);
+
+    // Cleanup
+    await fsPromises.unlink(spritePath);
+    await fsPromises.unlink(vttPath);
+  }
+  return { spriteUrls, vttUrls };
+}
+
+function formatSeconds(s: number): string {
+  const hh = Math.floor(s / 3600);
+  const mm = Math.floor((s % 3600) / 60);
+  const ss = Math.floor(s % 60);
+  const ms = Math.floor((s % 1) * 1000);
+  return `${pad(hh)}:${pad(mm)}:${pad(ss)}.${String(ms).padStart(3, '0')}`;
+}
+
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+const resolveFfmpegExecutable = (): string => {
+  // First try system ffmpeg
+  try {
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('where', ['ffmpeg'], { encoding: 'utf8' });
+    if (result.status === 0) {
+      const path = result.stdout.trim().split('\n')[0];
+      if (path && existsSync(path)) {
+        console.log(`✅ Using system FFmpeg: ${path}`);
+        return path;
+      }
+    }
+  } catch (error) {
+    console.log('⚠️  System FFmpeg not found via where command');
+  }
+
+  // Then try static binaries
+  const candidates = [
+    typeof ffmpegStatic === 'string' ? ffmpegStatic : null,
+    (ffmpegStatic as unknown as { path?: string })?.path,
+    process.env.FFMPEG_PATH,
+    process.env.ffmpeg_path,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && candidate.length > 0) {
+      const exists = existsSync(candidate);
+      console.log(`🔍 Checking FFmpeg binary candidate: ${candidate} (exists: ${exists})`);
+      if (exists) {
+        console.log(`✅ Using FFmpeg binary: ${candidate}`);
+        return candidate;
+      }
+    }
+  }
+
+  console.warn(
+    '⚠️  Falling back to system "ffmpeg" executable. Set FFMPEG_PATH env variable if FFmpeg is not on PATH.',
+  );
+  console.warn('   ffmpeg-static returned:', ffmpegStatic);
+  console.warn('   Make sure FFmpeg is installed: https://ffmpeg.org/download.html');
+  return 'ffmpeg';
+};
 
 export const connection = {
   host: getConfig('redis.host', 'localhost'),
@@ -164,6 +339,39 @@ async function bootstrap() {
         } as UpdateVideoDto);
 
         console.log(`✅ Updated video ${videoId} successfully in ${duration}s`);
+
+        // Generate sprites and VTT
+        console.log('🎨 Generating sprites and VTT...');
+        try {
+          const { spriteUrls, vttUrls } = await generateSpritesAndVTT(
+            videoId,
+            inputPath,
+            r2Service,
+          );
+          console.log(`✅ Generated ${spriteUrls.length} sprites and ${vttUrls.length} VTT files`);
+
+          // Update video entity with sprites and VTT
+          console.log('About to update video with sprites and VTT:', {
+            sprites: spriteUrls,
+            vttFiles: vttUrls,
+          });
+          const updatedVideoWithSprites = await videoService.update(videoId, {
+            id: videoId,
+            sprites: spriteUrls,
+            vttFiles: vttUrls,
+          } as UpdateVideoDto);
+          console.log('Updated video entity with sprites and VTT:', {
+            id: updatedVideoWithSprites.id,
+            sprites: updatedVideoWithSprites.sprites,
+            vttFiles: updatedVideoWithSprites.vttFiles,
+          });
+
+          console.log(`✅ Updated video ${videoId} with sprites and VTT`);
+        } catch (error) {
+          console.error('❌ Failed to generate sprites and VTT:', error);
+          // Continue, don't fail the job
+        }
+
         console.log(`✅ [Worker] Job ${job.id} completed successfully in ${duration}s`);
         console.log(`   Updated video entity: ${updatedVideo.id}`);
         console.log(`   Video URL: ${masterResult.url}`);
