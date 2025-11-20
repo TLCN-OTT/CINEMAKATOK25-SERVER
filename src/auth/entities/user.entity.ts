@@ -1,4 +1,5 @@
 import { EntityFavorite } from 'src/pep/entities/favorite.entity';
+import { EntityReviewEpisode } from 'src/pep/entities/review-episode.entity';
 import { EntityReview } from 'src/pep/entities/review.entity';
 import { EntityWatchProgress } from 'src/pep/entities/watch-progress.entity';
 import { EntityWatchList } from 'src/pep/entities/watchlist.entity';
@@ -55,6 +56,9 @@ export class EntityUser extends PersonEntity {
 
   @OneToMany(() => EntityReview, review => review.user)
   reviews: EntityReview[];
+
+  @OneToMany(() => EntityReviewEpisode, reviewEpisode => reviewEpisode.user)
+  reviewEpisodes: EntityReviewEpisode[];
 
   @OneToMany(() => EntityWatchList, watchlist => watchlist.user)
   watchlist: EntityWatchList[];
