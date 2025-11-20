@@ -1,10 +1,12 @@
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { Injectable } from '@nestjs/common';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
+import { AuditLogService } from '../../audit-log/service/audit-log.service';
 import {
   ContentFilterDto,
   ContentSortBy,
@@ -33,6 +35,7 @@ export class ContentService {
     private readonly movieService: MovieService,
     @InjectRepository(EntityTVSeries)
     private readonly tvSeriesRepository: Repository<EntityTVSeries>,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async create(createDto: CreateContentDto) {
@@ -229,6 +232,13 @@ export class ContentService {
     const content = await this.findContentById(id);
 
     await this.contentRepository.update({ id }, { viewCount: content.viewCount + 1 });
+
+    // Log the view count increase
+    await this.auditLogService.log({
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      userId: 'System', // System-generated view count increase
+      description: `View count increased for content: ${content.title} (ID: ${id})`,
+    });
   }
 
   async getIdOfTVOrMovie(contentId: string): Promise<string> {

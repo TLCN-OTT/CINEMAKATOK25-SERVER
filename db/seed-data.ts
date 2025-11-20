@@ -3,6 +3,208 @@ import { ContentType } from 'src/cms/entities/content.entity';
 import e from 'express';
 
 import { MaturityRating } from '@app/common/enums/global.enum';
+import { GENDER, USER_STATUS } from '@app/common/enums/global.enum';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
+
+// ========================= // USER SEED // =========================
+export const usersSeed = [
+  {
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    password: '$2b$10$hashedpassword1', // This should be properly hashed
+    dateOfBirth: new Date('1990-01-15'),
+    gender: GENDER.MALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/john.png',
+    address: '123 Main St, City, Country',
+    phoneNumber: '+1234567890',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    password: '$2b$10$hashedpassword2',
+    dateOfBirth: new Date('1988-05-20'),
+    gender: GENDER.FEMALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/jane.png',
+    address: '456 Oak Ave, City, Country',
+    phoneNumber: '+1234567891',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'Admin User',
+    email: 'admin@example.com',
+    password: '$2b$10$hashedpassword3',
+    dateOfBirth: new Date('1985-03-10'),
+    gender: GENDER.MALE,
+    isAdmin: true,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/admin.png',
+    address: '789 Admin Blvd, City, Country',
+    phoneNumber: '+1234567892',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'Alice Johnson',
+    email: 'alice.johnson@example.com',
+    password: '$2b$10$hashedpassword4',
+    dateOfBirth: new Date('1992-07-25'),
+    gender: GENDER.FEMALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/alice.png',
+    address: '321 Pine St, City, Country',
+    phoneNumber: '+1234567893',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'Bob Wilson',
+    email: 'bob.wilson@example.com',
+    password: '$2b$10$hashedpassword5',
+    dateOfBirth: new Date('1987-11-30'),
+    gender: GENDER.MALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/bob.png',
+    address: '654 Elm Dr, City, Country',
+    phoneNumber: '+1234567894',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'Charlie Brown',
+    email: 'charlie.brown@example.com',
+    password: '$2b$10$hashedpassword6',
+    dateOfBirth: new Date('1995-09-12'),
+    gender: GENDER.MALE,
+    isAdmin: false,
+    isEmailVerified: false,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/charlie.png',
+    address: '987 Maple Ln, City, Country',
+    phoneNumber: '+1234567895',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'Diana Prince',
+    email: 'diana.prince@example.com',
+    password: '$2b$10$hashedpassword7',
+    dateOfBirth: new Date('1991-04-18'),
+    gender: GENDER.FEMALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/diana.png',
+    address: '147 Wonder Way, City, Country',
+    phoneNumber: '+1234567896',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'Edward Norton',
+    email: 'edward.norton@example.com',
+    password: '$2b$10$hashedpassword8',
+    dateOfBirth: new Date('1989-12-05'),
+    gender: GENDER.MALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/edward.png',
+    address: '258 Fight Club St, City, Country',
+    phoneNumber: '+1234567897',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'Fiona Green',
+    email: 'fiona.green@example.com',
+    password: '$2b$10$hashedpassword9',
+    dateOfBirth: new Date('1993-08-22'),
+    gender: GENDER.FEMALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/fiona.png',
+    address: '369 Green Valley, City, Country',
+    phoneNumber: '+1234567898',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  {
+    name: 'George Lucas',
+    email: 'george.lucas@example.com',
+    password: '$2b$10$hashedpassword10',
+    dateOfBirth: new Date('1986-06-14'),
+    gender: GENDER.MALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/george.png',
+    address: '741 Star Wars Blvd, City, Country',
+    phoneNumber: '+1234567899',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: false,
+  },
+  // Banned user
+  {
+    name: 'Banned User',
+    email: 'banned@example.com',
+    password: '$2b$10$hashedpassword11',
+    dateOfBirth: new Date('1994-02-28'),
+    gender: GENDER.MALE,
+    isAdmin: false,
+    isEmailVerified: true,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/banned.png',
+    address: '999 Banned St, City, Country',
+    phoneNumber: '+1234567800',
+    status: USER_STATUS.ACTIVATED,
+    isBanned: true,
+    banReason: 'Violation of terms of service',
+    bannedUntil: new Date('2025-12-31'),
+  },
+  // Inactive user
+  {
+    name: 'Inactive User',
+    email: 'inactive@example.com',
+    password: '$2b$10$hashedpassword12',
+    dateOfBirth: new Date('1984-10-08'),
+    gender: GENDER.FEMALE,
+    isAdmin: false,
+    isEmailVerified: false,
+    provider: undefined,
+    providerId: undefined,
+    avatar: 'https://yourdomain.com/avatars/inactive.png',
+    address: '000 Inactive Ave, City, Country',
+    phoneNumber: '+1234567801',
+    status: USER_STATUS.DEACTIVATED,
+    isBanned: false,
+  },
+];
 
 // ========================= // CATEGORY SEED // =========================
 export const categoriesSeed = [
@@ -533,3 +735,263 @@ function generateTVSeries(count: number) {
 }
 
 export const tvSeriesSeed = [...generateTVSeries(60)];
+
+// ========================= // AUDIT LOG SEED // =========================
+export function generateAuditLogs(
+  userIds: string[] = [],
+  contentIds: string[] = [],
+  contentTitles: string[] = [],
+) {
+  const logs: Array<{
+    userId: string;
+    action: LOG_ACTION;
+    description: string;
+    createdAt: Date;
+  }> = [];
+  const now = new Date();
+
+  // Use provided user IDs or fallback to sample IDs
+  const sampleUserIds =
+    userIds.length > 0
+      ? userIds
+      : [
+          'user-1',
+          'user-2',
+          'user-3',
+          'user-4',
+          'user-5',
+          'user-6',
+          'user-7',
+          'user-8',
+          'user-9',
+          'user-10',
+          'user-11',
+          'user-12',
+          'user-13',
+          'user-14',
+          'user-15',
+        ];
+
+  // Use provided content IDs or fallback to sample IDs
+  const sampleContentIds =
+    contentIds.length > 0
+      ? contentIds
+      : [
+          'content-1',
+          'content-2',
+          'content-3',
+          'content-4',
+          'content-5',
+          'content-6',
+          'content-7',
+          'content-8',
+          'content-9',
+          'content-10',
+        ];
+
+  const sampleTitles =
+    contentTitles.length > 0
+      ? contentTitles
+      : [
+          'Trending Up Movie',
+          'Trending Down Movie',
+          'Stable Movie',
+          'New Movie',
+          'Popular Movie 1',
+          'Popular Movie 2',
+          'Popular Movie 3',
+          'Popular Movie 4',
+          'Popular Movie 5',
+          'Popular Movie 6',
+        ];
+
+  // 1. CONTENT_VIEW_INCREASED logs for trending analysis
+  // Content 1: Trending up (50 views tuần này, 30 views tuần trước)
+  // Previous period (8-14 days ago): 30 views
+  for (let i = 0; i < 30; i++) {
+    const randomDay = 8 + Math.floor(Math.random() * 7); // 8-14 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: Trending Up Movie (ID: ${sampleContentIds[0]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+  // Recent period (0-7 days ago): 50 views
+  for (let i = 0; i < 50; i++) {
+    const randomDay = Math.floor(Math.random() * 7); // 0-6 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: Trending Up Movie (ID: ${sampleContentIds[0]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+
+  // Content 2: Trending down (20 views tuần này, 40 views tuần trước) - sẽ có change âm
+  // Previous period (8-14 days ago): 40 views
+  for (let i = 0; i < 40; i++) {
+    const randomDay = 8 + Math.floor(Math.random() * 7); // 8-14 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: Trending Down Movie (ID: ${sampleContentIds[1]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+  // Recent period (0-7 days ago): 20 views
+  for (let i = 0; i < 20; i++) {
+    const randomDay = Math.floor(Math.random() * 7); // 0-6 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: Trending Down Movie (ID: ${sampleContentIds[1]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+
+  // Content 3: Stable (35 views both weeks) - change ≈ 0%
+  // Previous period (8-14 days ago): 35 views
+  for (let i = 0; i < 35; i++) {
+    const randomDay = 8 + Math.floor(Math.random() * 7); // 8-14 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: Stable Movie (ID: ${sampleContentIds[2]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+  // Recent period (0-7 days ago): 35 views
+  for (let i = 0; i < 35; i++) {
+    const randomDay = Math.floor(Math.random() * 7); // 0-6 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: Stable Movie (ID: ${sampleContentIds[2]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+
+  // Content 4: New content (25 views tuần này, 0 views tuần trước) - change = 0%
+  // Only recent period (0-7 days ago): 25 views
+  for (let i = 0; i < 25; i++) {
+    const randomDay = Math.floor(Math.random() * 7); // 0-6 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: New Movie (ID: ${sampleContentIds[3]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+
+  // Content 5: High trending (80 views tuần này, 20 views tuần trước)
+  // Previous period (8-14 days ago): 20 views
+  for (let i = 0; i < 20; i++) {
+    const randomDay = 8 + Math.floor(Math.random() * 7); // 8-14 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: High Trending Movie (ID: ${sampleContentIds[4]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+  // Recent period (0-7 days ago): 80 views
+  for (let i = 0; i < 80; i++) {
+    const randomDay = Math.floor(Math.random() * 7); // 0-6 days ago
+    logs.push({
+      userId: 'System',
+      action: LOG_ACTION.CONTENT_VIEW_INCREASED,
+      description: `View count increased for content: High Trending Movie (ID: ${sampleContentIds[4]})`,
+      createdAt: new Date(now.getTime() - randomDay * 24 * 60 * 60 * 1000),
+    });
+  }
+
+  // 2. User engagement actions for DAU/MAU/Churn analysis
+  const engagementActions = [
+    LOG_ACTION.USER_LOGIN,
+    LOG_ACTION.LIKE_MOVIE,
+    LOG_ACTION.PLAY_MOVIE,
+    LOG_ACTION.ADD_MOVIE_TO_WATCHLIST,
+    LOG_ACTION.CREATE_REVIEW,
+  ];
+
+  // Generate DAU data for last 7 days (decreasing pattern)
+  const dauCounts = [120, 115, 110, 105, 100, 95, 90]; // Today to 6 days ago
+  for (let day = 0; day < 7; day++) {
+    const dayUsers = dauCounts[day];
+    for (let i = 0; i < dayUsers; i++) {
+      const userId = sampleUserIds[i % sampleUserIds.length];
+      const action = engagementActions[Math.floor(Math.random() * engagementActions.length)];
+      logs.push({
+        userId,
+        action,
+        description: `${action} by user ${userId}`,
+        createdAt: new Date(
+          now.getTime() - day * 24 * 60 * 60 * 1000 - Math.random() * 24 * 60 * 60 * 1000,
+        ), // Random time in day
+      });
+    }
+  }
+
+  // Generate MAU data for last 4 months (increasing pattern)
+  const mauCounts = [800, 850, 900, 950]; // Current month to 3 months ago
+  for (let month = 0; month < 4; month++) {
+    const monthUsers = mauCounts[month];
+    const monthStart = new Date(now.getFullYear(), now.getMonth() - month, 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() - month + 1, 1);
+
+    for (let i = 0; i < monthUsers; i++) {
+      const userId = sampleUserIds[i % sampleUserIds.length];
+      const action = engagementActions[Math.floor(Math.random() * engagementActions.length)];
+      const randomTime =
+        monthStart.getTime() + Math.random() * (monthEnd.getTime() - monthStart.getTime());
+      logs.push({
+        userId,
+        action,
+        description: `${action} by user ${userId}`,
+        createdAt: new Date(randomTime),
+      });
+    }
+  }
+
+  // 3. User registration data (30 days)
+  for (let i = 0; i < sampleUserIds.length; i++) {
+    logs.push({
+      userId: sampleUserIds[i],
+      action: LOG_ACTION.USER_REGISTRATION,
+      description: `User registration for ${sampleUserIds[i]}`,
+      createdAt: new Date(now.getTime() - i * 24 * 60 * 60 * 1000), // 0-12 days ago (one per user)
+    });
+  }
+
+  // 4. Churn analysis - users who haven't logged in for 30+ days
+  for (let i = 0; i < sampleUserIds.length; i++) {
+    const lastLogin = new Date(now.getTime() - (35 + Math.random() * 60) * 24 * 60 * 60 * 1000); // 35-95 days ago
+    logs.push({
+      userId: sampleUserIds[i],
+      action: LOG_ACTION.USER_LOGIN,
+      description: `Last login for user ${sampleUserIds[i]}`,
+      createdAt: lastLogin,
+    });
+  }
+
+  // 5. Series engagement
+  const seriesActions = [
+    LOG_ACTION.LIKE_SERIES,
+    LOG_ACTION.PLAY_EPISODE_OF_SERIES,
+    LOG_ACTION.ADD_SERIES_TO_WATCHLIST,
+  ];
+
+  for (let i = 0; i < 100; i++) {
+    const userId = sampleUserIds[i % sampleUserIds.length];
+    const action = seriesActions[Math.floor(Math.random() * seriesActions.length)];
+    logs.push({
+      userId,
+      action,
+      description: `${action} for series by user ${userId}`,
+      createdAt: new Date(now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random in last 30 days
+    });
+  }
+
+  return logs;
+}

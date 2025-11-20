@@ -16,7 +16,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { AuditLogDto, AuditLogVideo } from '../dtos/audit-log.dto';
+import { AuditLogDto, AuditLogVideo, RecentActivityDto } from '../dtos/audit-log.dto';
 import { AuditLogService } from '../service/audit-log.service';
 
 // import { AdminGuard } from '...'; // Giả sử bạn có Guard bảo vệ admin
@@ -85,6 +85,39 @@ export class AuditLogController {
     return ResponseBuilder.createResponse({
       data: plainToInstance(AuditLogDto, log, { excludeExtraneousValues: true }),
       message: 'Audit log created successfully',
+    });
+  }
+
+  @Get('/recent-activity')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @ApiProperty({ description: 'Get recent activity logs from the last 7 days with pagination' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of recent activity logs',
+    type: PaginatedApiResponseDto(RecentActivityDto),
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  async getRecentActivity(@Query() query: PaginationQueryDto) {
+    const results = await this.auditLogService.getRecentActivity(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: results.result.map(log =>
+        plainToInstance(RecentActivityDto, log, { excludeExtraneousValues: true }),
+      ),
+      totalItems: results.total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 20,
+      message: 'Recent activity logs retrieved successfully',
     });
   }
 }
