@@ -1,3 +1,5 @@
+import { EntityReviewEpisode } from 'src/pep/entities/review-episode.entity';
+
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 
 import { BaseEntity } from '@app/common/base/base-entity';
@@ -56,6 +58,12 @@ export class EntityEpisode extends BaseEntity {
   @ManyToOne(() => EntitySeason, season => season.episodes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'season_id' })
   season: EntitySeason;
+
+  @OneToMany(() => EntityReviewEpisode, review => review.episode, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  reviews: EntityReviewEpisode[];
   // Helper method để lấy videos
   async getVideos(videoRepository): Promise<EntityVideo> {
     return videoRepository.findOne({

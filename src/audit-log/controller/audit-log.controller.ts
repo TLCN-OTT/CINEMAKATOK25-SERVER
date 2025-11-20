@@ -72,7 +72,7 @@ export class AuditLogController {
     });
   }
 
-  @Post('/video-action/')
+  @Post('/video-action')
   @UseGuards(JwtAuthGuard)
   @ApiProperty({ description: 'Create a new audit log entry' })
   @ApiResponse({
