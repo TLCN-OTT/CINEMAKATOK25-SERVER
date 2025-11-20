@@ -2,7 +2,10 @@ import { CoreModule } from '@app/core/core.module';
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { AuditLog } from '../audit-log/entities/audit-log.entity';
+import { EntityWatchProgress } from '../pep/entities/watch-progress.entity';
 import { ActorController } from './controllers/actor.controller';
+import { AnalyticsController } from './controllers/analytics.controller';
 import { CategoryController } from './controllers/category.controller';
 import { ContentController } from './controllers/content.controller';
 import { DirectorController } from './controllers/director.controller';
@@ -18,6 +21,7 @@ import { EntityTag } from './entities/tag.entity';
 import { EntityEpisode, EntitySeason, EntityTVSeries } from './entities/tvseries.entity';
 import { EntityVideo } from './entities/video.entity';
 import { ActorService } from './services/actor.service';
+import { AnalyticsService } from './services/analytics.service';
 import { CategoryService } from './services/category.service';
 import { ContentService } from './services/content.service';
 import { DirectorService } from './services/director.service';
@@ -41,6 +45,8 @@ import { VideoService } from './services/video.service';
       EntitySeason,
       EntityEpisode,
       EntityMovie,
+      EntityWatchProgress,
+      AuditLog,
     ]),
     forwardRef(() => CoreModule), // ✅ Sử dụng forwardRef để tránh circular dependency
   ],
@@ -53,6 +59,7 @@ import { VideoService } from './services/video.service';
     CategoryController,
     MovieController,
     TvSeriesController,
+    AnalyticsController,
   ],
   providers: [
     ContentService,
@@ -65,6 +72,7 @@ import { VideoService } from './services/video.service';
     TvSeriesService,
     S3Service,
     R2StorageService,
+    AnalyticsService,
   ],
   exports: [
     VideoService,

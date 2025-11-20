@@ -1,6 +1,8 @@
 import { EntityEpisode, EntitySeason, EntityTVSeries } from 'src/cms/entities/tvseries.entity';
 
 import { connectionSource } from '../db/seed.config';
+import { AuditLog } from '../src/audit-log/entities/audit-log.entity';
+import { EntityUser } from '../src/auth/entities/user.entity';
 import { EntityActor, EntityDirector } from '../src/cms/entities/actor.entity';
 import { EntityCategory } from '../src/cms/entities/category.entity';
 import { EntityContent } from '../src/cms/entities/content.entity';
@@ -11,9 +13,11 @@ import {
   actorsSeed,
   categoriesSeed,
   directorsSeed,
+  generateAuditLogs,
   moviesSeed,
   tagsSeed,
   tvSeriesSeed,
+  usersSeed,
 } from './seed-data';
 
 async function seed() {
@@ -24,7 +28,7 @@ async function seed() {
     TRUNCATE TABLE 
       "content_category", "content_tag", "content_actor", "content_director",
       "category", "tag", "actor", "director", "content", "movies",
-      "tvseries", "season", "episode", "video"
+      "tvseries", "season", "episode", "video", "audit_logs", "user"
     CASCADE;
   `);
 
@@ -44,14 +48,22 @@ async function seed() {
   const directorRepo = connectionSource.getRepository(EntityDirector);
   await directorRepo.save(directorsSeed);
 
+  // Seed users
+  console.log('🌱 Seeding users...');
+  const userRepo = connectionSource.getRepository(EntityUser);
+  const savedUsers = await userRepo.save(usersSeed);
+  console.log(`✅ Seeded ${savedUsers.length} users`);
+
   // Seed movies
   const movieRepo = connectionSource.getRepository(EntityMovie);
   const contentRepo = connectionSource.getRepository(EntityContent);
+  const savedMovies: EntityMovie[] = [];
   for (const movie of moviesSeed) {
     // Save metaData (EntityContent)
     const metaData = await contentRepo.save(movie.metaData);
     // Save movie with metaData
-    await movieRepo.save({ ...movie, metaData });
+    const savedMovie = await movieRepo.save({ ...movie, metaData });
+    savedMovies.push(savedMovie);
   }
 
   // Seed TV series
@@ -60,6 +72,7 @@ async function seed() {
   const tvEpisodeRepo = connectionSource.getRepository(EntityEpisode);
   const videoRepo = connectionSource.getRepository(EntityVideo);
 
+  const savedTVSeries: EntityTVSeries[] = [];
   for (const series of tvSeriesSeed) {
     const { metaData, seasons = [], ...seriesPayload } = series;
 
@@ -68,6 +81,8 @@ async function seed() {
       ...seriesPayload,
       metaData: metaDataEntity,
     });
+    savedTVSeries.push(tvSeriesEntity);
+    savedTVSeries.push(tvSeriesEntity);
 
     for (const seasonData of seasons) {
       const { episodes = [], ...seasonPayload } = seasonData;
@@ -97,6 +112,26 @@ async function seed() {
       }
     }
   }
+
+  // Generate and seed audit logs with real content IDs and user IDs
+  console.log('🌱 Generating audit logs...');
+  const allContentIds = [
+    ...savedMovies.map(m => m.metaData.id),
+    ...savedTVSeries.map(s => s.metaData.id),
+  ].slice(0, 10); // Take first 10 content IDs for testing
+
+  const allContentTitles = [
+    ...savedMovies.map(m => m.metaData.title),
+    ...savedTVSeries.map(s => s.metaData.title),
+  ].slice(0, 10); // Take first 10 content titles for testing
+
+  const allUserIds = (savedUsers as EntityUser[]).map(u => u.id).filter(id => id !== undefined);
+
+  const auditLogsData = generateAuditLogs(allUserIds, allContentIds, allContentTitles);
+  console.log('🌱 Seeding audit logs...');
+  const auditLogRepo = connectionSource.getRepository(AuditLog);
+  await auditLogRepo.save(auditLogsData);
+  console.log(`✅ Seeded ${auditLogsData.length} audit logs`);
 
   await connectionSource.destroy();
   console.log('✅ Seed data completed!');

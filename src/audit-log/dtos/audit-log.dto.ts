@@ -45,3 +45,33 @@ export class AuditLogVideo {
   @IsUUID()
   videoId: string;
 }
+
+export class RecentActivityDto extends BaseEntityDto {
+  @ApiProperty({
+    description: 'ID of the user who performed the action',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @Expose()
+  userId: string;
+
+  @ApiProperty({
+    description: 'Name of the user who performed the action',
+    example: 'John Doe',
+  })
+  @Expose()
+  userName: string;
+
+  @ApiProperty({
+    description: 'Action performed',
+    example: LOG_ACTION.USER_LOGIN,
+  })
+  @Expose()
+  action: LOG_ACTION;
+
+  @ApiProperty({
+    description: 'Description of the action',
+    example: 'User logged in to the system',
+  })
+  @Expose()
+  description: string;
+}
