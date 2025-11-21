@@ -78,6 +78,7 @@ export class WatchListService {
         user: { id: userId },
         content: { id: contentId },
       },
+      relations: ['content'],
     });
 
     if (!watchListItem) {
