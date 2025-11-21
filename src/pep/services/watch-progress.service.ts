@@ -1,4 +1,6 @@
 import { EntityUser } from 'src/auth/entities/user.entity';
+import { EntityMovie } from 'src/cms/entities/movie.entity';
+import { EntityEpisode, EntitySeason, EntityTVSeries } from 'src/cms/entities/tvseries.entity';
 import { EntityVideo } from 'src/cms/entities/video.entity';
 import { VideoService } from 'src/cms/services/video.service';
 
@@ -186,79 +188,69 @@ export class WatchProgressService {
 
         // Get owner info from video
         try {
-          if (item.video.ownerId && item.video.ownerType) {
-            const ownerInfo = await this.videoService.getMovieOrSeriesIdFromVideo(item.video.id);
-            if (ownerInfo && 'movieId' in ownerInfo && ownerInfo.movieId) {
-              movieId = ownerInfo.movieId;
-              // Get movie metadata
-              const movie = await this.watchProgressRepository.manager
-                .createQueryBuilder()
-                .select('movie')
-                .from('EntityMovie', 'movie')
-                .leftJoinAndSelect('movie.metaData', 'metaData')
-                .where('movie.id = :movieId', { movieId: ownerInfo.movieId })
-                .getOne();
-              if (movie) {
-                contentTitle = movie.metaData?.title || null;
-                contentThumbnail = movie.metaData?.thumbnail || null;
-                duration = movie.duration || null;
-                metadata = movie.metaData
-                  ? {
-                      id: movie.metaData.id,
-                      title: movie.metaData.title,
-                      description: movie.metaData.description,
-                      thumbnail: movie.metaData.thumbnail,
-                      banner: movie.metaData.banner,
-                      trailer: movie.metaData.trailer,
-                      type: movie.metaData.type,
-                      releaseDate: movie.metaData.releaseDate,
-                      avgRating: movie.metaData.avgRating,
-                      imdbRating: movie.metaData.imdbRating,
-                      maturityRating: movie.metaData.maturityRating,
-                      viewCount: movie.metaData.viewCount,
-                    }
-                  : null;
-              }
-            } else if (ownerInfo && 'tvSeriesId' in ownerInfo && ownerInfo.tvSeriesId) {
-              // For TV series, get series metadata and episode duration if applicable
-              const tvSeries = await this.watchProgressRepository.manager
-                .createQueryBuilder()
-                .select('tvseries')
-                .from('EntityTvseries', 'tvseries')
-                .leftJoinAndSelect('tvseries.metaData', 'metaData')
-                .where('tvseries.id = :tvSeriesId', { tvSeriesId: ownerInfo.tvSeriesId })
-                .getOne();
-              if (tvSeries) {
-                contentTitle = tvSeries.metaData?.title || null;
-                contentThumbnail = tvSeries.metaData?.thumbnail || null;
-                metadata = tvSeries.metaData
-                  ? {
-                      id: tvSeries.metaData.id,
-                      title: tvSeries.metaData.title,
-                      description: tvSeries.metaData.description,
-                      thumbnail: tvSeries.metaData.thumbnail,
-                      banner: tvSeries.metaData.banner,
-                      trailer: tvSeries.metaData.trailer,
-                      type: tvSeries.metaData.type,
-                      releaseDate: tvSeries.metaData.releaseDate,
-                      avgRating: tvSeries.metaData.avgRating,
-                      imdbRating: tvSeries.metaData.imdbRating,
-                      maturityRating: tvSeries.metaData.maturityRating,
-                      viewCount: tvSeries.metaData.viewCount,
-                    }
-                  : null;
-              }
-              // Get duration from episode if video is for episode
-              if (item.video.ownerType === 'episode' && item.video.ownerId) {
-                episodeId = item.video.ownerId;
-                const episode = await this.watchProgressRepository.manager
-                  .createQueryBuilder()
-                  .select('episode')
-                  .from('EntityEpisode', 'episode')
-                  .where('episode.id = :episodeId', { episodeId: item.video.ownerId })
-                  .getOne();
-                duration = episode?.episodeDuration || null;
-              }
+          if (item.video.ownerType === 'episode' && item.video.ownerId) {
+            // Handle episode: find tvSeries of the episode
+            episodeId = item.video.ownerId;
+            const episode = await this.watchProgressRepository.manager
+              .createQueryBuilder()
+              .select('episode')
+              .from('EntityEpisode', 'episode')
+              .leftJoinAndSelect('episode.season', 'season')
+              .leftJoinAndSelect('season.tvseries', 'tvseries')
+              .leftJoinAndSelect('tvseries.metaData', 'metaData')
+              .where('episode.id = :episodeId', { episodeId: item.video.ownerId })
+              .getOne();
+            if (episode) {
+              duration = episode.episodeDuration;
+              contentTitle = episode.season.tvseries.metaData?.title || null;
+              contentThumbnail = episode.season.tvseries.metaData?.thumbnail || null;
+              metadata = episode.season.tvseries.metaData
+                ? {
+                    id: episode.season.tvseries.metaData.id,
+                    title: episode.season.tvseries.metaData.title,
+                    description: episode.season.tvseries.metaData.description,
+                    thumbnail: episode.season.tvseries.metaData.thumbnail,
+                    banner: episode.season.tvseries.metaData.banner,
+                    trailer: episode.season.tvseries.metaData.trailer,
+                    type: episode.season.tvseries.metaData.type,
+                    releaseDate: episode.season.tvseries.metaData.releaseDate,
+                    avgRating: episode.season.tvseries.metaData.avgRating,
+                    imdbRating: episode.season.tvseries.metaData.imdbRating,
+                    maturityRating: episode.season.tvseries.metaData.maturityRating,
+                    viewCount: episode.season.tvseries.metaData.viewCount,
+                  }
+                : null;
+            }
+          } else if (item.video.ownerType === 'movie' && item.video.ownerId) {
+            // Handle movie
+            movieId = item.video.ownerId;
+            const movie = await this.watchProgressRepository.manager
+              .createQueryBuilder()
+              .select('movie')
+              .from('EntityMovie', 'movie')
+              .leftJoinAndSelect('movie.metaData', 'metaData')
+              .where('movie.id = :movieId', { movieId: item.video.ownerId })
+              .getOne();
+            if (movie) {
+              contentTitle = movie.metaData?.title || null;
+              contentThumbnail = movie.metaData?.thumbnail || null;
+              duration = movie.duration || null;
+              metadata = movie.metaData
+                ? {
+                    id: movie.metaData.id,
+                    title: movie.metaData.title,
+                    description: movie.metaData.description,
+                    thumbnail: movie.metaData.thumbnail,
+                    banner: movie.metaData.banner,
+                    trailer: movie.metaData.trailer,
+                    type: movie.metaData.type,
+                    releaseDate: movie.metaData.releaseDate,
+                    avgRating: movie.metaData.avgRating,
+                    imdbRating: movie.metaData.imdbRating,
+                    maturityRating: movie.metaData.maturityRating,
+                    viewCount: movie.metaData.viewCount,
+                  }
+                : null;
             }
           }
         } catch (error) {
