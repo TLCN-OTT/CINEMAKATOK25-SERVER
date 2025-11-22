@@ -182,6 +182,9 @@ export class WatchProgressService {
         let duration: number | null = null;
         let movieId: string | null = null;
         let episodeId: string | null = null;
+        let tvSeriesId: string | null = null;
+        let episodeNumber: number | null = null;
+        let seasonNumber: number | null = null;
         let contentTitle: string | null = null;
         let contentThumbnail: string | null = null;
         let metadata: Record<string, any> | null = null;
@@ -204,6 +207,9 @@ export class WatchProgressService {
               duration = episode.episodeDuration;
               contentTitle = episode.season.tvseries.metaData?.title || null;
               contentThumbnail = episode.season.tvseries.metaData?.thumbnail || null;
+              tvSeriesId = episode.season.tvseries.id;
+              episodeNumber = episode.episodeNumber;
+              seasonNumber = episode.season.seasonNumber;
               metadata = episode.season.tvseries.metaData
                 ? {
                     id: episode.season.tvseries.metaData.id,
@@ -261,6 +267,9 @@ export class WatchProgressService {
           ...item,
           movieId,
           episodeId,
+          tvSeriesId,
+          episodeNumber,
+          seasonNumber,
           duration,
           contentTitle,
           contentThumbnail,

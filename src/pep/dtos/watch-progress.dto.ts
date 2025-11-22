@@ -79,6 +79,36 @@ export class WatchProgressDto extends BaseEntityDto {
   episodeId: string | null;
 
   @ApiProperty({
+    description: 'TV Series ID (if the video belongs to an episode)',
+    example: '550e8400-e29b-41d4-a716-446655440003',
+    nullable: true,
+  })
+  @Expose()
+  @IsOptional()
+  @IsUUID()
+  tvSeriesId: string | null;
+
+  @ApiProperty({
+    description: 'Episode number (if the video belongs to an episode)',
+    example: 5,
+    nullable: true,
+  })
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  episodeNumber: number | null;
+
+  @ApiProperty({
+    description: 'Season number (if the video belongs to an episode)',
+    example: 2,
+    nullable: true,
+  })
+  @Expose()
+  @IsOptional()
+  @IsNumber()
+  seasonNumber: number | null;
+
+  @ApiProperty({
     description: 'Full content metadata including description, release date, rating, etc.',
     type: Object,
     nullable: true,
