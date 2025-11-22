@@ -741,6 +741,8 @@ export function generateAuditLogs(
   userIds: string[] = [],
   contentIds: string[] = [],
   contentTitles: string[] = [],
+  savedMovies: string[] = [],
+  savedTVSeries: string[] = [],
 ) {
   const logs: Array<{
     userId: string;
@@ -906,54 +908,6 @@ export function generateAuditLogs(
     });
   }
 
-  // 2. User engagement actions for DAU/MAU/Churn analysis
-  const engagementActions = [
-    LOG_ACTION.USER_LOGIN,
-    LOG_ACTION.LIKE_MOVIE,
-    LOG_ACTION.PLAY_MOVIE,
-    LOG_ACTION.ADD_MOVIE_TO_WATCHLIST,
-    LOG_ACTION.CREATE_REVIEW,
-  ];
-
-  // Generate DAU data for last 7 days (decreasing pattern)
-  const dauCounts = [120, 115, 110, 105, 100, 95, 90]; // Today to 6 days ago
-  for (let day = 0; day < 7; day++) {
-    const dayUsers = dauCounts[day];
-    for (let i = 0; i < dayUsers; i++) {
-      const userId = sampleUserIds[i % sampleUserIds.length];
-      const action = engagementActions[Math.floor(Math.random() * engagementActions.length)];
-      logs.push({
-        userId,
-        action,
-        description: `${action} by user ${userId}`,
-        createdAt: new Date(
-          now.getTime() - day * 24 * 60 * 60 * 1000 - Math.random() * 24 * 60 * 60 * 1000,
-        ), // Random time in day
-      });
-    }
-  }
-
-  // Generate MAU data for last 4 months (increasing pattern)
-  const mauCounts = [800, 850, 900, 950]; // Current month to 3 months ago
-  for (let month = 0; month < 4; month++) {
-    const monthUsers = mauCounts[month];
-    const monthStart = new Date(now.getFullYear(), now.getMonth() - month, 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() - month + 1, 1);
-
-    for (let i = 0; i < monthUsers; i++) {
-      const userId = sampleUserIds[i % sampleUserIds.length];
-      const action = engagementActions[Math.floor(Math.random() * engagementActions.length)];
-      const randomTime =
-        monthStart.getTime() + Math.random() * (monthEnd.getTime() - monthStart.getTime());
-      logs.push({
-        userId,
-        action,
-        description: `${action} by user ${userId}`,
-        createdAt: new Date(randomTime),
-      });
-    }
-  }
-
   // 3. User registration data (30 days)
   for (let i = 0; i < sampleUserIds.length; i++) {
     logs.push({
@@ -976,21 +930,140 @@ export function generateAuditLogs(
   }
 
   // 5. Series engagement
+  // 5. Series engagement
   const seriesActions = [
     LOG_ACTION.LIKE_SERIES,
     LOG_ACTION.PLAY_EPISODE_OF_SERIES,
     LOG_ACTION.ADD_SERIES_TO_WATCHLIST,
+    LOG_ACTION.CREATE_REVIEW,
   ];
 
   for (let i = 0; i < 100; i++) {
     const userId = sampleUserIds[i % sampleUserIds.length];
     const action = seriesActions[Math.floor(Math.random() * seriesActions.length)];
+    const typeText = 'TV series'; // Loại content
+    const contentId = savedTVSeries[Math.floor(Math.random() * savedTVSeries.length)];
+
+    let description = '';
+    switch (action) {
+      case LOG_ACTION.LIKE_SERIES:
+        description = `User ${userId} liked ${typeText} with ID ${contentId}`;
+        break;
+      case LOG_ACTION.PLAY_EPISODE_OF_SERIES:
+        description = `User ${userId} played series with ID ${contentId}`;
+        break;
+      case LOG_ACTION.ADD_SERIES_TO_WATCHLIST:
+        description = `User ${userId} added ${typeText} with ID ${contentId}`;
+        break;
+      case LOG_ACTION.CREATE_REVIEW:
+        description = `User ${userId} created review on ${typeText} with ID ${contentId}`;
+        break;
+      default:
+        description = `User ${userId} did ${action} on ${typeText} with ID ${contentId}`;
+    }
+
     logs.push({
       userId,
       action,
-      description: `${action} for series by user ${userId}`,
-      createdAt: new Date(now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random in last 30 days
+      description,
+      createdAt: new Date(now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000),
     });
+  }
+
+  // 2. User engagement actions for DAU/MAU/Churn analysis
+  const engagementActions = [
+    LOG_ACTION.USER_LOGIN,
+    LOG_ACTION.LIKE_MOVIE,
+    LOG_ACTION.PLAY_MOVIE,
+    LOG_ACTION.ADD_MOVIE_TO_WATCHLIST,
+    LOG_ACTION.CREATE_REVIEW,
+  ];
+
+  // Generate DAU data for last 7 days (decreasing pattern)
+  const dauCounts = [120, 115, 110, 105, 100, 95, 90]; // Today to 6 days ago
+  for (let day = 0; day < 7; day++) {
+    const dayUsers = dauCounts[day];
+    for (let i = 0; i < dayUsers; i++) {
+      const userId = sampleUserIds[i % sampleUserIds.length];
+      const action = engagementActions[Math.floor(Math.random() * engagementActions.length)];
+      const typeText = action.includes('MOVIE') ? 'movie' : 'user';
+      const contentId = savedMovies[Math.floor(Math.random() * savedMovies.length)];
+
+      let description = '';
+      switch (action) {
+        case LOG_ACTION.USER_LOGIN:
+          description = `User ${userId} logged in`;
+          break;
+        case LOG_ACTION.LIKE_MOVIE:
+          description = `User ${userId} liked ${typeText} with ID ${contentId}`;
+          break;
+        case LOG_ACTION.PLAY_MOVIE:
+          description = `User ${userId} played ${typeText} with ID ${contentId}`;
+          break;
+        case LOG_ACTION.ADD_MOVIE_TO_WATCHLIST:
+          description = `User ${userId} added ${typeText} with ID ${contentId}`;
+          break;
+        case LOG_ACTION.CREATE_REVIEW:
+          description = `User ${userId} created review on movie with ID ${contentId}`;
+          break;
+        default:
+          description = `User ${userId} did ${action} on ${typeText} with ID ${contentId}`;
+      }
+
+      logs.push({
+        userId,
+        action,
+        description,
+        createdAt: new Date(
+          now.getTime() - day * 24 * 60 * 60 * 1000 - Math.random() * 24 * 60 * 60 * 1000,
+        ),
+      });
+    }
+  }
+
+  // Generate MAU data for last 4 months (increasing pattern)
+  const mauCounts = [800, 850, 900, 950]; // Current month to 3 months ago
+  for (let month = 0; month < 4; month++) {
+    const monthUsers = mauCounts[month];
+    const monthStart = new Date(now.getFullYear(), now.getMonth() - month, 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() - month + 1, 1);
+
+    for (let i = 0; i < monthUsers; i++) {
+      const userId = sampleUserIds[i % sampleUserIds.length];
+      const action = engagementActions[Math.floor(Math.random() * engagementActions.length)];
+      const typeText = action.includes('MOVIE') ? 'movie' : 'user';
+      const contentId = savedMovies[Math.floor(Math.random() * savedMovies.length)];
+      const randomTime =
+        monthStart.getTime() + Math.random() * (monthEnd.getTime() - monthStart.getTime());
+
+      let description = '';
+      switch (action) {
+        case LOG_ACTION.USER_LOGIN:
+          description = `User ${userId} logged in`;
+          break;
+        case LOG_ACTION.LIKE_MOVIE:
+          description = `User ${userId} liked ${typeText} with ID ${contentId}`;
+          break;
+        case LOG_ACTION.PLAY_MOVIE:
+          description = `User ${userId} played ${typeText} with ID ${contentId}`;
+          break;
+        case LOG_ACTION.ADD_MOVIE_TO_WATCHLIST:
+          description = `User ${userId} added ${typeText} with ID ${contentId}`;
+          break;
+        case LOG_ACTION.CREATE_REVIEW:
+          description = `User ${userId} created review on ${typeText} with ID ${contentId}`;
+          break;
+        default:
+          description = `User ${userId} did ${action} on ${typeText} with ID ${contentId}`;
+      }
+
+      logs.push({
+        userId,
+        action,
+        description,
+        createdAt: new Date(randomTime),
+      });
+    }
   }
 
   return logs;

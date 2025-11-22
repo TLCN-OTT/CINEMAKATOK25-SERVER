@@ -127,7 +127,13 @@ async function seed() {
 
   const allUserIds = (savedUsers as EntityUser[]).map(u => u.id).filter(id => id !== undefined);
 
-  const auditLogsData = generateAuditLogs(allUserIds, allContentIds, allContentTitles);
+  const auditLogsData = generateAuditLogs(
+    allUserIds,
+    allContentIds,
+    allContentTitles,
+    savedMovies.map(m => m.id),
+    savedTVSeries.map(s => s.id),
+  );
   console.log('🌱 Seeding audit logs...');
   const auditLogRepo = connectionSource.getRepository(AuditLog);
   await auditLogRepo.save(auditLogsData);

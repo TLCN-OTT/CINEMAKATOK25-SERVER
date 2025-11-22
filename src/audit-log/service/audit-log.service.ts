@@ -113,13 +113,13 @@ export class AuditLogService {
       await this.log({
         action: LOG_ACTION.PLAY_MOVIE,
         userId,
-        description: `User played movie with ID ${video.movieId}`,
+        description: `User ${userId} played movie with ID ${video.movieId}`,
       });
     } else if (video.tvSeriesId) {
       await this.log({
         action: LOG_ACTION.PLAY_EPISODE_OF_SERIES,
         userId,
-        description: `User played series with ID ${video.tvSeriesId}`,
+        description: `User ${userId} played series with ID ${video.tvSeriesId}`,
       });
     }
   }
