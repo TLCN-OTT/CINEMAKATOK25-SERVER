@@ -4,6 +4,7 @@ import { EntityContent } from 'src/cms/entities/content.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '@app/common/base/base-entity';
+import { REVIEW_STATUS } from '@app/common/enums/global.enum';
 
 @Entity({ name: 'review' })
 export class EntityReview extends BaseEntity {
@@ -13,6 +14,9 @@ export class EntityReview extends BaseEntity {
 
   @Column({ type: 'int' })
   rating: number;
+
+  @Column({ type: 'enum', enum: REVIEW_STATUS, default: REVIEW_STATUS.ACTIVE })
+  status: REVIEW_STATUS;
 
   @ManyToOne(() => EntityContent, content => content.reviews, {
     onDelete: 'CASCADE',

@@ -1,7 +1,8 @@
 import { Expose, Transform } from 'class-transformer';
-import { IsNumber, IsString, IsUUID } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
+import { REVIEW_STATUS } from '@app/common/enums/global.enum';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 export class EpisodeReviewDto extends BaseEntityDto {
@@ -44,6 +45,15 @@ export class EpisodeReviewDto extends BaseEntityDto {
     return obj.avatar || null;
   })
   avatar: string | null;
+
+  @ApiProperty({
+    description: 'Status of the review',
+    example: REVIEW_STATUS.ACTIVE,
+    enum: REVIEW_STATUS,
+  })
+  @Expose()
+  @IsOptional()
+  status: REVIEW_STATUS;
 }
 
 export class CreateEpisodeReviewDto extends OmitType(EpisodeReviewDto, [

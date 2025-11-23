@@ -7,6 +7,7 @@ import { ContentService } from 'src/cms/services/content.service';
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { REVIEW_STATUS } from '@app/common/enums/global.enum';
 import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import {
@@ -20,7 +21,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateEpisodeReviewDto, UpdateEpisodeReviewDto } from '../dtos/episode.-review.dto';
 import { CreateReviewDto, ReviewDto, UpdateReviewDto } from '../dtos/review.dto';
-import { EntityReviewEpisode, REVIEW_STATUS } from '../entities/review-episode.entity';
+import { EntityReviewEpisode } from '../entities/review-episode.entity';
 import { EntityReview } from '../entities/review.entity';
 
 @Injectable()
@@ -181,13 +182,16 @@ export class EpisodeReviewService {
   }
 
   async findReviews(query: PaginationQueryDto & { episodeId?: string; userId?: string }) {
-    const { page = 1, limit = 10, sort, search, episodeId, userId } = query || {};
+    const { page = 1, limit = 10, sort, search, episodeId, userId, status } = query || {};
 
     const queryBuilder = this.reviewEpisodeRepository
       .createQueryBuilder('review')
       .leftJoinAndSelect('review.episode', 'episode')
-      .leftJoinAndSelect('review.user', 'user')
-      .where('review.status = :status', { status: REVIEW_STATUS.APPROVED });
+      .leftJoinAndSelect('review.user', 'user');
+
+    // Filter by status - default to ACTIVE if not specified
+    const statusFilter = status || REVIEW_STATUS.ACTIVE;
+    queryBuilder.andWhere('review.status = :status', { status: statusFilter });
 
     if (episodeId) queryBuilder.andWhere('episode.id = :episodeId', { episodeId });
     if (userId) queryBuilder.andWhere('user.id = :userId', { userId });

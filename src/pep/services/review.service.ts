@@ -6,6 +6,7 @@ import { ContentService } from 'src/cms/services/content.service';
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { REVIEW_STATUS } from '@app/common/enums/global.enum';
 import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
@@ -184,12 +185,16 @@ export class ReviewService {
   }
 
   async findReviews(query: PaginationQueryDto & { contentId?: string; userId?: string }) {
-    const { page = 1, limit = 10, sort, search, contentId, userId } = query || {};
+    const { page = 1, limit = 10, sort, search, contentId, userId, status } = query || {};
 
     const queryBuilder = this.reviewRepository
       .createQueryBuilder('review')
       .leftJoinAndSelect('review.content', 'content')
       .leftJoinAndSelect('review.user', 'user');
+
+    // Filter by status - default to ACTIVE if not specified
+    const statusFilter = status || REVIEW_STATUS.ACTIVE;
+    queryBuilder.andWhere('review.status = :status', { status: statusFilter });
 
     if (contentId) queryBuilder.andWhere('content.id = :contentId', { contentId });
     if (userId) queryBuilder.andWhere('user.id = :userId', { userId });

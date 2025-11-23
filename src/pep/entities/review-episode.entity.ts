@@ -5,11 +5,8 @@ import { EntityEpisode } from 'src/cms/entities/tvseries.entity';
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 
 import { BaseEntity } from '@app/common/base/base-entity';
+import { REVIEW_STATUS } from '@app/common/enums/global.enum';
 
-export enum REVIEW_STATUS {
-  APPROVED = 'APPROVED',
-  BANNED = 'BANNED',
-}
 @Unique(['user', 'episode'])
 @Entity({ name: 'review_episode' })
 export class EntityReviewEpisode extends BaseEntity {
@@ -17,7 +14,7 @@ export class EntityReviewEpisode extends BaseEntity {
   @Column({ type: 'varchar', length: 500 })
   contentReviewed: string;
 
-  @Column({ type: 'enum', enum: REVIEW_STATUS, default: REVIEW_STATUS.APPROVED })
+  @Column({ type: 'enum', enum: REVIEW_STATUS, default: REVIEW_STATUS.ACTIVE })
   status: REVIEW_STATUS;
 
   @ManyToOne(() => EntityEpisode, episode => episode.reviews, {

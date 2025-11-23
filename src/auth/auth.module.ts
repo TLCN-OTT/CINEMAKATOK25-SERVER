@@ -51,6 +51,6 @@ import { JwtStrategy } from './strategy/jwt.strategy';
     JwtStrategy,
     GoogleStrategy,
   ],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, EmailService],
 })
 export class AuthModule {}

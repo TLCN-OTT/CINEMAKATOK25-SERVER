@@ -1,7 +1,8 @@
 import { Expose, Transform } from 'class-transformer';
-import { IsNumber, IsString, IsUUID } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 import { BaseEntityDto } from '@app/common/base/base-entity-dto';
+import { REVIEW_STATUS } from '@app/common/enums/global.enum';
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 export class ReviewDto extends BaseEntityDto {
@@ -20,6 +21,14 @@ export class ReviewDto extends BaseEntityDto {
   @Expose()
   @IsNumber()
   rating: number;
+
+  @ApiProperty({
+    description: 'Status of the review',
+    enum: REVIEW_STATUS,
+  })
+  @Expose()
+  @IsOptional()
+  status: REVIEW_STATUS;
 
   @ApiProperty({
     description: 'ID of the content being reviewed',
@@ -52,6 +61,15 @@ export class ReviewDto extends BaseEntityDto {
     return obj.avatar || null;
   })
   avatar: string | null;
+
+  @ApiProperty({
+    description: 'ID of the user who made the review',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @Expose()
+  @IsUUID()
+  @Transform(({ obj }) => obj.user?.id || obj.userId)
+  userId: string;
 }
 
 export class CreateReviewDto extends OmitType(ReviewDto, [
@@ -60,6 +78,7 @@ export class CreateReviewDto extends OmitType(ReviewDto, [
   'updatedAt',
   'name',
   'avatar',
+  'userId',
 ]) {}
 
 export class UpdateReviewDto extends OmitType(ReviewDto, [
@@ -67,4 +86,5 @@ export class UpdateReviewDto extends OmitType(ReviewDto, [
   'updatedAt',
   'name',
   'avatar',
+  'userId',
 ]) {}
