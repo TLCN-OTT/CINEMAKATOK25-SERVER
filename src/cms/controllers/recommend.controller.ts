@@ -8,7 +8,14 @@ import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
 import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   ActorContentDto,
@@ -30,6 +37,11 @@ export class RecommendationsController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get recommendations for a user' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of recommended content for the user',
+    type: PaginatedApiResponseDto(RecommendationDto),
+  })
   async get(@UserSession('id') userId: string) {
     const { movies, tvSeries } = await this.recommendService.getFastApiData(userId, 10);
 
