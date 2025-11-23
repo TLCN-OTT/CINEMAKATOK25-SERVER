@@ -194,6 +194,22 @@ export class EmailService {
     }
   }
 
+  async sendEmail(to: string, subject: string, html: string): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: `"${this.emailConfig.fromName}" <${this.emailConfig.user}>`,
+        to,
+        subject,
+        html,
+      });
+
+      this.logger.log(`Email sent successfully to ${to}`);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${to}`, error);
+      throw new Error('Failed to send email');
+    }
+  }
+
   private getEmailSubject(purpose: string): string {
     switch (purpose) {
       case 'FORGOT_PASSWORD':

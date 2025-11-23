@@ -30,4 +30,8 @@ export class PaginationQueryDto {
   @Expose()
   @IsOptional()
   search?: string;
+
+  @Expose()
+  @IsOptional()
+  status?: string;
 }

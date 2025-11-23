@@ -70,6 +70,12 @@ export class EpisodeReviewController {
     required: false,
     description: 'Search reviews by content or user name',
   })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Filter reviews by status (ACTIVE, BANNED). Default: ACTIVE',
+    example: 'ACTIVE',
+  })
   @ApiOkResponse({
     description: 'List of reviews',
     type: PaginatedApiResponseDto(ReviewDto),
