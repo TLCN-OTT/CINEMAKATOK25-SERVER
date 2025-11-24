@@ -1,4 +1,5 @@
 import { CoreModule } from '@app/core/core.module';
+import { HttpModule } from '@nestjs/axios';
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -10,6 +11,7 @@ import { CategoryController } from './controllers/category.controller';
 import { ContentController } from './controllers/content.controller';
 import { DirectorController } from './controllers/director.controller';
 import { MovieController } from './controllers/movie.controller';
+import { RecommendationsController } from './controllers/recommend.controller';
 import { TagController } from './controllers/tag.controller';
 import { TvSeriesController } from './controllers/tvseries.controller';
 import { VideoController } from './controllers/video.controller';
@@ -27,6 +29,7 @@ import { ContentService } from './services/content.service';
 import { DirectorService } from './services/director.service';
 import { MovieService } from './services/movie.service';
 import { R2StorageService } from './services/r2.service';
+import { RecommendService } from './services/recommend.service';
 import { S3Service } from './services/s3.service';
 import { TagService } from './services/tag.service';
 import { TvSeriesService } from './services/tvseries.service';
@@ -49,6 +52,7 @@ import { VideoService } from './services/video.service';
       AuditLog,
     ]),
     forwardRef(() => CoreModule), // ✅ Sử dụng forwardRef để tránh circular dependency
+    HttpModule,
   ],
   controllers: [
     ContentController,
@@ -60,6 +64,7 @@ import { VideoService } from './services/video.service';
     MovieController,
     TvSeriesController,
     AnalyticsController,
+    RecommendationsController,
   ],
   providers: [
     ContentService,
@@ -73,6 +78,7 @@ import { VideoService } from './services/video.service';
     S3Service,
     R2StorageService,
     AnalyticsService,
+    RecommendService,
   ],
   exports: [
     VideoService,
