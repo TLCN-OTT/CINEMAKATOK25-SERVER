@@ -96,6 +96,15 @@ export class TagService {
   }
 
   async remove(id: string): Promise<void> {
+    // First, remove all associations with contents
+    await this.tagRepository
+      .createQueryBuilder()
+      .delete()
+      .from('content_tag')
+      .where('tag_id = :tagId', { tagId: id })
+      .execute();
+
+    // Then delete the tag itself
     const result = await this.tagRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Tag with ID ${id} not found`);

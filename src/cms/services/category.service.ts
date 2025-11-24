@@ -101,6 +101,15 @@ export class CategoryService {
   }
 
   async remove(id: string): Promise<void> {
+    // First, remove all associations with contents
+    await this.categoryRepository
+      .createQueryBuilder()
+      .delete()
+      .from('content_category')
+      .where('category_id = :categoryId', { categoryId: id })
+      .execute();
+
+    // Then delete the category itself
     const result = await this.categoryRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Category with ID ${id} not found`);

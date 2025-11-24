@@ -7,7 +7,7 @@ import { ContentService } from 'src/cms/services/content.service';
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
-import { REVIEW_STATUS } from '@app/common/enums/global.enum';
+import { REPORT_TYPE, REVIEW_STATUS } from '@app/common/enums/global.enum';
 import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import {
@@ -21,6 +21,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateEpisodeReviewDto, UpdateEpisodeReviewDto } from '../dtos/episode.-review.dto';
 import { CreateReviewDto, ReviewDto, UpdateReviewDto } from '../dtos/review.dto';
+import { EntityReport } from '../entities/report.entity';
 import { EntityReviewEpisode } from '../entities/review-episode.entity';
 import { EntityReview } from '../entities/review.entity';
 
@@ -29,6 +30,8 @@ export class EpisodeReviewService {
   constructor(
     @InjectRepository(EntityReviewEpisode)
     private readonly reviewEpisodeRepository: Repository<EntityReviewEpisode>,
+    @InjectRepository(EntityReport)
+    private readonly reportRepository: Repository<EntityReport>,
     private readonly contentService: ContentService,
     @InjectRepository(EntityEpisode)
     private readonly episodeRepository: Repository<EntityEpisode>,
@@ -148,6 +151,12 @@ export class EpisodeReviewService {
       const content = await this.contentService.findContentById(
         review.episode.season.tvseries.metaData.id,
       );
+
+      // Delete all related reports before deleting the review
+      await queryRunner.manager.delete(EntityReport, {
+        targetId: id,
+        type: REPORT_TYPE.EPISODE_REVIEW,
+      });
 
       await queryRunner.manager.delete(EntityReviewEpisode, id);
       // Ghi log hành động xóa review

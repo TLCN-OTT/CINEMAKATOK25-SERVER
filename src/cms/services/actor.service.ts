@@ -148,6 +148,15 @@ export class ActorService {
   }
 
   async remove(id: string): Promise<void> {
+    // First, remove all associations with contents
+    await this.actorRepository
+      .createQueryBuilder()
+      .delete()
+      .from('content_actor')
+      .where('actor_id = :actorId', { actorId: id })
+      .execute();
+
+    // Then delete the actor itself
     const result = await this.actorRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Actor with ID ${id} not found`);
