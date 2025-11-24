@@ -157,6 +157,15 @@ export class DirectorService {
   }
 
   async remove(id: string): Promise<void> {
+    // First, remove all associations with contents
+    await this.directorRepository
+      .createQueryBuilder()
+      .delete()
+      .from('content_director')
+      .where('director_id = :directorId', { directorId: id })
+      .execute();
+
+    // Then delete the director itself
     const result = await this.directorRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Director with ID ${id} not found`);

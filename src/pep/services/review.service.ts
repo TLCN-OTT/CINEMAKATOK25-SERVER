@@ -6,13 +6,14 @@ import { ContentService } from 'src/cms/services/content.service';
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
-import { REVIEW_STATUS } from '@app/common/enums/global.enum';
+import { REPORT_TYPE, REVIEW_STATUS } from '@app/common/enums/global.enum';
 import { LOG_ACTION } from '@app/common/enums/log.enum';
 import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateReviewDto, ReviewDto, UpdateReviewDto } from '../dtos/review.dto';
+import { EntityReport } from '../entities/report.entity';
 import { EntityReview } from '../entities/review.entity';
 
 @Injectable()
@@ -20,6 +21,8 @@ export class ReviewService {
   constructor(
     @InjectRepository(EntityReview)
     private readonly reviewRepository: Repository<EntityReview>,
+    @InjectRepository(EntityReport)
+    private readonly reportRepository: Repository<EntityReport>,
     private readonly contentService: ContentService,
     private readonly auditLogService: AuditLogService,
   ) {}
@@ -139,6 +142,12 @@ export class ReviewService {
       }
 
       const contentId = review.content.id;
+
+      // Delete all related reports before deleting the review
+      await queryRunner.manager.delete(EntityReport, {
+        targetId: id,
+        type: REPORT_TYPE.REVIEW,
+      });
 
       await queryRunner.manager.delete(EntityReview, id);
 

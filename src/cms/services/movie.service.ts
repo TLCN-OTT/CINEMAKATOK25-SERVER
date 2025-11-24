@@ -262,10 +262,16 @@ export class MovieService {
         throw new NotFoundException(`Movie with ID "${id}" not found`);
       }
 
-      // ✅ Unlink videos trước khi xóa movie
+      // ✅ Xóa videos liên kết với movie trước
       await this.videoService.unassignVideosByMovieIds([id]);
 
-      // Delete the movie (cascade will delete content metadata)
+      // ✅ Xóa movie (cascade sẽ xóa:
+      // - EntityContent (metaData)
+      // - Tất cả quan hệ của content: categories, actors, directors, tags (qua junction tables)
+      // - Tất cả reviews liên kết với content
+      // - Tất cả watchlist entries liên kết với content
+      // - Tất cả favorite entries liên kết với content
+      // - Watch progress của videos sẽ được xóa tự động do cascade từ video)
       await queryRunner.manager.remove(movie);
 
       await queryRunner.commitTransaction();
