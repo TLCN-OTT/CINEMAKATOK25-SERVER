@@ -239,106 +239,156 @@ export const actorsSeed = [
   {
     name: 'Leonardo DiCaprio',
     bio: 'American actor and film producer.',
-    profilePicture: 'https://yourdomain.com/actors/leonardo.png',
+    profilePicture:
+      'https://media.rolex.com/image/upload/q_auto:eco/f_auto/c_limit,w_1920/v1740135245/rolexcom/rolex-testimonees/arts/cinema/leonard-dicaprio/rolex-testimonees-cinema-leonardo-dicaprio-lifestyle-gettyimages-530778376.jpg',
     nationality: 'American',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1974-11-11'),
   },
   {
     name: 'Joseph Gordon-Levitt',
     bio: 'American actor and filmmaker.',
-    profilePicture: 'https://yourdomain.com/actors/joseph.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Joseph_Gordon-Levitt_by_Gage_Skidmore_2.jpg/960px-Joseph_Gordon-Levitt_by_Gage_Skidmore_2.jpg',
     nationality: 'American',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1981-02-17'),
   },
   {
     name: 'Matthew McConaughey',
     bio: 'American actor.',
-    profilePicture: 'https://yourdomain.com/actors/matthew.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Matthew_McConaughey_-_Goldene_Kamera_2014_-_Berlin.jpg/960px-Matthew_McConaughey_-_Goldene_Kamera_2014_-_Berlin.jpg',
     nationality: 'American',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1969-11-04'),
   },
   {
     name: 'Anne Hathaway',
     bio: 'American actress.',
-    profilePicture: 'https://yourdomain.com/actors/anne.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Anne_Hathaway_at_The_Apprentice_in_NYC_03_%28cropped2%29.jpg/960px-Anne_Hathaway_at_The_Apprentice_in_NYC_03_%28cropped2%29.jpg',
     nationality: 'American',
+    gender: GENDER.FEMALE,
+    dateOfBirth: new Date('1982-11-12'),
   },
   {
     name: 'Christian Bale',
     bio: 'English actor.',
-    profilePicture: 'https://yourdomain.com/actors/christian.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Christian_Bale_in_2022.jpg/960px-Christian_Bale_in_2022.jpg',
     nationality: 'English',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1974-01-30'),
   },
   {
     name: 'Heath Ledger',
     bio: 'Australian actor.',
-    profilePicture: 'https://yourdomain.com/actors/heath.png',
+    profilePicture: 'https://upload.wikimedia.org/wikipedia/commons/4/4f/Heath_Ledger.jpg',
     nationality: 'Australian',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1979-04-04'),
   },
   {
     name: 'Scarlett Johansson',
     bio: 'American actress and singer.',
-    profilePicture: 'https://yourdomain.com/actors/scarlett.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Scarlett_Johansson-8588.jpg/960px-Scarlett_Johansson-8588.jpg',
     nationality: 'American',
+    gender: GENDER.FEMALE,
+    dateOfBirth: new Date('1984-11-22'),
   },
   {
     name: 'Chris Evans',
     bio: 'American actor known for Captain America.',
-    profilePicture: 'https://yourdomain.com/actors/evans.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Chris_Evans_at_the_2025_Toronto_International_Film_Festival_%28cropped%29.jpg/960px-Chris_Evans_at_the_2025_Toronto_International_Film_Festival_%28cropped%29.jpg',
     nationality: 'American',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1981-06-13'),
   },
   {
     name: 'Robert Downey Jr.',
     bio: 'American actor and producer.',
-    profilePicture: 'https://yourdomain.com/actors/robert.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Robert_Downey_Jr._2014_Comic-Con.jpg/960px-Robert_Downey_Jr._2014_Comic-Con.jpg',
     nationality: 'American',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1965-04-04'),
   },
   {
     name: 'Tom Holland',
     bio: 'English actor best known for Spider-Man.',
-    profilePicture: 'https://yourdomain.com/actors/tom.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Tom_Holland_during_pro-am_Wentworth_golf_club_2023-2.jpg/960px-Tom_Holland_during_pro-am_Wentworth_golf_club_2023-2.jpg',
     nationality: 'English',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1996-06-01'),
   },
   {
     name: 'Benedict Cumberbatch',
     bio: 'English actor and producer.',
-    profilePicture: 'https://yourdomain.com/actors/benedict.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Benedict_Cumberbatch-67555.jpg/960px-Benedict_Cumberbatch-67555.jpg',
     nationality: 'English',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1976-07-19'),
   },
   {
     name: 'Amy Adams',
     bio: 'American actress.',
-    profilePicture: 'https://yourdomain.com/actors/amy.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Amy_Adams_at_the_2024_Toronto_International_Film_Festival._03_%28cropped%29.jpg/960px-Amy_Adams_at_the_2024_Toronto_International_Film_Festival._03_%28cropped%29.jpg',
     nationality: 'American',
+    gender: GENDER.FEMALE,
+    dateOfBirth: new Date('1974-08-20'),
   },
   {
     name: 'Ryan Reynolds',
     bio: 'Canadian actor and producer.',
-    profilePicture: 'https://yourdomain.com/actors/ryan.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Ryan_Reynolds_at_the_2025_Toronto_International_Film_Festival_%28cropped%29.jpg/960px-Ryan_Reynolds_at_the_2025_Toronto_International_Film_Festival_%28cropped%29.jpg',
     nationality: 'Canadian',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1976-10-23'),
   },
 ]; // ========================= // DIRECTOR SEED // =========================
 export const directorsSeed = [
   {
     name: 'Christopher Nolan',
     bio: 'British-American film director, producer, and screenwriter.',
-    profilePicture: 'https://yourdomain.com/directors/nolan.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/4/49/ChrisNolanBFI150224_%2810_of_12%29_%2853532289710%29_%28cropped2%29.jpg',
     nationality: 'British-American',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1970-07-30'),
   },
   {
     name: 'James Cameron',
     bio: 'Canadian filmmaker and deep-sea explorer.',
-    profilePicture: 'https://yourdomain.com/directors/cameron.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Avatar_The_Way_of_Water_Tokyo_Press_Conference_James_Cameron_%2852563430565%29_%28cropped%29.jpg/960px-Avatar_The_Way_of_Water_Tokyo_Press_Conference_James_Cameron_%2852563430565%29_%28cropped%29.jpg',
     nationality: 'Canadian',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1954-08-16'),
   },
   {
     name: 'Steven Spielberg',
     bio: 'American film director and producer.',
-    profilePicture: 'https://yourdomain.com/directors/spielberg.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/MKr25402_Steven_Spielberg_%28Berlinale_2023%29_%283x4_cropped%29.jpg/960px-MKr25402_Steven_Spielberg_%28Berlinale_2023%29_%283x4_cropped%29.jpg',
     nationality: 'American',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1946-12-18'),
   },
   {
     name: 'Taika Waititi',
     bio: 'New Zealand filmmaker and actor.',
-    profilePicture: 'https://yourdomain.com/directors/taika.png',
+    profilePicture:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Taika_Waititi_photo_by_pouria_afkhami.jpg/960px-Taika_Waititi_photo_by_pouria_afkhami.jpg',
     nationality: 'New Zealander',
+    gender: GENDER.MALE,
+    dateOfBirth: new Date('1975-08-16'),
   },
 ];
 
@@ -361,10 +411,15 @@ function generateMovies(count: number) {
       actors: typeof actorsSeed;
       directors: typeof directorsSeed;
     };
+    video: {
+      videoUrl: string;
+      duration: number;
+    };
   }> = [];
   for (let i = 0; i < count; i++) {
+    const duration = 90 + Math.floor(Math.random() * 60); // 90-150 phút
     movies.push({
-      duration: 90 + Math.floor(Math.random() * 60), // 90-150 phút
+      duration,
       metaData: {
         type: ContentType.MOVIE,
         title: `Movie ${i + 1}`,
@@ -387,6 +442,11 @@ function generateMovies(count: number) {
         actors: [actorsSeed[i % actorsSeed.length]],
         directors: [directorsSeed[i % directorsSeed.length]],
       },
+      video: {
+        videoUrl:
+          'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+        duration,
+      },
     });
   }
   return movies;
@@ -401,9 +461,11 @@ export const moviesSeed = [
       title: 'Inception',
       description: 'A mind-bending thriller about dreams within dreams.',
       releaseDate: new Date('2010-07-16'),
-      thumbnail: 'https://yourdomain.com/thumbnails/inception.png',
-      banner: 'https://yourdomain.com/banners/inception.jpg',
-      trailer: 'https://yourdomain.com/trailers/inception.mp4',
+      thumbnail:
+        'https://www.cgv.vn/media/catalog/product/cache/3/image/c5f0a1eff4c394a251036189ccddaacd/i/n/inception.jpg',
+      banner:
+        'https://www.cgv.vn/media/catalog/product/cache/3/image/c5f0a1eff4c394a251036189ccddaacd/i/n/inception.jpg',
+      trailer: 'https://www.youtube.com/watch?v=YoHD9XEInc0',
       rating: 8.8,
       maturityRating: MaturityRating.PG13,
       viewCount: 1000000,
@@ -411,6 +473,11 @@ export const moviesSeed = [
       tags: [tagsSeed[0], tagsSeed[1]],
       actors: [actorsSeed[0], actorsSeed[1]],
       directors: [directorsSeed[0]],
+    },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 148,
     },
   },
   {
@@ -420,9 +487,11 @@ export const moviesSeed = [
       title: 'Interstellar',
       description: 'A journey beyond the stars to save humanity.',
       releaseDate: new Date('2014-11-07'),
-      thumbnail: 'https://yourdomain.com/thumbnails/interstellar.png',
-      banner: 'https://yourdomain.com/banners/interstellar.jpg',
-      trailer: 'https://yourdomain.com/trailers/interstellar.mp4',
+      thumbnail:
+        'https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg',
+      banner:
+        'https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg',
+      trailer: 'https://www.youtube.com/watch?v=zSWdZVtXT7E',
       rating: 8.6,
       maturityRating: MaturityRating.PG13,
       viewCount: 900000,
@@ -430,6 +499,11 @@ export const moviesSeed = [
       tags: [tagsSeed[2], tagsSeed[3]],
       actors: [actorsSeed[2], actorsSeed[3]],
       directors: [directorsSeed[0]],
+    },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 169,
     },
   },
   {
@@ -439,8 +513,8 @@ export const moviesSeed = [
       title: 'The Dark Knight',
       description: 'Batman faces the Joker in Gotham City.',
       releaseDate: new Date('2008-07-18'),
-      thumbnail: 'https://yourdomain.com/thumbnails/darkknight.jpg',
-      banner: 'https://yourdomain.com/banners/darkknight.jpg',
+      thumbnail: 'https://images-na.ssl-images-amazon.com/images/I/91HM6470jLL.jpg',
+      banner: 'https://images-na.ssl-images-amazon.com/images/I/91HM6470jLL.jpg',
       trailer: 'https://www.youtube.com/watch?v=YoHD9XEInc0',
       rating: 9.0,
       maturityRating: MaturityRating.PG13,
@@ -450,6 +524,11 @@ export const moviesSeed = [
       actors: [actorsSeed[4], actorsSeed[5]],
       directors: [directorsSeed[0]],
     },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 152,
+    },
   },
   {
     duration: 148,
@@ -458,8 +537,10 @@ export const moviesSeed = [
       title: 'Spider-Man: No Way Home',
       description: 'Spider-Man teams up with other Spider-Men from different universes.',
       releaseDate: new Date('2021-12-17'),
-      thumbnail: 'https://yourdomain.com/thumbnails/spiderman.png',
-      banner: 'https://yourdomain.com/banners/spiderman.jpg',
+      thumbnail:
+        'https://resizing.flixster.com/8PNiwC2bpe9OecfYZSOVkvYC5vk=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzL2U5NGM0Y2Q1LTAyYTItNGFjNC1hNWZhLWMzYjJjOTdjMTFhOS5qcGc=',
+      banner:
+        'https://resizing.flixster.com/8PNiwC2bpe9OecfYZSOVkvYC5vk=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzL2U5NGM0Y2Q1LTAyYTItNGFjNC1hNWZhLWMzYjJjOTdjMTFhOS5qcGc=',
       trailer: 'https://www.youtube.com/watch?v=JfVOs4VSpmA',
       rating: 8.5,
       maturityRating: MaturityRating.PG13,
@@ -469,6 +550,11 @@ export const moviesSeed = [
       actors: [actorsSeed[7], actorsSeed[9], actorsSeed[8]],
       directors: [directorsSeed[3]],
     },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 148,
+    },
   },
   {
     duration: 134,
@@ -477,8 +563,10 @@ export const moviesSeed = [
       title: 'Black Panther',
       description: "T'Challa returns home as king of Wakanda but faces challenges.",
       releaseDate: new Date('2018-02-16'),
-      thumbnail: 'https://yourdomain.com/thumbnails/blackpanther.png',
-      banner: 'https://yourdomain.com/banners/blackpanther.jpg',
+      thumbnail:
+        'https://m.media-amazon.com/images/M/MV5BMTg1MTY2MjYzNV5BMl5BanBnXkFtZTgwMTc4NTMwNDI@._V1_.jpg',
+      banner:
+        'https://m.media-amazon.com/images/M/MV5BMTg1MTY2MjYzNV5BMl5BanBnXkFtZTgwMTc4NTMwNDI@._V1_.jpg',
       trailer: 'https://www.youtube.com/watch?v=xjDjIWPwcPU',
       rating: 7.3,
       maturityRating: MaturityRating.PG13,
@@ -488,6 +576,11 @@ export const moviesSeed = [
       actors: [actorsSeed[7], actorsSeed[8]],
       directors: [directorsSeed[3]],
     },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 134,
+    },
   },
   {
     duration: 122,
@@ -496,8 +589,8 @@ export const moviesSeed = [
       title: 'Joker',
       description: 'An origin story of the infamous villain Joker.',
       releaseDate: new Date('2019-10-04'),
-      thumbnail: 'https://yourdomain.com/thumbnails/joker.png',
-      banner: 'https://yourdomain.com/banners/joker.jpg',
+      thumbnail: 'https://tr.web.img2.acsta.net/c_310_420/pictures/19/09/11/16/43/1511539.jpg',
+      banner: 'https://tr.web.img2.acsta.net/c_310_420/pictures/19/09/11/16/43/1511539.jpg',
       trailer: 'https://www.youtube.com/watch?v=zAGVQLHvwOY',
       rating: 8.4,
       maturityRating: MaturityRating.R,
@@ -507,6 +600,11 @@ export const moviesSeed = [
       actors: [actorsSeed[5], actorsSeed[4]],
       directors: [directorsSeed[0]],
     },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 122,
+    },
   },
   {
     duration: 130,
@@ -515,8 +613,10 @@ export const moviesSeed = [
       title: 'Thor: Ragnarok',
       description: 'Thor must escape from Sakaar and save Asgard from Hela.',
       releaseDate: new Date('2017-11-03'),
-      thumbnail: 'https://yourdomain.com/thumbnails/thor.png',
-      banner: 'https://yourdomain.com/banners/thor.jpg',
+      thumbnail:
+        'https://play-lh.googleusercontent.com/H6bqIWE2Gd2myPbEncSOdu8LyLKxoNZVW9z03Os8BiMVG-FBtgpf2huX8jmWqfMRzSdOSw',
+      banner:
+        'https://play-lh.googleusercontent.com/H6bqIWE2Gd2myPbEncSOdu8LyLKxoNZVW9z03Os8BiMVG-FBtgpf2huX8jmWqfMRzSdOSw',
       trailer: 'https://www.youtube.com/watch?v=ue80QwXMRHg',
       rating: 7.9,
       maturityRating: MaturityRating.PG13,
@@ -526,6 +626,11 @@ export const moviesSeed = [
       actors: [actorsSeed[7], actorsSeed[8], actorsSeed[6]],
       directors: [directorsSeed[3]],
     },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 130,
+    },
   },
   {
     duration: 121,
@@ -534,8 +639,10 @@ export const moviesSeed = [
       title: 'Guardians of the Galaxy',
       description: 'A group of intergalactic criminals must save the galaxy.',
       releaseDate: new Date('2014-08-01'),
-      thumbnail: 'https://yourdomain.com/thumbnails/guardians.png',
-      banner: 'https://yourdomain.com/banners/guardians.jpg',
+      thumbnail:
+        'https://m.media-amazon.com/images/M/MV5BM2ZmNjQ2MzAtNDlhNi00MmQyLWJhZDMtNmJiMjFlOWY4MzcxXkEyXkFqcGc@._V1_.jpg',
+      banner:
+        'https://m.media-amazon.com/images/M/MV5BM2ZmNjQ2MzAtNDlhNi00MmQyLWJhZDMtNmJiMjFlOWY4MzcxXkEyXkFqcGc@._V1_.jpg',
       trailer: 'https://www.youtube.com/watch?v=d96cjJhvlMA',
       rating: 8.0,
       maturityRating: MaturityRating.PG13,
@@ -544,6 +651,11 @@ export const moviesSeed = [
       tags: [tagsSeed[6], tagsSeed[2], tagsSeed[8]],
       actors: [actorsSeed[7], actorsSeed[8], actorsSeed[10]],
       directors: [directorsSeed[3]],
+    },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 121,
     },
   },
   {
@@ -554,8 +666,8 @@ export const moviesSeed = [
       description:
         'A young lion prince flees his kingdom only to learn the true meaning of responsibility.',
       releaseDate: new Date('1994-06-24'),
-      thumbnail: 'https://yourdomain.com/thumbnails/lionking.png',
-      banner: 'https://yourdomain.com/banners/lionking.jpg',
+      thumbnail: 'https://i.scdn.co/image/ab67616d0000b27359235d40e20d96dd8c40ffd2',
+      banner: 'https://i.scdn.co/image/ab67616d0000b27359235d40e20d96dd8c40ffd2',
       trailer: 'https://www.youtube.com/watch?v=7TavVZMewpY',
       rating: 8.5,
       maturityRating: MaturityRating.G,
@@ -565,6 +677,11 @@ export const moviesSeed = [
       actors: [actorsSeed[11]],
       directors: [directorsSeed[2]],
     },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 118,
+    },
   },
   {
     duration: 102,
@@ -573,8 +690,10 @@ export const moviesSeed = [
       title: 'Frozen',
       description: 'A princess sets out to save her kingdom from eternal winter.',
       releaseDate: new Date('2013-11-27'),
-      thumbnail: 'https://yourdomain.com/thumbnails/frozen.png',
-      banner: 'https://yourdomain.com/banners/frozen.jpg',
+      thumbnail:
+        'https://www.cgv.vn/media/catalog/product/cache/3/image/c5f0a1eff4c394a251036189ccddaacd/p/o/poster_frozen_nhbg_-final_1_.jpg',
+      banner:
+        'https://www.cgv.vn/media/catalog/product/cache/3/image/c5f0a1eff4c394a251036189ccddaacd/p/o/poster_frozen_nhbg_-final_1_.jpg',
       trailer: 'https://www.youtube.com/watch?v=TbQm5doF_Uc',
       rating: 7.5,
       maturityRating: MaturityRating.G,
@@ -583,6 +702,11 @@ export const moviesSeed = [
       tags: [tagsSeed[11], tagsSeed[10]],
       actors: [actorsSeed[11]],
       directors: [directorsSeed[2]],
+    },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 102,
     },
   },
   {
@@ -603,6 +727,11 @@ export const moviesSeed = [
       actors: [actorsSeed[7], actorsSeed[8], actorsSeed[6]],
       directors: [directorsSeed[1]],
     },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 143,
+    },
   },
   {
     duration: 107,
@@ -611,8 +740,8 @@ export const moviesSeed = [
       title: 'Moana',
       description: 'A young girl sets sail to save her island and discover her identity.',
       releaseDate: new Date('2016-11-23'),
-      thumbnail: 'https://yourdomain.com/thumbnails/moana.png',
-      banner: 'https://yourdomain.com/banners/moana.jpg',
+      thumbnail: 'https://upload.wikimedia.org/wikipedia/vi/5/56/Moana_2016_%28Poster%29.jpg',
+      banner: 'https://upload.wikimedia.org/wikipedia/vi/5/56/Moana_2016_%28Poster%29.jpg',
       trailer: 'https://www.youtube.com/watch?v=LKFuXETZUsI',
       rating: 7.6,
       maturityRating: MaturityRating.G,
@@ -622,6 +751,11 @@ export const moviesSeed = [
       actors: [actorsSeed[11]],
       directors: [directorsSeed[2]],
     },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 107,
+    },
   },
   {
     duration: 141,
@@ -630,8 +764,10 @@ export const moviesSeed = [
       title: 'Wonder Woman',
       description: 'Diana, princess of the Amazons, discovers her powers and destiny.',
       releaseDate: new Date('2017-06-02'),
-      thumbnail: 'https://yourdomain.com/thumbnails/wonderwoman.png',
-      banner: 'https://yourdomain.com/banners/wonderwoman.jpg',
+      thumbnail:
+        'https://upload.wikimedia.org/wikipedia/en/b/b0/Wonder_Woman_%282017_film%29_poster.jpg',
+      banner:
+        'https://upload.wikimedia.org/wikipedia/en/b/b0/Wonder_Woman_%282017_film%29_poster.jpg',
       trailer: 'https://www.youtube.com/watch?v=VSB4wGIdDwo',
       rating: 7.4,
       maturityRating: MaturityRating.PG13,
@@ -640,6 +776,11 @@ export const moviesSeed = [
       tags: [tagsSeed[15], tagsSeed[6]],
       actors: [actorsSeed[7], actorsSeed[8]],
       directors: [directorsSeed[3]],
+    },
+    video: {
+      videoUrl:
+        'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+      duration: 141,
     },
   },
   ...generateMovies(100),
@@ -690,9 +831,9 @@ function generateTVSeries(count: number) {
           Math.floor(Math.random() * 12),
           Math.floor(Math.random() * 28) + 1,
         ),
-        thumbnail: `https://yourdomain.com/thumbnails/tvseries${i + 1}.png`,
-        banner: `https://yourdomain.com/banners/tvseries${i + 1}.jpg`,
-        trailer: `https://yourdomain.com/trailers/tvseries${i + 1}.mp4`,
+        thumbnail: `https://res.cloudinary.com/dpazxfkpx/image/upload/v1764073226/default_banner_zcrfgr.jpg`,
+        banner: `https://res.cloudinary.com/dpazxfkpx/image/upload/v1764073226/default_banner_zcrfgr.jpg`,
+        trailer: `https://www.youtube.com/watch?v=PypDSyIRRSs`,
         rating: +(6 + Math.random() * 3.5).toFixed(1),
         maturityRating: Object.values(MaturityRating)[
           Math.floor(Math.random() * Object.values(MaturityRating).length)
@@ -713,7 +854,7 @@ function generateTVSeries(count: number) {
               episodeDuration: 20 + Math.floor(Math.random() * 20),
               episodeTitle: `Episode 1 of TV Series ${i + 1}`,
               video: {
-                videoUrl: `https://yourdomain.com/tvseries${i + 1}/s1e1.mp4`,
+                videoUrl: `https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8`,
                 duration: 20 + Math.floor(Math.random() * 20),
               },
             },
@@ -722,7 +863,7 @@ function generateTVSeries(count: number) {
               episodeDuration: 20 + Math.floor(Math.random() * 20),
               episodeTitle: `Episode 2 of TV Series ${i + 1}`,
               video: {
-                videoUrl: `https://yourdomain.com/tvseries${i + 1}/s1e2.mp4`,
+                videoUrl: `https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8`,
                 duration: 20 + Math.floor(Math.random() * 20),
               },
             },
@@ -734,7 +875,517 @@ function generateTVSeries(count: number) {
   return series;
 }
 
-export const tvSeriesSeed = [...generateTVSeries(60)];
+export const tvSeriesSeed = [
+  // Breaking Bad
+  {
+    duration: 47,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'Breaking Bad',
+      description:
+        "A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine to secure his family's future.",
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://m.media-amazon.com/images/M/MV5BYmQ4YWMxYjUtNjZmYi00MDQ1LWFjMjMtNjA5ZDdiYjdiODU5XkEyXkFqcGdeQXVyMTMzNDExODE5._V1_.jpg',
+      banner:
+        'https://m.media-amazon.com/images/M/MV5BYmQ4YWMxYjUtNjZmYi00MDQ1LWFjMjMtNjA5ZDdiYjdiODU5XkEyXkFqcGdeQXVyMTMzNDExODE5._V1_.jpg',
+      trailer: 'https://www.youtube.com/watch?v=HhesaQXLuRY',
+      rating: 9.5,
+      maturityRating: MaturityRating.R,
+      viewCount: 1500000,
+      categories: [categoriesSeed[3], categoriesSeed[4]], // Crime, Drama
+      tags: [tagsSeed[14], tagsSeed[13]], // Villain, War
+      actors: [actorsSeed[4]], // Christian Bale (placeholder, actually Bryan Cranston)
+      directors: [directorsSeed[3]], // Taika Waititi (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 7,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 58,
+            episodeTitle: 'Pilot',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 58,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 48,
+            episodeTitle: "Cat's in the Bag...",
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 48,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // Game of Thrones
+  {
+    duration: 57,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'Game of Thrones',
+      description:
+        'Nine noble families fight for control over the lands of Westeros, while an ancient enemy returns after being dormant for millennia.',
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://m.media-amazon.com/images/M/MV5BYTRiNDQwYzAtMzVlZS00NTI5LWJjYjUtMzkwNTUzMWMxZTllXkEyXkFqcGdeQXVyNDIzMzcwNjc@._V1_.jpg',
+      banner:
+        'https://m.media-amazon.com/images/M/MV5BYTRiNDQwYzAtMzVlZS00NTI5LWJjYjUtMzkwNTUzMWMxZTllXkEyXkFqcGdeQXVyNDIzMzcwNjc@._V1_.jpg',
+      trailer: 'https://www.youtube.com/watch?v=KPLWWIOCOOQ',
+      rating: 9.2,
+      maturityRating: MaturityRating.R,
+      viewCount: 2000000,
+      categories: [categoriesSeed[0], categoriesSeed[4]], // Action, Drama
+      tags: [tagsSeed[13], tagsSeed[14]], // War, Villain
+      actors: [actorsSeed[10]], // Benedict Cumberbatch (placeholder)
+      directors: [directorsSeed[0]], // Christopher Nolan (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 10,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 62,
+            episodeTitle: 'Winter Is Coming',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 62,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 56,
+            episodeTitle: 'The Kingsroad',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 56,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // The Office (US)
+  {
+    duration: 22,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'The Office',
+      description:
+        'A mockumentary on a group of typical office workers, where the workday consists of ego clashes, inappropriate behavior, and tedium.',
+      releaseDate: new Date('2025-10-20'),
+      thumbnail: 'https://m.media-amazon.com/images/I/81vj15-NuoL._AC_UF894,1000_QL80_.jpg',
+      banner: 'https://m.media-amazon.com/images/I/81vj15-NuoL._AC_UF894,1000_QL80_.jpg',
+      trailer: 'https://www.youtube.com/watch?v=2Z0QM6wHOFY',
+      rating: 9.0,
+      maturityRating: MaturityRating.PG13,
+      viewCount: 1800000,
+      categories: [categoriesSeed[6]], // Comedy
+      tags: [tagsSeed[10]], // Love
+      actors: [actorsSeed[12]], // Ryan Reynolds (placeholder)
+      directors: [directorsSeed[3]], // Taika Waititi (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 6,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 23,
+            episodeTitle: 'Pilot',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 23,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 22,
+            episodeTitle: 'Diversity Day',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 22,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // Friends
+  {
+    duration: 22,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'Friends',
+      description:
+        'Follows the personal and professional lives of six twenty to thirty-something-year-old friends living in Manhattan.',
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://upload.wikimedia.org/wikipedia/vi/thumb/7/7c/Friends_titles.png/260px-Friends_titles.png',
+      banner:
+        'https://upload.wikimedia.org/wikipedia/vi/thumb/7/7c/Friends_titles.png/260px-Friends_titles.png',
+      trailer: 'https://www.youtube.com/watch?v=hDNNmeeJs1Q',
+      rating: 8.9,
+      maturityRating: MaturityRating.PG13,
+      viewCount: 2200000,
+      categories: [categoriesSeed[6]], // Comedy
+      tags: [tagsSeed[10]], // Love
+      actors: [actorsSeed[3]], // Anne Hathaway (placeholder)
+      directors: [directorsSeed[3]], // Taika Waititi (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 24,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 22,
+            episodeTitle: 'The One Where Monica Gets a Roommate',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 22,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 22,
+            episodeTitle: 'The One with the Sonogram at the End',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 22,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // Stranger Things
+  {
+    duration: 51,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'Stranger Things',
+      description:
+        'When a young boy disappears, his mother, a police chief and his friends must confront terrifying supernatural forces in order to get him back.',
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Stranger_Things_logo.png/250px-Stranger_Things_logo.png',
+      banner:
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Stranger_Things_logo.png/250px-Stranger_Things_logo.png',
+      trailer: 'https://www.youtube.com/watch?v=XWxyRG_tF7Y',
+      rating: 8.7,
+      maturityRating: MaturityRating.PG13,
+      viewCount: 2500000,
+      categories: [categoriesSeed[1], categoriesSeed[4]], // Sci-Fi, Drama
+      tags: [tagsSeed[7], tagsSeed[14]], // AI, Villain
+      actors: [actorsSeed[11]], // Amy Adams (placeholder)
+      directors: [directorsSeed[3]], // Taika Waititi (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 8,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 49,
+            episodeTitle: 'Chapter One: The Vanishing of Will Byers',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 49,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 56,
+            episodeTitle: 'Chapter Two: The Weirdo on Maple Street',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 56,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // The Mandalorian
+  {
+    duration: 40,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'The Mandalorian',
+      description:
+        'The travels of a lone bounty hunter in the outer reaches of the galaxy, far from the authority of the New Republic.',
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQa6lKT2i-ZL7iT4CwIYzWKjCmFaPJ3exijaz1T5qI69wDAHHnks09RgIuIBS7uPIJYxqVJ7bRSxkQ9OMXdn-BMdj97CmDSW3aL2igwnD4&s=10',
+      banner:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQa6lKT2i-ZL7iT4CwIYzWKjCmFaPJ3exijaz1T5qI69wDAHHnks09RgIuIBS7uPIJYxqVJ7bRSxkQ9OMXdn-BMdj97CmDSW3aL2igwnD4&s=10',
+      trailer: 'https://www.youtube.com/watch?v=aOC8E8z_ifw',
+      rating: 8.7,
+      maturityRating: MaturityRating.PG13,
+      viewCount: 1900000,
+      categories: [categoriesSeed[0], categoriesSeed[1]], // Action, Sci-Fi
+      tags: [tagsSeed[6], tagsSeed[2]], // Marvel, Space
+      actors: [actorsSeed[9]], // Tom Holland (placeholder)
+      directors: [directorsSeed[3]], // Taika Waititi (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 8,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 39,
+            episodeTitle: 'Chapter 1: The Mandalorian',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 39,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 32,
+            episodeTitle: 'Chapter 2: The Child',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 32,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // The Crown
+  {
+    duration: 58,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'The Crown',
+      description:
+        "Follows the political rivalries and romance of Queen Elizabeth II's reign and the events that shaped the second half of the twentieth century.",
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBw7bpXkZx4BgaamjwnWXCHtVSMvbvyiMuqkeHo2HP8rZqUDXZzJH1fDobmYVEc27xDRzqm3qD2mkXj9_WC4tB-Cg8PkME4OEAizhrb30&s=10',
+      banner:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBw7bpXkZx4BgaamjwnWXCHtVSMvbvyiMuqkeHo2HP8rZqUDXZzJH1fDobmYVEc27xDRzqm3qD2mkXj9_WC4tB-Cg8PkME4OEAizhrb30&s=10',
+      trailer: 'https://www.youtube.com/watch?v=JWtnJjn6ng0',
+      rating: 8.6,
+      maturityRating: MaturityRating.PG13,
+      viewCount: 1400000,
+      categories: [categoriesSeed[4]], // Drama
+      tags: [tagsSeed[13]], // War
+      actors: [actorsSeed[3]], // Anne Hathaway (placeholder)
+      directors: [directorsSeed[3]], // Taika Waititi (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 10,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 63,
+            episodeTitle: 'Wolferton Splash',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 63,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 58,
+            episodeTitle: 'Hyde Park Corner',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 58,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // Black Mirror
+  {
+    duration: 60,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'Black Mirror',
+      description:
+        "An anthology series exploring a twisted, high-tech world where humanity's greatest innovations and darkest instincts collide.",
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkr6TWq2BGnvBK6s5B6eDnp3GXUBE_zGejyh9vlDEzKZt8DKeR6TI1stlz6QOQWP3gKqzKZkiDxnBnqBzAIXJ3lcbJam2uRx9y8UyqcHs&s',
+      banner:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkr6TWq2BGnvBK6s5B6eDnp3GXUBE_zGejyh9vlDEzKZt8DKeR6TI1stlz6QOQWP3gKqzKZkiDxnBnqBzAIXJ3lcbJam2uRx9y8UyqcHs&s',
+      trailer: 'https://www.youtube.com/watch?v=zLZHdK4y7lo',
+      rating: 8.8,
+      maturityRating: MaturityRating.R,
+      viewCount: 1600000,
+      categories: [categoriesSeed[1], categoriesSeed[4]], // Sci-Fi, Drama
+      tags: [tagsSeed[7], tagsSeed[14]], // AI, Villain
+      actors: [actorsSeed[10]], // Benedict Cumberbatch (placeholder)
+      directors: [directorsSeed[0]], // Christopher Nolan (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 3,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 63,
+            episodeTitle: 'Fifteen Million Merits',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 63,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 49,
+            episodeTitle: 'White Christmas',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 49,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // The Witcher
+  {
+    duration: 60,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'The Witcher',
+      description:
+        'Geralt of Rivia, a solitary monster hunter, struggles to find his place in a world where people often prove more wicked than beasts.',
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBw7bpXkZx4BgaamjwnWXCHtVSMvbvyiMuqkeHo2HP8rZqUDXZzJH1fDobmYVEc27xDRzqm3qD2mkXj9_WC4tB-Cg8PkME4OEAizhrb30&s=10',
+      banner:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBw7bpXkZx4BgaamjwnWXCHtVSMvbvyiMuqkeHo2HP8rZqUDXZzJH1fDobmYVEc27xDRzqm3qD2mkXj9_WC4tB-Cg8PkME4OEAizhrb30&s=10',
+      trailer: 'https://www.youtube.com/watch?v=ndl1W4ltcmg',
+      rating: 8.2,
+      maturityRating: MaturityRating.R,
+      viewCount: 1700000,
+      categories: [categoriesSeed[0], categoriesSeed[7]], // Action, Fantasy
+      tags: [tagsSeed[13], tagsSeed[14]], // War, Villain
+      actors: [actorsSeed[4]], // Christian Bale (placeholder)
+      directors: [directorsSeed[3]], // Taika Waititi (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 8,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 63,
+            episodeTitle: "The End's Beginning",
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 63,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 60,
+            episodeTitle: 'Four Marks',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 60,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  // The Sopranos
+  {
+    duration: 55,
+    metaData: {
+      type: ContentType.TVSERIES,
+      title: 'The Sopranos',
+      description:
+        'New Jersey mob boss Tony Soprano deals with personal and professional issues in his home and business life that affect his mental state, leading him to seek professional psychiatric counseling.',
+      releaseDate: new Date('2025-10-20'),
+      thumbnail:
+        'https://resizing.flixster.com/-XZAfHZM39UwaGJIFWKAE8fS0ak=/v3/t/assets/p7894124_b_v8_ab.jpg',
+      banner:
+        'https://resizing.flixster.com/-XZAfHZM39UwaGJIFWKAE8fS0ak=/v3/t/assets/p7894124_b_v8_ab.jpg',
+      trailer: 'https://www.youtube.com/watch?v=6Q3D4rZ8JnM',
+      rating: 9.2,
+      maturityRating: MaturityRating.R,
+      viewCount: 1300000,
+      categories: [categoriesSeed[3], categoriesSeed[4]], // Crime, Drama
+      tags: [tagsSeed[14]], // Villain
+      actors: [actorsSeed[2]], // Matthew McConaughey (placeholder)
+      directors: [directorsSeed[1]], // James Cameron (placeholder)
+    },
+    seasons: [
+      {
+        seasonNumber: 1,
+        totalEpisodes: 13,
+        episodes: [
+          {
+            episodeNumber: 1,
+            episodeDuration: 56,
+            episodeTitle: 'Pilot',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 56,
+            },
+          },
+          {
+            episodeNumber: 2,
+            episodeDuration: 50,
+            episodeTitle: '46 Long',
+            video: {
+              videoUrl:
+                'https://cinematok2-bucket.s3.ap-southeast-1.amazonaws.com/videos/fdad2420-c23a-4a14-9b4f-19dd276e4cf0/hls/master.m3u8',
+              duration: 50,
+            },
+          },
+        ],
+      },
+    ],
+  },
+  ...generateTVSeries(60),
+];
 
 // ========================= // AUDIT LOG SEED // =========================
 export function generateAuditLogs(
