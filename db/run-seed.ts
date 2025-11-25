@@ -1,5 +1,7 @@
 import { EntityEpisode, EntitySeason, EntityTVSeries } from 'src/cms/entities/tvseries.entity';
 
+import { VIDEO_STATUS } from '@app/common/enums/global.enum';
+
 import { connectionSource } from '../db/seed.config';
 import { AuditLog } from '../src/audit-log/entities/audit-log.entity';
 import { EntityUser } from '../src/auth/entities/user.entity';
@@ -57,6 +59,7 @@ async function seed() {
   // Seed movies
   const movieRepo = connectionSource.getRepository(EntityMovie);
   const contentRepo = connectionSource.getRepository(EntityContent);
+  const videoRepo = connectionSource.getRepository(EntityVideo);
   const savedMovies: EntityMovie[] = [];
   for (const movie of moviesSeed) {
     // Save metaData (EntityContent)
@@ -64,13 +67,22 @@ async function seed() {
     // Save movie with metaData
     const savedMovie = await movieRepo.save({ ...movie, metaData });
     savedMovies.push(savedMovie);
+
+    // Save video if exists
+    if (movie.video) {
+      await videoRepo.save({
+        ...movie.video,
+        ownerId: savedMovie.id,
+        ownerType: VideoOwnerType.MOVIE,
+        status: VIDEO_STATUS.READY,
+      });
+    }
   }
 
   // Seed TV series
   const tvSeriesRepo = connectionSource.getRepository(EntityTVSeries);
   const tvSeasonRepo = connectionSource.getRepository(EntitySeason);
   const tvEpisodeRepo = connectionSource.getRepository(EntityEpisode);
-  const videoRepo = connectionSource.getRepository(EntityVideo);
 
   const savedTVSeries: EntityTVSeries[] = [];
   for (const series of tvSeriesSeed) {
