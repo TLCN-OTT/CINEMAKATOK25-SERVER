@@ -2,9 +2,9 @@ name: NestJS Unit Tests
 
 on:
   push:
-    branches: [unit-test]
+    branches: [feat/unit-test]
   pull_request:
-    branches: [unit-test]
+    branches: [feat/unit-test]
   workflow_dispatch:
 
 jobs:
