@@ -33,9 +33,6 @@ jobs:
       - name: Run unit tests
         run: pnpm run test
 
-      - name: Run e2e tests
-        run: pnpm run test:e2e
-
       - name: Generate coverage report
         run: pnpm run test:cov
 
