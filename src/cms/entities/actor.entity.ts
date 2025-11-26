@@ -9,10 +9,10 @@ export class EntityActor extends PersonEntity {
   @Column({ type: 'varchar', nullable: true })
   bio?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   profilePicture?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 250, nullable: true })
   nationality?: string;
 
   @ManyToMany(() => EntityContent, content => content.actors)
@@ -24,10 +24,10 @@ export class EntityDirector extends PersonEntity {
   @Column({ type: 'varchar', nullable: true })
   bio?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   profilePicture?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 250, nullable: true })
   nationality?: string;
 
   @ManyToMany(() => EntityContent, content => content.directors)

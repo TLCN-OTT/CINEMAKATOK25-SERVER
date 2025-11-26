@@ -28,13 +28,13 @@ export class EntityContent extends BaseEntity {
   @Column({ type: 'date', default: () => 'CURRENT_DATE' })
   releaseDate: Date;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 250 })
   thumbnail: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 250 })
   banner?: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 250 })
   trailer: string;
 
   @Column({ type: 'decimal', precision: 3, scale: 1, default: 0 })

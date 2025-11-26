@@ -49,10 +49,10 @@ export class EntityEpisode extends BaseEntity {
   @Column({ type: 'int' })
   episodeDuration: number;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 250 })
   episodeTitle: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 250, nullable: true })
   episodeThumbnail: string;
 
   @ManyToOne(() => EntitySeason, season => season.episodes, { onDelete: 'CASCADE' })
