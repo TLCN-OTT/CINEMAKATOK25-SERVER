@@ -148,7 +148,6 @@ export class UserService {
         );
       } catch (error) {
         // Log error but don't fail the ban operation
-        console.error('Failed to send ban notification email:', error);
       }
     }
 
@@ -237,7 +236,6 @@ export class UserService {
       });
     }
 
-    console.log(`Auto-unbanned ${expiredBannedUsers.length} users`);
     return expiredBannedUsers.length;
   }
 }

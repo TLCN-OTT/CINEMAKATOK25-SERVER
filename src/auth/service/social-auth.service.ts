@@ -29,7 +29,6 @@ export class SocialAuthService {
         picture: userData.picture,
       };
     } catch (error) {
-      console.error('Google login error:', error);
       throw new Error('Invalid Google access token');
     }
   }

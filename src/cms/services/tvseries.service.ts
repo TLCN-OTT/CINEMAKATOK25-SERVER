@@ -145,8 +145,12 @@ export class TvSeriesService {
         }
         qb.addOrderBy(field, sortObj[key]);
       });
-    } else if (!search && !defaultOrder) {
-      qb.orderBy('tvseries.metaData.releaseDate', 'DESC');
+    } else if (!search) {
+      if (defaultOrder) {
+        qb.orderBy(defaultOrder.field, defaultOrder.direction);
+      } else {
+        qb.orderBy('tvseries.metaData.releaseDate', 'DESC');
+      }
     }
 
     return qb;

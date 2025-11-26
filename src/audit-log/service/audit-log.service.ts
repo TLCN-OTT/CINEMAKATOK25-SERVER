@@ -48,7 +48,6 @@ export class AuditLogService {
     const { page = 1, limit = 20 } = query;
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    console.log('Seven days ago:', sevenDaysAgo);
 
     // First get the audit logs
     const logs = await this.auditLogRepository

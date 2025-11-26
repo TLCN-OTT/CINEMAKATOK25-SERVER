@@ -1,5 +1,6 @@
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
@@ -101,6 +102,51 @@ describe('CategoryService', () => {
       expect(result.data).toEqual(mockCategories);
       expect(result.total).toBe(2);
     });
+    it('should search categories', async () => {
+      const mockCategories = [{ id: '1', categoryName: 'Action' }];
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        setParameter: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([mockCategories, 1]),
+      };
+      jest
+        .spyOn(mockCategoryRepository, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
+      await service.findAll({ search: 'Action' });
+
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        `similarity(category.categoryName, :search) > 0.2`,
+      );
+    });
+    it('should sort categories', async () => {
+      const mockCategories = [
+        { id: '1', categoryName: 'Action' },
+        { id: '2', categoryName: 'Comedy' },
+      ];
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        setParameter: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([mockCategories, 2]),
+      };
+
+      jest
+        .spyOn(mockCategoryRepository, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
+      await service.findAll({ sort: JSON.stringify({ categoryName: 'ASC' }) });
+
+      expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith(`category.categoryName`, 'ASC');
+    });
   });
 
   describe('findOne', () => {
@@ -117,6 +163,11 @@ describe('CategoryService', () => {
       });
       expect(result).toEqual(mockCategory);
     });
+    it('should return null if category not found', async () => {
+      mockCategoryRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne('2')).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('findById', () => {
@@ -132,16 +183,43 @@ describe('CategoryService', () => {
       });
       expect(result).toEqual(mockCategory);
     });
+
+    it('should throw NotFoundException if category not found', async () => {
+      mockCategoryRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne('2')).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('validateCategories', () => {
     it('should validate categories successfully', async () => {
       const categoryDtos = [{ id: '1' }];
-      const mockCategories = [{ id: '1', categoryName: 'Action' }];
+      const mockCategory = { id: '1', categoryName: 'Action' };
 
-      mockCategoryRepository.find.mockResolvedValue(mockCategories);
+      mockCategoryRepository.findOne.mockResolvedValue(mockCategory);
 
       await expect(service.validateCategories(categoryDtos)).resolves.not.toThrow();
+    });
+    it('should throw NotFoundException if any category is invalid', async () => {
+      const categoryDtos = [{ id: '1' }, { id: '2' }];
+
+      mockCategoryRepository.findOne
+        .mockResolvedValueOnce({ id: '1', categoryName: 'Action' }) // valid
+        .mockResolvedValueOnce(null); // invalid
+
+      await expect(service.validateCategories(categoryDtos)).rejects.toThrow(NotFoundException);
+    });
+    it('should return immediately if no categories provided', async () => {
+      await expect(service.validateCategories([])).resolves.not.toThrow();
+    });
+    it('should skip validation if category id is empty', async () => {
+      const categoryDtos = [{ id: '' }];
+
+      const findByIdSpy = jest.spyOn(service, 'findById');
+
+      await service.validateCategories(categoryDtos);
+
+      expect(findByIdSpy).not.toHaveBeenCalled();
     });
   });
 

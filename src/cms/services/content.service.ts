@@ -52,7 +52,6 @@ export class ContentService {
 
       return await this.contentRepository.save(content);
     } catch (error) {
-      console.error('Error creating content:', error);
       throw new BadRequestException({
         code: ERROR_CODE.UNEXPECTED_ERROR,
         message: 'Failed to create content',

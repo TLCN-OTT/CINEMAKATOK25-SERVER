@@ -346,9 +346,7 @@ describe('AuditLogService', () => {
       const userId = 'user-1';
       const videoId = 'video-1';
 
-      mockVideoService.getMovieOrSeriesIdFromVideo.mockRejectedValue(
-        new NotFoundException('Video not found'),
-      );
+      mockVideoService.getMovieOrSeriesIdFromVideo.mockRejectedValue(new NotFoundException());
 
       await expect(service.logVideoAction(userId, videoId)).rejects.toThrow(NotFoundException);
       expect(mockVideoService.getMovieOrSeriesIdFromVideo).toHaveBeenCalledWith(videoId);

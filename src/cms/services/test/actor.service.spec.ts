@@ -196,6 +196,10 @@ describe('ActorService', () => {
 
       expect(result.name).toBe('Updated Name');
     });
+    it('should throw NotFoundException if not found', async () => {
+      jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException());
+      await expect(service.update('actor-1', updateDto)).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('remove', () => {

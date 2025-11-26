@@ -71,18 +71,6 @@ export class ReportService {
       take: limit,
     });
 
-    // Debug: Log reporter information
-    console.log(
-      'Reports with reporter info:',
-      reports.map(r => ({
-        id: r.id,
-        reporter: r.reporter,
-        reporterId: r.reporter?.id,
-        reporterName: r.reporter?.name,
-        reporterEmail: r.reporter?.email,
-      })),
-    );
-
     // Apply search filtering if needed
     let filteredReports = reports;
     if (search) {

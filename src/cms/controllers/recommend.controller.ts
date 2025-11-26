@@ -47,7 +47,6 @@ export class RecommendationsController {
 
     // Combine movies and tvSeries into a single array for the data property
     const combinedData = [...movies, ...tvSeries];
-    console.log('Combined Data:', combinedData);
     const data = combinedData.map((item: any) => ({
       ...plainToInstance(RecommendationDto, item, { excludeExtraneousValues: true }),
       metaData: item.metaData,

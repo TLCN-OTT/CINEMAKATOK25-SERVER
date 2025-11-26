@@ -89,7 +89,6 @@ export class AnalyticsService {
 
       return Math.round(engagementScore);
     } catch (error) {
-      console.error('Error calculating engagement:', error);
       return 0;
     }
   }
@@ -132,7 +131,6 @@ export class AnalyticsService {
 
       return { trending, change };
     } catch (error) {
-      console.error('Error calculating trending:', error);
       return { trending: 'up', change: '+0.0%' };
     }
   }
@@ -209,7 +207,6 @@ export class AnalyticsService {
 
       return { trending, change };
     } catch (error) {
-      console.error('Error calculating category trending:', error);
       return { trending: 'up', change: '+0.0%' };
     }
   }
@@ -335,7 +332,6 @@ export class AnalyticsService {
 
       return { data: paginatedMovies, total: totalItems };
     } catch (error) {
-      console.error('Analytics movies error:', error);
       throw error;
     }
   }
@@ -460,7 +456,6 @@ export class AnalyticsService {
 
       return { data: paginatedTVSeries, total: totalItems };
     } catch (error) {
-      console.error('Analytics TV series error:', error);
       throw error;
     }
   }
@@ -580,7 +575,6 @@ export class AnalyticsService {
 
       return { data: paginatedCategories, total: totalItems };
     } catch (error) {
-      console.error('Analytics categories error:', error);
       throw error;
     }
   }
@@ -591,8 +585,6 @@ export class AnalyticsService {
     try {
       const page = query.page || 1;
       const limit = query.limit || 10;
-      console.log(`Analytics: Fetching trending movies - page ${page}, limit ${limit}`);
-
       // Get ALL movies first (no limit)
       const moviesQuery = this.movieRepository
         .createQueryBuilder('movie')
@@ -697,7 +689,6 @@ export class AnalyticsService {
 
       return { data: cleanMoviesData, total: filteredMovies.length };
     } catch (error) {
-      console.error('Analytics trending movies error:', error);
       throw error;
     }
   }
@@ -708,7 +699,6 @@ export class AnalyticsService {
     try {
       const page = query.page || 1;
       const limit = query.limit || 10;
-      console.log(`Analytics: Fetching trending TV series - page ${page}, limit ${limit}`);
 
       // Get ALL TV series first (no limit)
       const tvSeriesQuery = this.tvseriesRepository
@@ -814,7 +804,6 @@ export class AnalyticsService {
 
       return { data: cleanTVSeriesData, total: filteredTVSeries.length };
     } catch (error) {
-      console.error('Analytics trending TV series error:', error);
       throw error;
     }
   }
@@ -1026,7 +1015,6 @@ export class AnalyticsService {
 
       return result;
     } catch (error) {
-      console.error('Analytics user stats error:', error);
       throw error;
     }
   }

@@ -83,7 +83,6 @@ export class TvSeriesController {
     type: PaginatedApiResponseDto(TVSeriesSummaryDto),
   })
   async findAll(@Query() query: PaginationQueryDto) {
-    console.log('Fetching all TV series with query:', query);
     const { data, total } = await this.tvSeriesService.findAll(query);
     return ResponseBuilder.createPaginatedResponse({
       data: plainToInstance(TVSeriesSummaryDto, data, { excludeExtraneousValues: true }),

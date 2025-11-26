@@ -396,7 +396,6 @@ export class AuthService {
         token: new TokenResponse(jwtAccessToken, refreshToken),
       };
     } catch (error) {
-      console.error('Social login error:', error);
       if (error.message?.includes('Invalid') && error.message?.includes('access token')) {
         throw new BadRequestException({
           code: ERROR_CODE.INVALID_TOKEN,

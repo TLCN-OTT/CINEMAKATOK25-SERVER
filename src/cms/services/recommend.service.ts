@@ -49,14 +49,12 @@ export class RecommendService {
           }
         } catch (error) {
           // Log lỗi cho item cụ thể, bỏ qua để tiếp tục
-          console.error(`Error fetching item ${rec.itemid}:`, error);
         }
       }
       return { movies, tvSeries };
     } catch (error) {
       // Xử lý lỗi Axios (e.g., 404) hoặc lỗi khác
       if (error.response?.status === 404) {
-        console.error('FastAPI endpoint not found. Ensure FastAPI is running.');
         return { movies: [], tvSeries: [] }; // Fallback
       }
       throw new BadRequestException({

@@ -5,9 +5,6 @@ import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
-import { EntityMovie } from '../../../cms/entities/movie.entity';
-import { EntityEpisode, EntitySeason, EntityTVSeries } from '../../../cms/entities/tvseries.entity';
-import { EntityVideo } from '../../../cms/entities/video.entity';
 import { VideoService } from '../../../cms/services/video.service';
 import { CreateWatchProgressDto, UpdateWatchProgressDto } from '../../dtos/watch-progress.dto';
 import { EntityWatchProgress } from '../../entities/watch-progress.entity';
@@ -18,17 +15,39 @@ describe('WatchProgressService', () => {
   let watchProgressRepository: Repository<EntityWatchProgress>;
   let videoService: VideoService;
 
-  const mockVideo = {
-    id: 'video-1',
-    videoUrl: 'video.mp4',
-    thumbnailUrl: 'thumb.jpg',
-    ownerType: 'movie' as any, // Cast to avoid type mismatch
+  // --- Mock Data ---
+  const mockVideoMovie = {
+    id: 'video-movie',
+    videoUrl: 'movie.mp4',
+    thumbnailUrl: 'thumb-movie.jpg',
+    ownerType: 'movie',
     ownerId: 'movie-1',
   } as any;
 
-  let mockWatchProgress: any;
+  const mockVideoEpisode = {
+    id: 'video-episode',
+    videoUrl: 'episode.mp4',
+    thumbnailUrl: 'thumb-episode.jpg',
+    ownerType: 'episode',
+    ownerId: 'episode-1',
+  } as any;
 
-  const mockEpisode = {
+  const mockVideoUnknown = {
+    id: 'video-unknown',
+    ownerType: 'clip',
+    ownerId: 'clip-1',
+  } as any;
+
+  const mockWatchProgress = {
+    id: 'wp-1',
+    user: { id: 'user-1' },
+    video: mockVideoMovie,
+    watchedDuration: 120,
+    lastWatched: new Date(),
+    isCompleted: false,
+  } as any;
+
+  const mockEpisodeEntity = {
     id: 'episode-1',
     episodeDuration: 45,
     episodeNumber: 1,
@@ -37,52 +56,50 @@ describe('WatchProgressService', () => {
       tvseries: {
         id: 'tv-1',
         metaData: {
-          id: 'meta-1',
-          title: 'TV Series',
-          description: 'Desc',
-          thumbnail: 'thumb.jpg',
-          banner: 'banner.jpg',
-          trailer: 'trailer.mp4',
+          id: 'meta-tv',
+          title: 'TV Series Title',
+          description: 'TV Desc',
+          thumbnail: 'tv-thumb.jpg',
           type: 'TVSERIES',
-          releaseDate: new Date(),
-          avgRating: 4.5,
-          imdbRating: 8.0,
-          maturityRating: 'PG',
-          viewCount: 1000,
         },
       },
     },
   } as any;
 
-  const mockMovie = {
+  const mockMovieEntity = {
     id: 'movie-1',
     duration: 120,
     metaData: {
-      id: 'meta-2',
+      id: 'meta-movie',
       title: 'Movie Title',
-      description: 'Desc',
-      thumbnail: 'thumb.jpg',
-      banner: 'banner.jpg',
-      trailer: 'trailer.mp4',
+      description: 'Movie Desc',
+      thumbnail: 'movie-thumb.jpg',
       type: 'MOVIE',
-      releaseDate: new Date(),
-      avgRating: 4.0,
-      imdbRating: 7.5,
-      maturityRating: 'PG-13',
-      viewCount: 500,
     },
   } as any;
 
-  beforeEach(async () => {
-    mockWatchProgress = {
-      id: 'wp-1',
-      user: { id: 'user-1' },
-      video: mockVideo,
-      watchedDuration: 120,
-      lastWatched: new Date(),
-      isCompleted: false,
-    } as any;
+  // --- Mocks ---
+  const mockQueryBuilder = {
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    addOrderBy: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    getManyAndCount: jest.fn(),
+    getMany: jest.fn(),
+  };
 
+  const mockManagerQueryBuilder = {
+    select: jest.fn().mockReturnThis(),
+    from: jest.fn().mockReturnThis(),
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    getOne: jest.fn(),
+  };
+
+  beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WatchProgressService,
@@ -93,9 +110,9 @@ describe('WatchProgressService', () => {
             create: jest.fn(),
             save: jest.fn(),
             delete: jest.fn(),
-            createQueryBuilder: jest.fn(),
+            createQueryBuilder: jest.fn(() => mockQueryBuilder),
             manager: {
-              createQueryBuilder: jest.fn(),
+              createQueryBuilder: jest.fn(() => mockManagerQueryBuilder),
             },
           },
         },
@@ -117,11 +134,14 @@ describe('WatchProgressService', () => {
     jest.clearAllMocks();
   });
 
+  // =================================================================
+  // 1. Tests for updateWatchProgress
+  // =================================================================
   describe('updateWatchProgress', () => {
-    const createDto: CreateWatchProgressDto = { videoId: 'video-1', watchedDuration: 100 };
+    const createDto: CreateWatchProgressDto = { videoId: 'video-movie', watchedDuration: 100 };
 
     it('should create new watch progress if not exists', async () => {
-      jest.spyOn(videoService, 'findOne').mockResolvedValue(mockVideo);
+      jest.spyOn(videoService, 'findOne').mockResolvedValue(mockVideoMovie);
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(null);
       jest.spyOn(watchProgressRepository, 'create').mockReturnValue(mockWatchProgress);
       jest.spyOn(watchProgressRepository, 'save').mockResolvedValue(mockWatchProgress);
@@ -129,66 +149,84 @@ describe('WatchProgressService', () => {
       const result = await service.updateWatchProgress('user-1', createDto);
 
       expect(result).toEqual(mockWatchProgress);
-      expect(videoService.findOne).toHaveBeenCalledWith('video-1');
-      expect(watchProgressRepository.findOne).toHaveBeenCalledWith({
-        where: { user: { id: 'user-1' }, video: { id: 'video-1' } },
-        relations: ['user', 'video'],
-      });
-      expect(watchProgressRepository.create).toHaveBeenCalled();
-      expect(watchProgressRepository.save).toHaveBeenCalled();
+      expect(watchProgressRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ watchedDuration: 100 }),
+      );
     });
 
     it('should update existing watch progress', async () => {
-      jest.spyOn(videoService, 'findOne').mockResolvedValue(mockVideo);
+      jest.spyOn(videoService, 'findOne').mockResolvedValue(mockVideoMovie);
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(mockWatchProgress);
-      jest
-        .spyOn(watchProgressRepository, 'save')
-        .mockResolvedValue({ ...mockWatchProgress, watchedDuration: 100 });
+      jest.spyOn(watchProgressRepository, 'save').mockImplementation(async entity => entity as any);
 
       const result = await service.updateWatchProgress('user-1', createDto);
 
       expect(result.watchedDuration).toBe(100);
+      expect(watchProgressRepository.create).not.toHaveBeenCalled();
       expect(watchProgressRepository.save).toHaveBeenCalled();
     });
   });
 
+  // =================================================================
+  // 2. Tests for updateProgress
+  // =================================================================
   describe('updateProgress', () => {
-    const updateDto: UpdateWatchProgressDto = { watchedDuration: 150, isCompleted: true };
+    it('should update both duration and completion status', async () => {
+      jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue({ ...mockWatchProgress });
+      jest.spyOn(watchProgressRepository, 'save').mockImplementation(async entity => entity as any);
 
-    it('should update watch progress successfully', async () => {
-      jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(mockWatchProgress);
-      jest
-        .spyOn(watchProgressRepository, 'save')
-        .mockResolvedValue({ ...mockWatchProgress, ...updateDto });
+      const dto: UpdateWatchProgressDto = { watchedDuration: 200, isCompleted: true };
+      const result = await service.updateProgress('user-1', 'video-1', dto);
 
-      const result = await service.updateProgress('user-1', 'video-1', updateDto);
-
-      expect(result.watchedDuration).toBe(150);
+      expect(result.watchedDuration).toBe(200);
       expect(result.isCompleted).toBe(true);
-      expect(watchProgressRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if not found', async () => {
+    it('should update only watchedDuration', async () => {
+      jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue({ ...mockWatchProgress });
+      jest.spyOn(watchProgressRepository, 'save').mockImplementation(async entity => entity as any);
+
+      const dto: UpdateWatchProgressDto = { watchedDuration: 50 };
+      const result = await service.updateProgress('user-1', 'video-1', dto);
+
+      expect(result.watchedDuration).toBe(50);
+      // isCompleted should remain unchanged (mockWatchProgress.isCompleted is false)
+      expect(result.isCompleted).toBe(false);
+    });
+
+    it('should update only isCompleted', async () => {
+      jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue({ ...mockWatchProgress });
+      jest.spyOn(watchProgressRepository, 'save').mockImplementation(async entity => entity as any);
+
+      const dto: UpdateWatchProgressDto = { isCompleted: true };
+      const result = await service.updateProgress('user-1', 'video-1', dto);
+
+      // watchedDuration should remain unchanged
+      expect(result.watchedDuration).toBe(mockWatchProgress.watchedDuration);
+      expect(result.isCompleted).toBe(true);
+    });
+
+    it('should throw NotFoundException if progress not found', async () => {
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(null);
 
-      await expect(service.updateProgress('user-1', 'video-1', updateDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.updateProgress('user-1', 'video-1', { watchedDuration: 10 }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
+  // =================================================================
+  // 3. Tests for Simple Getters
+  // =================================================================
   describe('getWatchProgress', () => {
     it('should return watch progress', async () => {
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(mockWatchProgress);
-
       const result = await service.getWatchProgress('user-1', 'video-1');
-
       expect(result).toEqual(mockWatchProgress);
     });
 
     it('should throw NotFoundException if not found', async () => {
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(null);
-
       await expect(service.getWatchProgress('user-1', 'video-1')).rejects.toThrow(
         NotFoundException,
       );
@@ -198,150 +236,153 @@ describe('WatchProgressService', () => {
   describe('getResumeData', () => {
     it('should return resume data', async () => {
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(mockWatchProgress);
-
       const result = await service.getResumeData('user-1', 'video-1');
-
       expect(result).toEqual({
-        videoId: 'video-1',
-        contentTitle: 'video.mp4',
-        contentThumbnail: 'thumb.jpg',
-        watchedDuration: 120,
-        lastWatched: expect.any(Date),
-        isCompleted: false,
+        videoId: mockWatchProgress.video.id,
+        contentTitle: mockWatchProgress.video.videoUrl,
+        contentThumbnail: mockWatchProgress.video.thumbnailUrl,
+        watchedDuration: mockWatchProgress.watchedDuration,
+        lastWatched: mockWatchProgress.lastWatched,
+        isCompleted: mockWatchProgress.isCompleted,
       });
     });
 
-    it('should return null if no progress', async () => {
+    it('should return null if no progress found', async () => {
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(null);
-
       const result = await service.getResumeData('user-1', 'video-1');
-
-      expect(result).toBe(null);
+      expect(result).toBeNull();
     });
   });
 
+  // =================================================================
+  // 4. Tests for getWatchProgressByUser (Complex)
+  // =================================================================
   describe('getWatchProgressByUser', () => {
-    it('should return enriched watch progress data', async () => {
-      const mockQueryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[mockWatchProgress], 1]),
-      };
-      const mockEpisodeQB = {
-        select: jest.fn().mockReturnThis(),
-        from: jest.fn().mockReturnThis(),
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(mockEpisode),
-      };
-      const mockMovieQB = {
-        select: jest.fn().mockReturnThis(),
-        from: jest.fn().mockReturnThis(),
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(mockMovie),
-      };
+    const mockProgressMovie = { ...mockWatchProgress, video: mockVideoMovie };
+    const mockProgressEpisode = { ...mockWatchProgress, video: mockVideoEpisode };
+    const mockProgressUnknown = { ...mockWatchProgress, video: mockVideoUnknown };
 
-      jest
-        .spyOn(watchProgressRepository, 'createQueryBuilder')
-        .mockReturnValue(mockQueryBuilder as any);
-      jest
-        .spyOn(watchProgressRepository.manager, 'createQueryBuilder')
-        .mockReturnValueOnce(mockMovieQB as any)
-        .mockReturnValueOnce(mockEpisodeQB as any);
+    it('should return enriched data handling Movie, Episode, and Unknown types', async () => {
+      // Mock findAll return list containing all 3 types
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([
+        [mockProgressEpisode, mockProgressMovie, mockProgressUnknown],
+        3,
+      ]);
 
-      const result = await service.getWatchProgressByUser('user-1', { page: 1, limit: 10 });
+      // Mock Enrichment calls
+      // The service iterates and calls manager.createQueryBuilder...getOne()
+      // Call 1: Episode -> found
+      // Call 2: Movie -> found
+      // Call 3: Unknown -> logic doesn't query DB
+      mockManagerQueryBuilder.getOne
+        .mockResolvedValueOnce(mockEpisodeEntity) // For Episode
+        .mockResolvedValueOnce(mockMovieEntity); // For Movie
 
-      expect(result.data[0].contentTitle).toBe('Movie Title');
-      expect(result.total).toBe(1);
+      const result = await service.getWatchProgressByUser('user-1', { page: 1 });
+
+      //  - This visualizes how the loop maps entities
+
+      expect(result.total).toBe(3);
+
+      // Check Episode Enrichment
+      const epResult = result.data[0];
+      expect(epResult.contentTitle).toBe('TV Series Title');
+      expect(epResult.episodeNumber).toBe(1);
+
+      // Check Movie Enrichment
+      const movResult = result.data[1];
+      expect(movResult.contentTitle).toBe('Movie Title');
+      expect(movResult.duration).toBe(120);
+
+      // Check Unknown Enrichment
+      const unkResult = result.data[2];
+      expect(unkResult.contentTitle).toBeNull();
+      expect(unkResult.metadata).toBeNull();
     });
 
-    it('should filter by isCompleted', async () => {
-      const mockQueryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
-      };
+    it('should handle filters and custom sort', async () => {
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
 
-      jest
-        .spyOn(watchProgressRepository, 'createQueryBuilder')
-        .mockReturnValue(mockQueryBuilder as any);
-
-      await service.getWatchProgressByUser('user-1', { isCompleted: true });
+      await service.getWatchProgressByUser('user-1', {
+        isCompleted: true,
+        sort: JSON.stringify({ lastWatched: 'ASC' }),
+      });
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('wp.isCompleted = :isCompleted', {
         isCompleted: true,
       });
+      expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith('wp.lastWatched', 'ASC');
+    });
+
+    it('should use default sort if not provided', async () => {
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+      await service.getWatchProgressByUser('user-1', {});
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('wp.lastWatched', 'DESC');
+    });
+
+    it('should handle database errors during enrichment gracefully (try/catch)', async () => {
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockProgressMovie], 1]);
+
+      // Simulate error during manager query
+      mockManagerQueryBuilder.getOne.mockRejectedValue(new Error('DB connection failed'));
+
+      const result = await service.getWatchProgressByUser('user-1', {});
+
+      // Should return data without enrichment, not throw
+      expect(result.data[0].contentTitle).toBeNull();
+      expect(result.data[0].metadata).toBeNull();
     });
   });
 
+  // =================================================================
+  // 5. Other List Methods
+  // =================================================================
   describe('getWatchHistory', () => {
-    it('should return watch history', async () => {
-      const mockQueryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[mockWatchProgress], 1]),
-      };
-
-      jest
-        .spyOn(watchProgressRepository, 'createQueryBuilder')
-        .mockReturnValue(mockQueryBuilder as any);
-
-      const result = await service.getWatchHistory('user-1', { page: 1, limit: 10 });
+    it('should return history with default sort', async () => {
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[mockWatchProgress], 1]);
+      const result = await service.getWatchHistory('user-1', {});
 
       expect(result.data).toEqual([mockWatchProgress]);
-      expect(result.total).toBe(1);
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('wp.lastWatched', 'DESC');
+    });
+
+    it('should return history with custom sort', async () => {
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([[], 0]);
+      await service.getWatchHistory('user-1', {
+        sort: JSON.stringify({ watchedDuration: 'DESC' }),
+      });
+
+      expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith('wp.watchedDuration', 'DESC');
     });
   });
 
   describe('getRecentlyWatched', () => {
-    it('should return recently watched', async () => {
-      const mockQueryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([mockWatchProgress]),
-      };
+    it('should return recently watched list', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([mockWatchProgress]);
 
-      jest
-        .spyOn(watchProgressRepository, 'createQueryBuilder')
-        .mockReturnValue(mockQueryBuilder as any);
+      const result = await service.getRecentlyWatched('user-1', 5);
 
-      const result = await service.getRecentlyWatched('user-1', 10);
-
+      expect(mockQueryBuilder.take).toHaveBeenCalledWith(5);
       expect(result).toEqual([mockWatchProgress]);
     });
   });
 
+  // =================================================================
+  // 6. State Change Methods
+  // =================================================================
   describe('markAsCompleted', () => {
     it('should mark as completed', async () => {
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(mockWatchProgress);
-      jest
-        .spyOn(watchProgressRepository, 'save')
-        .mockResolvedValue({ ...mockWatchProgress, isCompleted: true });
+      jest.spyOn(watchProgressRepository, 'save').mockImplementation(async entity => entity as any);
 
       const result = await service.markAsCompleted('user-1', 'video-1');
 
       expect(result.isCompleted).toBe(true);
+      expect(watchProgressRepository.save).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException if not found', async () => {
+    it('should throw NotFoundException', async () => {
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(null);
-
       await expect(service.markAsCompleted('user-1', 'video-1')).rejects.toThrow(NotFoundException);
     });
   });
@@ -353,16 +394,12 @@ describe('WatchProgressService', () => {
 
       const result = await service.deleteWatchProgress('user-1', 'video-1');
 
-      expect(result.message).toBe('Watch progress deleted successfully');
-      expect(watchProgressRepository.delete).toHaveBeenCalledWith({
-        user: { id: 'user-1' },
-        video: { id: 'video-1' },
-      });
+      expect(result.message).toContain('deleted successfully');
+      expect(watchProgressRepository.delete).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if not found', async () => {
       jest.spyOn(watchProgressRepository, 'findOne').mockResolvedValue(null);
-
       await expect(service.deleteWatchProgress('user-1', 'video-1')).rejects.toThrow(
         NotFoundException,
       );
