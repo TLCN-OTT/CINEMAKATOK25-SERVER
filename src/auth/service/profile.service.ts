@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { AuditLogService } from 'src/audit-log/service/audit-log.service';
 
 import { Repository } from 'typeorm';
@@ -201,9 +199,9 @@ export class ProfileService {
   }
 
   /**
-   * Upload user avatar
+   * Update user avatar with URL
    */
-  async uploadAvatar(userId: string, file: any) {
+  async updateAvatar(userId: string, avatarUrl: string) {
     try {
       const user = await this.userRepository.findOne({
         where: { id: userId },
@@ -216,68 +214,25 @@ export class ProfileService {
         });
       }
 
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!allowedTypes.includes(file.mimetype)) {
-        throw new BadRequestException({
-          code: ERROR_CODE.INVALID_BODY,
-          message: 'Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed',
-        });
-      }
-
-      // Validate file size (5MB max)
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        throw new BadRequestException({
-          code: ERROR_CODE.INVALID_BODY,
-          message: 'File size too large. Maximum 5MB allowed',
-        });
-      }
-
-      // Create upload directory if not exists
-      const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      // Delete old avatar if exists
-      if (user.avatar) {
-        const oldAvatarPath = path.join(
-          process.cwd(),
-          'uploads',
-          'avatars',
-          path.basename(user.avatar),
-        );
-        if (fs.existsSync(oldAvatarPath)) {
-          fs.unlinkSync(oldAvatarPath);
-        }
-      }
-
-      // Generate unique filename
-      const fileExtension = path.extname(file.originalname);
-      const fileName = `user-${userId}-${Date.now()}${fileExtension}`;
-      const filePath = path.join(uploadDir, fileName);
-
-      // Save file
-      fs.writeFileSync(filePath, file.buffer);
-
-      // Generate avatar URL
-      const avatarUrl = `/uploads/avatars/${fileName}`;
-
       // Update user avatar in database
       await this.userRepository.update(userId, {
         avatar: avatarUrl,
       });
+
       await this.auditLogService.log({
         action: LOG_ACTION.UPDATE_USER,
         userId: userId,
         description: `User with ID ${userId} updated their avatar`,
       });
+
       return avatarUrl;
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       throw new BadRequestException({
         code: ERROR_CODE.UNEXPECTED_ERROR,
-        message: 'Failed to upload avatar',
+        message: 'Failed to update avatar',
       });
     }
   }
@@ -315,16 +270,11 @@ export class ProfileService {
         });
       }
 
-      // Delete file from filesystem
-      const avatarPath = path.join(process.cwd(), 'uploads', 'avatars', path.basename(user.avatar));
-      if (fs.existsSync(avatarPath)) {
-        fs.unlinkSync(avatarPath);
-      }
-
-      // Update database
+      // Update database to remove avatar
       await this.userRepository.update(userId, {
         avatar: undefined,
       });
+
       await this.auditLogService.log({
         action: LOG_ACTION.UPDATE_USER,
         userId: userId,
