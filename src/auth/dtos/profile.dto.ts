@@ -89,7 +89,6 @@ export class UpdateProfileRequest extends OmitType(ProfileResponse, [
   'email',
   'provider',
   'isEmailVerified',
-  'avatar', // avatar should be updated through a separate endpoint
 ]) {}
 
 export class ChangePasswordRequest {
@@ -124,6 +123,16 @@ export class ChangePasswordRequest {
   @IsNotEmpty({ message: 'Password confirmation cannot be empty' })
   @Expose()
   confirmPassword: string;
+}
+
+export class UpdateAvatarRequest {
+  @ApiProperty({
+    description: 'Avatar URL',
+    example: 'https://example.com/avatar.jpg',
+  })
+  @IsString()
+  @IsNotEmpty()
+  avatarUrl: string;
 }
 
 export class UploadAvatarResponse {

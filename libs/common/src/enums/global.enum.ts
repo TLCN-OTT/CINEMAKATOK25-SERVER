@@ -46,6 +46,7 @@ export enum VIDEO_STATUS {
 export enum REPORT_TYPE {
   REVIEW = 'REVIEW',
   EPISODE_REVIEW = 'EPISODE_REVIEW',
+  REVIEW_REPLY = 'REVIEW_REPLY',
 }
 
 export enum REPORT_STATUS {

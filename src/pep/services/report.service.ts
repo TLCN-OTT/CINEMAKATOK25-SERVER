@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateReportDto } from '../dtos/report.dto';
 import { EntityReport } from '../entities/report.entity';
 import { EntityReviewEpisode } from '../entities/review-episode.entity';
+import { EntityReviewReply } from '../entities/review-reply.entity';
 import { EntityReview } from '../entities/review.entity';
 
 @Injectable()
@@ -20,6 +21,8 @@ export class ReportService {
     private readonly reviewRepository: Repository<EntityReview>,
     @InjectRepository(EntityReviewEpisode)
     private readonly reviewEpisodeRepository: Repository<EntityReviewEpisode>,
+    @InjectRepository(EntityReviewReply)
+    private readonly reviewReplyRepository: Repository<EntityReviewReply>,
     private readonly emailService: EmailService,
   ) {}
 
@@ -36,6 +39,11 @@ export class ReportService {
       const episodeReview = await this.reviewEpisodeRepository.findOne({ where: { id: targetId } });
       if (!episodeReview) {
         throw new NotFoundException('Episode review not found');
+      }
+    } else if (type === REPORT_TYPE.REVIEW_REPLY) {
+      const reviewReply = await this.reviewReplyRepository.findOne({ where: { id: targetId } });
+      if (!reviewReply) {
+        throw new NotFoundException('Review reply not found');
       }
     }
 
@@ -157,6 +165,12 @@ export class ReportService {
             ],
           });
           enrichedReport.episodeReview = episodeReview;
+        } else if (report.type === REPORT_TYPE.REVIEW_REPLY) {
+          const reviewReply = await this.reviewReplyRepository.findOne({
+            where: { id: report.targetId },
+            relations: ['user', 'review', 'review.content'],
+          });
+          enrichedReport.reviewReply = reviewReply;
         }
 
         return enrichedReport;
@@ -297,6 +311,58 @@ export class ReportService {
       `;
 
       await this.emailService.sendEmail(userEmail, 'Episode Review Banned', htmlContent);
+    } else if (normalizedType === 'review-reply') {
+      const reviewReply = await this.reviewReplyRepository.findOne({
+        where: { id },
+        relations: ['user', 'review', 'review.content'],
+      });
+      if (!reviewReply) {
+        throw new NotFoundException('Review reply not found');
+      }
+
+      // Update review reply status to BANNED
+      reviewReply.status = REVIEW_STATUS.BANNED;
+      await this.reviewReplyRepository.save(reviewReply);
+
+      // Update all reports for this review reply to APPROVED
+      await this.reportRepository.update(
+        { targetId: id, type: REPORT_TYPE.REVIEW_REPLY },
+        { status: REPORT_STATUS.APPROVED },
+      );
+
+      const userEmail = reviewReply.user.email;
+      if (!userEmail) {
+        throw new NotFoundException('User email not found');
+      }
+
+      const contentTitle = reviewReply.review?.content?.title || 'Unknown Content';
+      const replyContent = reviewReply.content;
+
+      // Send email notification
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+          <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">${this.emailService['emailConfig'].fromName}</h1>
+          </div>
+          <div style="padding: 30px; color: #333;">
+            <h2 style="margin-top: 0; color: #dc2626;">Review Reply Banned</h2>
+            <p>Dear ${reviewReply.user.name || 'User'},</p>
+            <p>Your reply on a review for the content "<strong>${contentTitle}</strong>" has been banned due to violation of our community guidelines.</p>
+
+            <div style="margin: 20px 0; padding: 15px; background-color: #fee2e2; border: 1px solid #fca5a5; border-radius: 5px;">
+              <h3 style="margin-top: 0; color: #991b1b;">Banned Reply Content:</h3>
+              <p style="color: #7f1d1d; font-style: italic;">"${replyContent}"</p>
+            </div>
+
+            <p>If you believe this ban was made in error or would like to appeal, please contact our support team.</p>
+          </div>
+          <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+            <p>This is an automated message. Please do not reply to this email.</p>
+          </div>
+        </div>
+      `;
+
+      await this.emailService.sendEmail(userEmail, 'Review Reply Banned', htmlContent);
     } else {
       throw new NotFoundException('Invalid type');
     }
@@ -394,6 +460,46 @@ export class ReportService {
       `;
 
       await this.emailService.sendEmail(userEmail, 'Episode Review Restored', htmlContent);
+    } else if (normalizedType === 'review-reply') {
+      const reviewReply = await this.reviewReplyRepository.findOne({
+        where: { id },
+        relations: ['user', 'review', 'review.content'],
+      });
+      if (!reviewReply) {
+        throw new NotFoundException('Review reply not found');
+      }
+
+      // Update review reply status to ACTIVE
+      reviewReply.status = REVIEW_STATUS.ACTIVE;
+      await this.reviewReplyRepository.save(reviewReply);
+
+      const userEmail = reviewReply.user.email;
+      if (!userEmail) {
+        throw new NotFoundException('User email not found');
+      }
+
+      const contentTitle = reviewReply.review?.content?.title || 'Unknown Content';
+
+      // Send email notification
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+          <div style="background-color: #10b981; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">${this.emailService['emailConfig'].fromName}</h1>
+          </div>
+          <div style="padding: 30px; color: #333;">
+            <h2 style="margin-top: 0; color: #10b981;">Review Reply Restored</h2>
+            <p>Dear ${reviewReply.user.name || 'User'},</p>
+            <p>Good news! Your reply on a review for the content "<strong>${contentTitle}</strong>" has been restored and is now visible to other users.</p>
+
+            <p>If you have any questions about this decision, please contact our support team.</p>
+          </div>
+          <div style="background-color: #f9f9f9; padding: 15px; text-align: center; font-size: 12px; color: #777;">
+            <p>This is an automated message. Please do not reply to this email.</p>
+          </div>
+        </div>
+      `;
+
+      await this.emailService.sendEmail(userEmail, 'Review Reply Restored', htmlContent);
     } else {
       throw new NotFoundException('Invalid type');
     }

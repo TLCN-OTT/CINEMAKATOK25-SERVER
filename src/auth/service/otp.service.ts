@@ -71,7 +71,7 @@ export class OtpService {
       await this.incrementAttemptCount(email, purpose);
       throw new BadRequestException({
         code: ERROR_CODE.INVALID_TOKEN,
-        message: 'Invalid or expired OTP',
+        message: 'Invalid or expired OTP, please try again.',
       });
     }
 
@@ -82,7 +82,6 @@ export class OtpService {
         message: 'Maximum OTP attempts exceeded. Please request a new OTP.',
       });
     }
-
     matchedEntity.isUsed = true;
     await this.otpRepository.save(matchedEntity);
 
