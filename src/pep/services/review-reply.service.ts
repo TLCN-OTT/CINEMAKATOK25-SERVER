@@ -140,50 +140,93 @@ export class ReviewReplyService {
   }
 
   async deleteReply(id: string, userId?: string) {
-    const reply = await this.findReplyById(id);
+    const queryRunner = this.reviewReplyRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Check ownership if userId is provided
-    if (userId && reply.user.id !== userId) {
-      throw new ForbiddenException({
-        message: 'You are not authorized to delete this reply',
-        code: ERROR_CODE.UNAUTHORIZED,
-      });
+    try {
+      const reply = await this.findReplyById(id);
+
+      // Check ownership if userId is provided
+      if (userId && reply.user.id !== userId) {
+        throw new ForbiddenException({
+          message: 'You are not authorized to delete this reply',
+          code: ERROR_CODE.UNAUTHORIZED,
+        });
+      }
+
+      // Collect all reply IDs (current + all descendants)
+      const allReplyIds = await this.collectAllDescendantReplyIds(id, queryRunner);
+      allReplyIds.push(id); // Add current reply
+
+      // Delete all reports for all these replies in one query
+      if (allReplyIds.length > 0) {
+        await queryRunner.manager
+          .createQueryBuilder()
+          .delete()
+          .from(EntityReport)
+          .where('target_id IN (:...ids)', { ids: allReplyIds })
+          .andWhere('type = :type', { type: REPORT_TYPE.REVIEW_REPLY })
+          .execute();
+      }
+
+      // Delete all child replies recursively (bottom-up)
+      await this.deleteChildRepliesRecursively(id, queryRunner);
+
+      // Delete reports for main reply (already deleted above, but kept for clarity)
+      // Delete main reply
+      await queryRunner.manager.delete(EntityReviewReply, id);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    // Xóa tất cả child replies đệ quy trước khi xóa reply này
-    await this.deleteChildRepliesRecursively(id);
-
-    // Xóa tất cả reports liên quan đến reply này
-    await this.reportRepository.delete({
-      targetId: id,
-      type: REPORT_TYPE.REVIEW_REPLY,
-    });
-
-    // Xóa reply chính
-    await this.reviewReplyRepository.delete(id);
   }
 
   /**
-   * Xóa đệ quy tất cả child replies
+   * Collect all descendant reply IDs recursively
    */
-  private async deleteChildRepliesRecursively(parentReplyId: string): Promise<void> {
-    // Lấy tất cả child replies
-    const childReplies = await this.reviewReplyRepository.find({
+  private async collectAllDescendantReplyIds(
+    parentReplyId: string,
+    queryRunner: any,
+  ): Promise<string[]> {
+    const childReplies = await queryRunner.manager.find(EntityReviewReply, {
       where: { parentReply: { id: parentReplyId } },
       select: ['id'],
     });
 
-    // Đệ quy xóa child replies của mỗi child
+    let allIds: string[] = childReplies.map(child => child.id);
+
+    // Recursively collect descendants
     for (const child of childReplies) {
-      await this.deleteChildRepliesRecursively(child.id);
+      const descendantIds = await this.collectAllDescendantReplyIds(child.id, queryRunner);
+      allIds = allIds.concat(descendantIds);
+    }
 
-      // Xóa reports liên quan đến child reply
-      await this.reportRepository.delete({
-        targetId: child.id,
-        type: REPORT_TYPE.REVIEW_REPLY,
-      });
+    return allIds;
+  }
 
-      await this.reviewReplyRepository.delete(child.id);
+  /**
+   * Xóa đệ quy tất cả child replies (bottom-up approach)
+   */
+  private async deleteChildRepliesRecursively(
+    parentReplyId: string,
+    queryRunner: any,
+  ): Promise<void> {
+    // Lấy tất cả child replies
+    const childReplies = await queryRunner.manager.find(EntityReviewReply, {
+      where: { parentReply: { id: parentReplyId } },
+      select: ['id'],
+    });
+
+    // Đệ quy xóa child replies của mỗi child (go deeper first)
+    for (const child of childReplies) {
+      await this.deleteChildRepliesRecursively(child.id, queryRunner);
+      // Xóa child reply (reports already deleted in batch)
+      await queryRunner.manager.delete(EntityReviewReply, child.id);
     }
   }
 

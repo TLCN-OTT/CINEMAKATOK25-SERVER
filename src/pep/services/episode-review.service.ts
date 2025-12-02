@@ -23,6 +23,7 @@ import { CreateEpisodeReviewDto, UpdateEpisodeReviewDto } from '../dtos/episode.
 import { CreateReviewDto, ReviewDto, UpdateReviewDto } from '../dtos/review.dto';
 import { EntityReport } from '../entities/report.entity';
 import { EntityReviewEpisode } from '../entities/review-episode.entity';
+import { EntityReviewReply } from '../entities/review-reply.entity';
 import { EntityReview } from '../entities/review.entity';
 
 @Injectable()
@@ -32,6 +33,8 @@ export class EpisodeReviewService {
     private readonly reviewEpisodeRepository: Repository<EntityReviewEpisode>,
     @InjectRepository(EntityReport)
     private readonly reportRepository: Repository<EntityReport>,
+    @InjectRepository(EntityReviewReply)
+    private readonly reviewReplyRepository: Repository<EntityReviewReply>,
     private readonly contentService: ContentService,
     @InjectRepository(EntityEpisode)
     private readonly episodeRepository: Repository<EntityEpisode>,
@@ -152,7 +155,33 @@ export class EpisodeReviewService {
         review.episode.season.tvseries.metaData.id,
       );
 
-      // Delete all related reports before deleting the review
+      // Get all replies for this episode review
+      const replies = await queryRunner.manager.find(EntityReviewReply, {
+        where: { episodeReview: { id } },
+        select: ['id'],
+      });
+      const replyIds = replies.map(reply => reply.id);
+
+      // Delete all reports for replies
+      if (replyIds.length > 0) {
+        await queryRunner.manager.delete(EntityReport, {
+          targetId:
+            replyIds.length === 1
+              ? replyIds[0]
+              : queryRunner.manager.connection
+                  .createQueryBuilder()
+                  .where('target_id IN (:...ids)', { ids: replyIds })
+                  .getQuery(),
+          type: REPORT_TYPE.REVIEW_REPLY,
+        });
+      }
+
+      // Delete all replies (cascade will handle nested replies)
+      await queryRunner.manager.delete(EntityReviewReply, {
+        episodeReview: { id },
+      });
+
+      // Delete all related reports for the episode review itself
       await queryRunner.manager.delete(EntityReport, {
         targetId: id,
         type: REPORT_TYPE.EPISODE_REVIEW,
