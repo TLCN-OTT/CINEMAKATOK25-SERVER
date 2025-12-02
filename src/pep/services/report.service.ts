@@ -506,12 +506,16 @@ export class ReportService {
   }
 
   async approveItem(type: string, id: string): Promise<void> {
-    // Update report status to APPROVED instead of deleting
+    // Approve means ban the reported item
     const report = await this.reportRepository.findOne({ where: { id } });
     if (!report) {
       throw new NotFoundException('Report not found');
     }
 
+    // Ban the reported item
+    await this.banItem(report.type, report.targetId);
+
+    // Update report status to APPROVED
     report.status = REPORT_STATUS.APPROVED;
     await this.reportRepository.save(report);
   }

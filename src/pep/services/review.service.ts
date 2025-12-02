@@ -14,6 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateReviewDto, ReviewDto, UpdateReviewDto } from '../dtos/review.dto';
 import { EntityReport } from '../entities/report.entity';
+import { EntityReviewReply } from '../entities/review-reply.entity';
 import { EntityReview } from '../entities/review.entity';
 
 @Injectable()
@@ -23,6 +24,8 @@ export class ReviewService {
     private readonly reviewRepository: Repository<EntityReview>,
     @InjectRepository(EntityReport)
     private readonly reportRepository: Repository<EntityReport>,
+    @InjectRepository(EntityReviewReply)
+    private readonly reviewReplyRepository: Repository<EntityReviewReply>,
     private readonly contentService: ContentService,
     private readonly auditLogService: AuditLogService,
   ) {}
@@ -143,7 +146,33 @@ export class ReviewService {
 
       const contentId = review.content.id;
 
-      // Delete all related reports before deleting the review
+      // Get all replies for this review
+      const replies = await queryRunner.manager.find(EntityReviewReply, {
+        where: { review: { id } },
+        select: ['id'],
+      });
+      const replyIds = replies.map(reply => reply.id);
+
+      // Delete all reports for replies
+      if (replyIds.length > 0) {
+        await queryRunner.manager.delete(EntityReport, {
+          targetId:
+            replyIds.length === 1
+              ? replyIds[0]
+              : queryRunner.manager.connection
+                  .createQueryBuilder()
+                  .where('target_id IN (:...ids)', { ids: replyIds })
+                  .getQuery(),
+          type: REPORT_TYPE.REVIEW_REPLY,
+        });
+      }
+
+      // Delete all replies (cascade will handle nested replies)
+      await queryRunner.manager.delete(EntityReviewReply, {
+        review: { id },
+      });
+
+      // Delete all related reports for the review itself
       await queryRunner.manager.delete(EntityReport, {
         targetId: id,
         type: REPORT_TYPE.REVIEW,
