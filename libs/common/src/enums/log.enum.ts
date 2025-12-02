@@ -57,6 +57,11 @@ export enum LOG_ACTION {
   UPDATE_TAG = 'UPDATE_TAG',
   DELETE_TAG = 'DELETE_TAG',
 
+  // News related actions
+  CREATE_NEWS = 'CREATE_NEWS',
+  UPDATE_NEWS = 'UPDATE_NEWS',
+  DELETE_NEWS = 'DELETE_NEWS',
+
   // Content related actions
   CONTENT_VIEW_INCREASED = 'CONTENT_VIEW_INCREASED',
 }

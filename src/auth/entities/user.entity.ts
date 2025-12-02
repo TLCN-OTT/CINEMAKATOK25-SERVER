@@ -1,3 +1,4 @@
+import { EntityNews } from 'src/cms/entities/news.entity';
 import { EntityFavorite } from 'src/pep/entities/favorite.entity';
 import { EntityReviewEpisode } from 'src/pep/entities/review-episode.entity';
 import { EntityReview } from 'src/pep/entities/review.entity';
@@ -68,4 +69,7 @@ export class EntityUser extends PersonEntity {
 
   @OneToMany(() => EntityWatchProgress, watchProgress => watchProgress.user)
   watchProgress: EntityWatchProgress[];
+
+  @OneToMany(() => EntityNews, news => news.author)
+  news: EntityNews[];
 }
