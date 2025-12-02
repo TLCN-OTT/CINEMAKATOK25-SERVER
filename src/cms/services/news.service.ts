@@ -17,10 +17,28 @@ export class NewsService {
   ) {}
 
   async findAll(query: any) {
-    const { page = 1, limit = 10, sort } = query || {};
+    const { page = 1, limit = 10, sort, search } = query || {};
 
     const queryBuilder = this.newsRepository.createQueryBuilder('news');
     queryBuilder.leftJoinAndSelect('news.author', 'user');
+    if (search) {
+      queryBuilder
+        .where(`similarity(news.title, :search) > 0.2`)
+        .orWhere(`similarity(news.content, :search) > 0.2`)
+        .setParameter('search', search)
+        // ⚠️ orderBy phải dùng addSelect để tính toán similarity trước
+        .addSelect(
+          `
+        GREATEST(
+          similarity(news.title, :search),
+          similarity(news.content, :search)
+        )
+      `,
+          'rank',
+        )
+        .orderBy('rank', 'DESC');
+    }
+
     if (sort) {
       const sortObj = typeof sort === 'string' ? JSON.parse(sort) : sort;
       Object.keys(sortObj).forEach(key => {

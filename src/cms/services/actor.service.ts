@@ -72,7 +72,7 @@ export class ActorService {
 
     if (!actor) {
       throw new NotFoundException({
-        message: `Actor with ID ${id} not found`,
+        message: `Actor not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -134,7 +134,7 @@ export class ActorService {
     });
     if (!actor) {
       throw new NotFoundException({
-        message: `Actor with ID ${id} not found`,
+        message: `Actor not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -159,7 +159,10 @@ export class ActorService {
     // Then delete the actor itself
     const result = await this.actorRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Actor with ID ${id} not found`);
+      throw new NotFoundException({
+        message: `Actor not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
   }
 
