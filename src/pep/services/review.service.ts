@@ -215,7 +215,7 @@ export class ReviewService {
     });
     if (!review) {
       throw new NotFoundException({
-        message: `Review with ID ${id} not found`,
+        message: `Review not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -267,7 +267,7 @@ export class ReviewService {
 
     if (!review) {
       throw new NotFoundException({
-        message: `Review with ID ${reviewId} not found`,
+        message: `Review not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }

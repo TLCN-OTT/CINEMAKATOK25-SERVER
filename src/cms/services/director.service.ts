@@ -69,7 +69,10 @@ export class DirectorService {
       .getOne();
 
     if (!director) {
-      throw new NotFoundException(`Director with ID ${id} not found`);
+      throw new NotFoundException({
+        message: `Director not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
 
     // Get movie/tvseries IDs for each content
@@ -129,7 +132,7 @@ export class DirectorService {
     });
     if (!director) {
       throw new NotFoundException({
-        message: `Director with ID ${id} not found`,
+        message: `Director not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -168,7 +171,10 @@ export class DirectorService {
     // Then delete the director itself
     const result = await this.directorRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Director with ID ${id} not found`);
+      throw new NotFoundException({
+        message: `Director not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
   }
 

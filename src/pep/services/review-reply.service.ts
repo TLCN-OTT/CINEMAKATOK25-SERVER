@@ -53,7 +53,7 @@ export class ReviewReplyService {
 
       if (!review) {
         throw new NotFoundException({
-          message: `Review with ID ${createReplyDto.reviewId} not found`,
+          message: `Review not found`,
           code: ERROR_CODE.ENTITY_NOT_FOUND,
         });
       }
@@ -64,7 +64,7 @@ export class ReviewReplyService {
 
       if (!episodeReview) {
         throw new NotFoundException({
-          message: `Episode review with ID ${createReplyDto.episodeReviewId} not found`,
+          message: `Episode review not found`,
           code: ERROR_CODE.ENTITY_NOT_FOUND,
         });
       }
@@ -79,7 +79,7 @@ export class ReviewReplyService {
 
       if (!parentReply) {
         throw new NotFoundException({
-          message: `Parent reply with ID ${createReplyDto.parentReplyId} not found`,
+          message: `Parent reply not found`,
           code: ERROR_CODE.ENTITY_NOT_FOUND,
         });
       }
@@ -245,7 +245,7 @@ export class ReviewReplyService {
 
     if (!reply) {
       throw new NotFoundException({
-        message: `Reply with ID ${id} not found`,
+        message: `Reply not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -334,7 +334,7 @@ export class ReviewReplyService {
 
     if (!reply) {
       throw new NotFoundException({
-        message: `Reply with ID ${replyId} not found`,
+        message: `Reply not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }

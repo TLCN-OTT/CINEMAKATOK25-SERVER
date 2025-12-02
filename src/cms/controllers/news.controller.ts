@@ -129,6 +129,7 @@ export class NewsController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'sort', required: false, type: String, example: '{"createdAt":"DESC"}' })
+  @ApiQuery({ name: 'search', required: false, type: String, example: 'breaking news' })
   async findAll(@Query() query: PaginationQueryDto) {
     const { data, total } = await this.newsService.findAll(query);
     return ResponseBuilder.createPaginatedResponse({

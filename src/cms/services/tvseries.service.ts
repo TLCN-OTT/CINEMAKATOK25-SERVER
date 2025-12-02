@@ -539,7 +539,7 @@ export class TvSeriesService {
 
             if (!seasonEntity) {
               throw new NotFoundException({
-                message: `Season with id ${seasonDto.id} not found`,
+                message: `Season not found`,
                 code: ERROR_CODE.ENTITY_NOT_FOUND,
               });
             }
@@ -576,7 +576,7 @@ export class TvSeriesService {
 
               if (!existingEpisode) {
                 throw new NotFoundException({
-                  message: `Episode with id ${epDto.id} not found`,
+                  message: `Episode not found`,
                   code: ERROR_CODE.ENTITY_NOT_FOUND,
                 });
               }
