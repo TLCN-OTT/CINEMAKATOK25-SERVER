@@ -16,17 +16,13 @@ import {
   Post,
   Put,
   Query,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
-  ApiConsumes,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -40,6 +36,7 @@ import '../dtos/profile.dto';
 import {
   ChangePasswordRequest,
   ProfileResponse,
+  UpdateAvatarRequest,
   UpdateProfileRequest,
   UploadAvatarResponse,
 } from '../dtos/profile.dto';
@@ -149,33 +146,19 @@ export class UserController {
     });
   }
 
-  @Post('profile/avatar')
+  @Put('profile/avatar')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: 'Upload avatar',
-    description: 'Upload a new avatar image for the current user',
+    summary: 'Update avatar',
+    description: 'Update avatar with a new URL for the current user',
   })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Avatar image file',
-    schema: {
-      type: 'object',
-      properties: {
-        avatar: {
-          type: 'string',
-          format: 'binary',
-          description: 'Avatar image file (jpg, png, gif)',
-        },
-      },
-      required: ['avatar'],
-    },
-  })
+  @ApiBody({ type: UpdateAvatarRequest })
   @ApiOkResponse({
-    description: 'Avatar uploaded successfully',
+    description: 'Avatar updated successfully',
     type: UploadAvatarResponse,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid file type or file size too large',
+    description: 'Invalid avatar URL',
   })
   @ApiNotFoundResponse({
     description: 'User not found',
@@ -183,15 +166,14 @@ export class UserController {
   @ApiUnauthorizedResponse({
     description: 'Unauthorized - Invalid or missing access token',
   })
-  @UseInterceptors(FileInterceptor('avatar'))
-  async uploadAvatar(@UserSession('id') userId: string, @UploadedFile() file?: any) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-    const result = await this.profileService.uploadAvatar(userId, file);
+  async updateAvatar(
+    @UserSession('id') userId: string,
+    @Body() updateAvatarDto: UpdateAvatarRequest,
+  ) {
+    const result = await this.profileService.updateAvatar(userId, updateAvatarDto.avatarUrl);
     return ResponseBuilder.createResponse({
-      data: plainToInstance(UploadAvatarResponse, result, { excludeExtraneousValues: true }),
-      message: 'Avatar uploaded successfully',
+      data: new UploadAvatarResponse(result),
+      message: 'Avatar updated successfully',
     });
   }
 

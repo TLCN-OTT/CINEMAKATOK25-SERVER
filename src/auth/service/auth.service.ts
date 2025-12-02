@@ -1,6 +1,6 @@
 import { AuditLogService } from 'src/audit-log/service/audit-log.service';
 
-import * as config from 'config';
+import c, * as config from 'config';
 import { Repository } from 'typeorm';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
@@ -55,9 +55,21 @@ export class AuthService {
   ) {}
   async auth(AuthRequest: AuthRequest) {
     const user = await this.usersService.findByEmail(AuthRequest.email);
-    // if (!PasswordHash.comparePassword(AuthRequest.password, user.password)) {
-    //   throw new BadRequestException({ code: ERROR_CODE.INVALID_PASSWORD });
-    // }
+    if (!PasswordHash.comparePassword(AuthRequest.password, user.password)) {
+      throw new BadRequestException({ code: ERROR_CODE.INVALID_PASSWORD });
+    }
+
+    // Check if user is banned
+    if (user.isBanned || user.status === 'BANNED') {
+      const banMessage = user.bannedUntil
+        ? `Your account has been banned until ${user.bannedUntil.toLocaleString()}. Reason: ${user.banReason || 'Violation of terms'}`
+        : `Your account has been permanently banned. Reason: ${user.banReason || 'Violation of terms'}`;
+      throw new BadRequestException({
+        code: ERROR_CODE.BANNED,
+        message: banMessage,
+      });
+    }
+
     const { accessToken, refreshToken } = await this.generateTokens({
       sub: user.id,
     });
@@ -79,6 +91,18 @@ export class AuthService {
   async loginGoogle(email: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new BadRequestException({ code: ERROR_CODE.USER_NOT_FOUND });
+
+    // Check if user is banned
+    if (user.isBanned) {
+      const banMessage = user.bannedUntil
+        ? `Your account has been banned until ${user.bannedUntil.toLocaleString()}. Reason: ${user.banReason || 'Violation of terms'}`
+        : `Your account has been permanently banned. Reason: ${user.banReason || 'Violation of terms'}`;
+      throw new BadRequestException({
+        code: ERROR_CODE.UNAUTHORIZED,
+        message: banMessage,
+      });
+    }
+
     const { accessToken, refreshToken } = await this.generateTokens({
       sub: user.id,
     });
@@ -174,43 +198,51 @@ export class AuthService {
   async resetPassword(resetPasswordDto: ResetPasswordRequest) {
     const { email, otp, newPassword } = resetPasswordDto;
 
+    // Verify user exists
+    let user: EntityUser;
     try {
-      const user = await this.usersService.findByEmail(email);
-
-      const isValid = await this.otpService.verifyOtp(email, otp, OTP_PURPOSE.FORGOT_PASSWORD);
-      if (!isValid) {
-        throw new BadRequestException({
-          code: ERROR_CODE.INVALID_OTP,
-          message: 'Invalid or expired OTP',
-        });
-      }
-
-      const hashedPassword = PasswordHash.hashPassword(newPassword);
-      await this.userRepository.update(user.id, { password: hashedPassword });
-      await this.auditLogService.log({
-        action: LOG_ACTION.PASSWORD_RESET,
-        userId: user.id,
-        description: `User ${user.email} reset their password`,
-      });
-
-      await this.otpService.cleanupExpiredOtpsByEmail(email);
-      await this.otpService.cleanupExpiredOtps();
-
-      try {
-        await this.emailService.sendPasswordResetConfirmation(email);
-      } catch (err) {
-        throw new BadRequestException({
-          code: ERROR_CODE.UNEXPECTED_ERROR,
-          message: 'Password changed but failed to send confirmation email',
-        });
-      }
-      return;
+      user = await this.usersService.findByEmail(email);
+      console.log('User found for password reset:', user.email);
     } catch (error) {
       throw new NotFoundException({
         code: ERROR_CODE.USER_NOT_FOUND,
         message: 'User with this email does not exist',
       });
     }
+
+    // Verify OTP - let OTP validation errors pass through
+    const isValid = await this.otpService.verifyOtp(email, otp, OTP_PURPOSE.FORGOT_PASSWORD);
+    console.log('OTP validation result:', isValid);
+
+    if (!isValid) {
+      throw new BadRequestException({
+        code: ERROR_CODE.INVALID_OTP,
+        message: 'Invalid or expired OTP, please try again.',
+      });
+    }
+
+    // Update password
+    const hashedPassword = PasswordHash.hashPassword(newPassword);
+    await this.userRepository.update(user.id, { password: hashedPassword });
+    await this.auditLogService.log({
+      action: LOG_ACTION.PASSWORD_RESET,
+      userId: user.id,
+      description: `User ${user.email} reset their password`,
+    });
+
+    // Cleanup OTPs
+    await this.otpService.cleanupExpiredOtpsByEmail(email);
+    await this.otpService.cleanupExpiredOtps();
+
+    // Send confirmation email (non-blocking)
+    try {
+      await this.emailService.sendPasswordResetConfirmation(email);
+    } catch (err) {
+      console.error('Failed to send password reset confirmation email:', err);
+      // Don't throw - password was already changed successfully
+    }
+
+    return;
   }
 
   async resendOtp(email: string): Promise<OTPResponse> {
@@ -277,7 +309,7 @@ export class AuthService {
     if (!isOtpValid) {
       throw new BadRequestException({
         code: ERROR_CODE.INVALID_OTP,
-        message: 'Invalid or expired OTP',
+        message: 'Invalid or expired OTP, please try again.',
       });
     }
 
@@ -375,6 +407,17 @@ export class AuthService {
         });
 
         user = await this.userRepository.save(newUser);
+      }
+
+      // Check if user is banned
+      if (user.isBanned) {
+        const banMessage = user.bannedUntil
+          ? `Your account has been banned until ${user.bannedUntil.toLocaleString()}. Reason: ${user.banReason || 'Violation of terms'}`
+          : `Your account has been permanently banned. Reason: ${user.banReason || 'Violation of terms'}`;
+        throw new BadRequestException({
+          code: ERROR_CODE.UNAUTHORIZED,
+          message: banMessage,
+        });
       }
 
       // Generate JWT
