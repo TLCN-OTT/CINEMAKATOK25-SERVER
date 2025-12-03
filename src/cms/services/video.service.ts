@@ -216,7 +216,7 @@ export class VideoService {
     const video = await this.videoRepository.findOne({ where: { id: videoId } });
     if (!video) {
       throw new NotFoundException({
-        message: `Video with ID ${videoId} not found`,
+        message: `Video not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -227,7 +227,7 @@ export class VideoService {
       // Lấy episode
       if (!video.ownerId) {
         throw new NotFoundException({
-          message: `Episode ownerId is null for video with ID ${videoId}`,
+          message: `Episode ownerId is null for video`,
           code: ERROR_CODE.ENTITY_NOT_FOUND,
         });
       }

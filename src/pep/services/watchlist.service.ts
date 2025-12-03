@@ -33,7 +33,7 @@ export class WatchListService {
 
     if (!content) {
       throw new NotFoundException({
-        message: `Content with ID ${contentId} not found`,
+        message: `Content not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }

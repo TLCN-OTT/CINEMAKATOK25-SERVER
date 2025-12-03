@@ -58,7 +58,7 @@ export class TagService {
 
     if (!tag) {
       throw new NotFoundException({
-        message: `Tag with ID ${id} not found`,
+        message: `Tag not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -68,7 +68,7 @@ export class TagService {
     const tag = await this.tagRepository.findOne({ where: { id } });
     if (!tag) {
       throw new NotFoundException({
-        message: `Tag with ID ${id} not found`,
+        message: `Tag not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -107,7 +107,10 @@ export class TagService {
     // Then delete the tag itself
     const result = await this.tagRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Tag with ID ${id} not found`);
+      throw new NotFoundException({
+        message: `Tag not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
   }
 

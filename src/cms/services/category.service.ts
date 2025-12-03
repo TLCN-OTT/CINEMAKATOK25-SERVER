@@ -60,7 +60,7 @@ export class CategoryService {
 
     if (!category) {
       throw new NotFoundException({
-        message: `Category with ID ${id} not found`,
+        message: `Category not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -73,7 +73,7 @@ export class CategoryService {
     });
     if (!category) {
       throw new NotFoundException({
-        message: `Category with ID ${id} not found`,
+        message: `Category not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }
@@ -112,7 +112,10 @@ export class CategoryService {
     // Then delete the category itself
     const result = await this.categoryRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new NotFoundException({
+        message: `Category not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
   }
 

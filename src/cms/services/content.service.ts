@@ -218,7 +218,7 @@ export class ContentService {
     });
     if (!content) {
       throw new NotFoundException({
-        message: `Content with ID ${id} not found`,
+        message: `Content not found`,
         code: ERROR_CODE.ENTITY_NOT_FOUND,
       });
     }

@@ -26,6 +26,7 @@ export const validationOptions: pipes.ValidationPipeOptions = {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       error: errorFields,
       code: ERROR_CODE.INVALID_BODY,
+      message: 'Your input contains invalid data. Please check the fields and try again.',
     });
   },
 };

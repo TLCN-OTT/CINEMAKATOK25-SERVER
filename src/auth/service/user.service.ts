@@ -69,7 +69,10 @@ export class UserService {
   async findByEmail(email: string) {
     const user = await this.userRepository.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
-      throw new NotFoundException({ code: ERROR_CODE.ENTITY_NOT_FOUND });
+      throw new NotFoundException({
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+        message: 'Account with the provided email does not exist.',
+      });
     }
     return user;
   }

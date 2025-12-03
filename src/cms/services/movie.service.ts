@@ -187,7 +187,10 @@ export class MovieService {
       .getOne();
 
     if (!movie) {
-      throw new NotFoundException(`Movie with ID "${id}" not found`);
+      throw new NotFoundException({
+        message: `Movie not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
 
     const [movieWithVideo] = await this._attachVideosToMovies([movie]);
@@ -259,7 +262,10 @@ export class MovieService {
       });
 
       if (!movie) {
-        throw new NotFoundException(`Movie with ID "${id}" not found`);
+        throw new NotFoundException({
+          message: `Movie not found`,
+          code: ERROR_CODE.ENTITY_NOT_FOUND,
+        });
       }
 
       // ✅ Xóa videos liên kết với movie trước
@@ -328,7 +334,10 @@ export class MovieService {
       .getOne();
 
     if (!currentMovie) {
-      throw new NotFoundException(`Movie with ID "${movieId}" not found`);
+      throw new NotFoundException({
+        message: `Movie not found`,
+        code: ERROR_CODE.ENTITY_NOT_FOUND,
+      });
     }
 
     // Tạo query builder với similarity score
