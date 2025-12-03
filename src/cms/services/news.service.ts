@@ -24,14 +24,14 @@ export class NewsService {
     if (search) {
       queryBuilder
         .where(`similarity(news.title, :search) > 0.2`)
-        .orWhere(`similarity(news.content, :search) > 0.2`)
+        .orWhere(`similarity(news.content_html, :search) > 0.2`)
         .setParameter('search', search)
         // ⚠️ orderBy phải dùng addSelect để tính toán similarity trước
         .addSelect(
           `
         GREATEST(
           similarity(news.title, :search),
-          similarity(news.content, :search)
+          similarity(news.content_html, :search)
         )
       `,
           'rank',

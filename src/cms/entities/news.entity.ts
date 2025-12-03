@@ -14,7 +14,7 @@ export class EntityNews extends BaseEntity {
   summary: string;
   @Column({ type: 'text' })
   content_html: string;
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 500 })
   cover_image: string;
 
   @Column({ type: 'text', array: true, default: [] })
