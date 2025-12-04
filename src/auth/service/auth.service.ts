@@ -55,12 +55,12 @@ export class AuthService {
   ) {}
   async auth(AuthRequest: AuthRequest) {
     const user = await this.usersService.findByEmail(AuthRequest.email);
-    // if (!PasswordHash.comparePassword(AuthRequest.password, user.password)) {
-    //   throw new BadRequestException({
-    //     code: ERROR_CODE.INVALID_PASSWORD,
-    //     message: 'Invalid password',
-    //   });
-    // }
+    if (!PasswordHash.comparePassword(AuthRequest.password, user.password)) {
+      throw new BadRequestException({
+        code: ERROR_CODE.INVALID_PASSWORD,
+        message: 'Invalid password',
+      });
+    }
 
     // Check if user is banned
     if (user.isBanned || user.status === 'BANNED') {
