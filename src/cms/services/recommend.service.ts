@@ -15,16 +15,13 @@ export class RecommendService {
     private httpService: HttpService,
     private readonly movieService: MovieService,
     private readonly tvSeriesService: TvSeriesService,
-    private readonly recommendBaseUrl = getConfig(
-      'recommendBaseUrl',
-      'https://recommendation-system-zlxn.onrender.com',
-    ),
   ) {}
 
   async getFastApiData(userId: string, top_n: number): Promise<any> {
+    const recommendBaseUrl = getConfig('recommendBaseUrl', 'http://localhost:8000');
     try {
       const response$ = this.httpService.get(
-        `${this.recommendBaseUrl}/recommend/${userId}?top_n=${top_n}`,
+        `${recommendBaseUrl}/recommend/${userId}?top_n=${top_n}`,
         {},
       );
       const response = await lastValueFrom(response$);
