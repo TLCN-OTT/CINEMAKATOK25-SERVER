@@ -22,7 +22,7 @@ export async function setupBootstrap(app: INestApplication<any>) {
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
       'http://127.0.0.1:3005',
-      'https://cinemakatok-25-fe-admin-bn2w.vercel.app',
+      'https://cinemakatok25-fe-client.vercel.app',
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
