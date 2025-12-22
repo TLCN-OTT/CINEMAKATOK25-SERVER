@@ -153,6 +153,37 @@ export const processVideoHLS = async (inputFilePath: string): Promise<CreateVide
       console.log(`[FFmpeg stdout] ${data.toString()}`);
     });
 
+    // ffmpegProcess.stderr.on('data', data => {
+    //   const msg = data.toString();
+    //   stderrOutput += msg;
+
+    //   // FFmpeg outputs progress to stderr, so we log it
+    //   if (msg.includes('frame=') || msg.includes('time=')) {
+    //     process.stdout.write(`\r🎞️ ${msg.trim()}`);
+    //   } else if (msg.toLowerCase().includes('error') || msg.toLowerCase().includes('invalid')) {
+    //     console.error(`❌ [FFmpeg Error] ${msg}`);
+    //     hasError = true;
+    //   } else {
+    //     console.log(`[FFmpeg] ${msg.trim()}`);
+    //   }
+    // });
+
+    // ffmpegProcess.on('close', async code => {
+    //   console.log(`\n🏁 FFmpeg process finished with exit code: ${code}`);
+
+    //   if (code === 0 && !hasError) {
+    //     console.log(`✅ HLS transcoding complete! Output: ${outputDir}`);
+
+    //     // Validate output files
+    //     const validation = validateOutput(outputDir);
+    //     if (!validation.success) {
+    //       console.error('Output validation failed:');
+    //       console.error(validation.message);
+    //       console.error('Full FFmpeg output:');
+    //       console.error(stderrOutput);
+    //       reject(new Error(validation.message));
+    //       return;
+    //     }
     ffmpegProcess.stderr.on('data', data => {
       const msg = data.toString();
       stderrOutput += msg;
@@ -160,7 +191,15 @@ export const processVideoHLS = async (inputFilePath: string): Promise<CreateVide
       // FFmpeg outputs progress to stderr, so we log it
       if (msg.includes('frame=') || msg.includes('time=')) {
         process.stdout.write(`\r🎞️ ${msg.trim()}`);
-      } else if (msg.toLowerCase().includes('error') || msg.toLowerCase().includes('invalid')) {
+      } else if (
+        // Only mark as error for critical failures
+        (msg.toLowerCase().includes('error') &&
+          !msg.includes('Error parsing Opus packet header') && // Ignore Opus warnings
+          !msg.includes('deprecated pixel format')) || // Ignore deprecation warnings
+        msg.toLowerCase().includes('invalid option') ||
+        msg.toLowerCase().includes('no such file') ||
+        msg.toLowerCase().includes('permission denied')
+      ) {
         console.error(`❌ [FFmpeg Error] ${msg}`);
         hasError = true;
       } else {
@@ -171,16 +210,15 @@ export const processVideoHLS = async (inputFilePath: string): Promise<CreateVide
     ffmpegProcess.on('close', async code => {
       console.log(`\n🏁 FFmpeg process finished with exit code: ${code}`);
 
+      // Consider successful if exit code is 0 AND no critical errors detected
       if (code === 0 && !hasError) {
         console.log(`✅ HLS transcoding complete! Output: ${outputDir}`);
 
         // Validate output files
         const validation = validateOutput(outputDir);
         if (!validation.success) {
-          console.error('Output validation failed:');
+          console.error('❌ Output validation failed:');
           console.error(validation.message);
-          console.error('Full FFmpeg output:');
-          console.error(stderrOutput);
           reject(new Error(validation.message));
           return;
         }
