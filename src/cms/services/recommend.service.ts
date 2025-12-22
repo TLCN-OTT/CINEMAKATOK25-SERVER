@@ -2,6 +2,7 @@
 import { lastValueFrom } from 'rxjs';
 
 import { ERROR_CODE } from '@app/common/constants/global.constants';
+import { getConfig } from '@app/common/utils/get-config';
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Injectable } from '@nestjs/common';
 
@@ -14,12 +15,16 @@ export class RecommendService {
     private httpService: HttpService,
     private readonly movieService: MovieService,
     private readonly tvSeriesService: TvSeriesService,
+    private readonly recommendBaseUrl = getConfig(
+      'recommendBaseUrl',
+      'https://recommendation-system-zlxn.onrender.com',
+    ),
   ) {}
 
   async getFastApiData(userId: string, top_n: number): Promise<any> {
     try {
       const response$ = this.httpService.get(
-        `http://127.0.0.1:8000/recommend/${userId}?top_n=${top_n}`,
+        `${this.recommendBaseUrl}/recommend/${userId}?top_n=${top_n}`,
         {},
       );
       const response = await lastValueFrom(response$);
