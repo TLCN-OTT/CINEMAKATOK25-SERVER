@@ -1,0 +1,357 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Format
+        run: pnpm run format
+
+  build-and-deploy:
+    needs: [format]
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
+          platforms: linux/amd64
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            docker pull ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
+            docker stop my-nest-app || true
+            docker rm my-nest-app || true
+
+            echo "${{ secrets.DB_CA_CERTIFICATE }}" > /home/ubuntu/ca.pem
+
+            # Kiểm tra secrets có giá trị không (không show content)
+            echo "🔍 Checking secrets availability..."
+            [ -n "${{ secrets.CORE_DATABASE_HOST }}" ] && echo "✅ CORE_DATABASE_HOST is set" || echo "❌ CORE_DATABASE_HOST is empty"
+            [ -n "${{ secrets.CORE_DATABASE_PORT }}" ] && echo "✅ CORE_DATABASE_PORT is set" || echo "❌ CORE_DATABASE_PORT is empty"
+            [ -n "${{ secrets.CORE_DATABASE_USERNAME }}" ] && echo "✅ CORE_DATABASE_USERNAME is set" || echo "❌ CORE_DATABASE_USERNAME is empty"
+            [ -n "${{ secrets.CORE_DATABASE_PASSWORD }}" ] && echo "✅ CORE_DATABASE_PASSWORD is set" || echo "❌ CORE_DATABASE_PASSWORD is empty"
+            [ -n "${{ secrets.CORE_DATABASE_DB_NAME }}" ] && echo "✅ CORE_DATABASE_DB_NAME is set" || echo "❌ CORE_DATABASE_DB_NAME is empty"
+            [ -n "${{ secrets.JWT_PRIVATE_KEY }}" ] && echo "✅ JWT_PRIVATE_KEY is set" || echo "❌ JWT_PRIVATE_KEY is empty"
+            [ -n "${{ secrets.JWT_PUBLIC_KEY }}" ] && echo "✅ JWT_PUBLIC_KEY is set" || echo "❌ JWT_PUBLIC_KEY is empty"
+            [ -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ] && echo "✅ AWS_SECRET_ACCESS_KEY is set" || echo "❌ AWS_SECRET_ACCESS_KEY is empty"
+            [ -n "${{ secrets.AWS_REGION }}" ] && echo "✅ AWS_REGION is set" || echo "❌ AWS_REGION is empty"
+            [ -n "${{ secrets.AWS_BUCKET_NAME }}" ] && echo "✅ AWS_BUCKET_NAME is set" || echo "❌ AWS_BUCKET_NAME is empty"
+            [ -n "${{ secrets.AWS_S3_BUCKET_URL }}" ] && echo "✅ AWS_S3_BUCKET_URL is set" || echo "❌ AWS_S3_BUCKET_URL is empty"
+            [ -n "${{ secrets.AWS_CLOUDFRONT_DOMAIN }}" ] && echo "✅ AWS_CLOUDFRONT_DOMAIN is set" || echo "❌ AWS_CLOUDFRONT_DOMAIN is empty"
+            [ -n "${{ secrets.AWS_CLOUDFRONT_KEY_PAIR_ID }}" ] && echo "✅ AWS_CLOUDFRONT_KEY_PAIR_ID is set" || echo "❌ AWS_CLOUDFRONT_KEY_PAIR_ID is empty"
+            [ -n "${{ secrets.AWS_CLOUDFRONT_PRIVATE_KEY }}" ] && echo "✅ AWS_CLOUDFRONT_PRIVATE_KEY is set" || echo "❌ AWS_CLOUDFRONT_PRIVATE_KEY is empty"
+            echo "✅ NODE_ENV will be set to: ${{ secrets.NODE_ENV || 'production' }}"
+
+            # Fail early if critical secrets are missing
+            if [ -z "${{ secrets.CORE_DATABASE_HOST }}" ] || [ -z "${{ secrets.CORE_DATABASE_PASSWORD }}" ]; then
+              echo "❌ Critical database secrets are missing"
+              exit 1
+            fi
+
+            # Create exports directory with proper permissions
+            mkdir -p /home/ubuntu/exports
+            chmod 755 /home/ubuntu/exports
+
+            # Test Aiven PostgreSQL connectivity before deploy
+            echo "🔍 Testing Aiven PostgreSQL connectivity..."
+            if nc -zv ${{ secrets.CORE_DATABASE_HOST }} ${{ secrets.CORE_DATABASE_PORT }}; then
+              echo "✅ Database connectivity confirmed"
+            else
+              echo "❌ Cannot connect to database, aborting deployment"
+              exit 1
+            fi
+
+            # Create custom-environment-variables.js for proper config mapping
+            mkdir -p /home/ubuntu/config
+            cat > /home/ubuntu/config/custom-environment-variables.js <<'EOF'
+            require('dotenv').config();
+
+            const number = name => ({ __name: name, __format: 'number' });
+            const boolean = name => ({ __name: name, __format: 'boolean' });
+            const json = name => ({ __name: name, __format: 'json' });
+
+            module.exports = {
+              //Server configuration
+              port: number('PORT'),
+              appName: 'APP_NAME',
+              recommendBaseUrl: 'RECOMMEND_BASE_URL',
+              jwt: {
+                privateKey: 'JWT_PRIVATE_KEY',
+                publicKey: 'JWT_PUBLIC_KEY',
+                expiresTime: 'ACCESS_TOKEN_EXPIRES_TIME',
+                refreshExpiresTime: 'REFRESH_TOKEN_EXPIRES_TIME',
+              },
+              aws: {
+                accessKeyId: 'AWS_ACCESS_KEY_ID',
+                secretAccessKey: 'AWS_SECRET_ACCESS_KEY',
+                region: 'AWS_REGION',
+                bucketName: 'AWS_BUCKET_NAME',
+                s3BucketUrl: 'AWS_S3_BUCKET_URL',
+                cloudfrontDomain: 'AWS_CLOUDFRONT_DOMAIN',
+                cloudfrontKeyPairId: 'AWS_CLOUDFRONT_KEY_PAIR_ID',
+                cloudfrontPrivateKey: 'AWS_CLOUDFRONT_PRIVATE_KEY',
+              },
+              r2: {
+                accessKeyId: 'R2_ACCESS_KEY_ID',
+                secretAccessKey: 'R2_SECRET_ACCESS_KEY',
+                bucketNameR2: 'R2_BUCKET_NAME',
+                endpoint: 'R2_ENDPOINT',
+                publicUrl: 'R2_PUBLIC_URL',
+              },
+              // Email configuration
+              email: {
+                host: 'SMTP_HOST',
+                port: number('SMTP_PORT'),
+                user: 'SMTP_USER',
+                pass: 'SMTP_PASS',
+                fromName: 'SMTP_FROM',
+                secure: boolean('SMTP_SECURE'),
+              },
+              // OAuth2 configuration
+              google: {
+                clientID: 'GOOGLE_CLIENT_ID',
+                clientSecret: 'GOOGLE_CLIENT_SECRET',
+                callbackURL: 'GOOGLE_CALLBACK_URL',
+              },
+              redis: {
+                host: 'REDIS_HOST',
+                port: number('REDIS_PORT'),
+                password: 'REDIS_PASSWORD',
+              },
+              // Core Config
+              core: {
+                database: {
+                  type: 'CORE_DATABASE_TYPE',
+                  host: 'CORE_DATABASE_HOST',
+                  port: number('CORE_DATABASE_PORT'),
+                  username: 'CORE_DATABASE_USERNAME',
+                  password: 'CORE_DATABASE_PASSWORD',
+                  dbName: 'CORE_DATABASE_DB_NAME',
+                  synchronize: boolean('CORE_DATABASE_SYNCHRONIZE'),
+                  caCertificate: 'DB_CA_CERTIFICATE',
+                },
+                cache: {
+                  store: 'CORE_CACHE_STORE',
+                  ttl: number('CORE_CACHE_TTL'),
+                  max: number('CORE_CACHE_MAX'),
+                },
+                healthCheck: {
+                  disk: {
+                    path: 'CORE_HEALTHCHECK_DISK_PATH',
+                    thresholdPercent: number('CORE_HEALTHCHECK_DISK_THRESHOLDPERCENT'),
+                    enable: boolean('CORE_HEALTHCHECK_DISK_ENABLE'),
+                  },
+                  memory: {
+                    heapThreshold: number('CORE_HEALTHCHECK_MEMORY_HEAPTHRESHOLD'),
+                    rssThreshold: number('CORE_HEALTHCHECK_MEMORY_RSSTHRESHOLD'),
+                    enableHeapCheck: boolean('CORE_HEALTHCHECK_MEMORY_ENABLEHEAPCHECK'),
+                    enableRssCheck: boolean('CORE_HEALTHCHECK_MEMORY_ENABLERSSCHECK'),
+                  },
+                  database: {
+                    enable: boolean('CORE_HEALTHCHECK_DATABASE_ENABLE'),
+                  },
+                  http: {
+                    url: 'CORE_HEALTHCHECK_HTTP_URL',
+                    enable: boolean('CORE_HEALTHCHECK_HTTP_ENABLE'),
+                  },
+                },
+                axios: {
+                  timeout: number('CORE_AXIOS_TIMEOUT'),
+                },
+              },
+            };
+            EOF
+
+            docker run -d \
+              --name my-nest-app \
+              --restart always \
+              -p 3000:3000 \
+              -e NODE_ENV=${{ secrets.NODE_ENV || 'production' }} \
+              -e RECOMMEND_BASE_URL="${{ secrets.RECOMMEND_BASE_URL }}" \
+              -e NODE_CONFIG_DIR=/app/config \
+              -e SUPPRESS_NO_CONFIG_WARNING=true \
+              -e PORT=3000 \
+              -e CORE_DATABASE_TYPE=postgres \
+              -e CORE_DATABASE_HOST=${{ secrets.CORE_DATABASE_HOST }} \
+              -e CORE_DATABASE_PORT=${{ secrets.CORE_DATABASE_PORT }} \
+              -e CORE_DATABASE_USERNAME=${{ secrets.CORE_DATABASE_USERNAME }} \
+              -e CORE_DATABASE_PASSWORD=${{ secrets.CORE_DATABASE_PASSWORD }} \
+              -e CORE_DATABASE_DB_NAME=${{ secrets.CORE_DATABASE_DB_NAME }} \
+              -e CORE_DATABASE_SYNCHRONIZE=true \
+              -e DB_CA_CERTIFICATE="${{ secrets.DB_CA_CERTIFICATE }}" \
+              -e JWT_PRIVATE_KEY="${{ secrets.JWT_PRIVATE_KEY }}" \
+              -e JWT_PUBLIC_KEY="${{ secrets.JWT_PUBLIC_KEY }}" \
+              -e ACCESS_TOKEN_EXPIRES_TIME="${{ secrets.ACCESS_TOKEN_EXPIRES_TIME || '5m' }}" \
+              -e REFRESH_TOKEN_EXPIRES_TIME="${{ secrets.REFRESH_TOKEN_EXPIRES_TIME || '7d' }}" \
+              -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+              -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+              -e GOOGLE_CALLBACK_URL="${{ secrets.GOOGLE_CALLBACK_URL }}" \
+              -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \
+              -e SMTP_PORT=587 \
+              -e SMTP_USER="${{ secrets.SMTP_USER }}" \
+              -e SMTP_FROM="${{ secrets.SMTP_FROM }}" \
+              -e SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+              -e SMTP_SECURE=false \
+              -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+              -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+              -e AWS_REGION="${{ secrets.AWS_REGION }}" \
+              -e AWS_BUCKET_NAME="${{ secrets.AWS_BUCKET_NAME }}" \
+              -e AWS_S3_BUCKET_URL="${{ secrets.AWS_S3_BUCKET_URL }}" \
+              -e AWS_CLOUDFRONT_DOMAIN="${{ secrets.AWS_CLOUDFRONT_DOMAIN }}" \
+              -e AWS_CLOUDFRONT_KEY_PAIR_ID="${{ secrets.AWS_CLOUDFRONT_KEY_PAIR_ID }}" \
+              -e AWS_CLOUDFRONT_PRIVATE_KEY="${{ secrets.AWS_CLOUDFRONT_PRIVATE_KEY }}" \
+              -e R2_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}" \
+              -e R2_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}" \
+              -e R2_BUCKET_NAME="${{ secrets.R2_BUCKET_NAME }}" \
+              -e R2_ENDPOINT="${{ secrets.R2_ENDPOINT }}" \
+              -e R2_PUBLIC_URL="${{ secrets.R2_PUBLIC_URL }}" \
+              -e REDIS_HOST="${{ secrets.REDIS_HOST }}" \
+              -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
+              -e REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}" \
+              -e CORE_CACHE_STORE=memory \
+              -e CORE_CACHE_TTL=5000 \
+              -e CORE_CACHE_MAX=100 \
+              -e CORE_AXIOS_TIMEOUT=3000 \
+              -e PGSSLMODE=require \
+              --health-cmd="node -e \"require('http').get('http://localhost:3000/api/hello', (res) => process.exit(res.statusCode === 200 ? 0 : 1))\"" \
+              --health-interval=30s \
+              --health-timeout=10s \
+              --health-retries=3 \
+              --health-start-period=40s \
+              -v /home/ubuntu/ca.pem:/app/ca.pem:ro \
+              -v /home/ubuntu/exports:/app/exports \
+              -v /home/ubuntu/config/custom-environment-variables.js:/app/config/custom-environment-variables.js:ro \
+              ${{ secrets.DOCKER_USERNAME }}/my-nest-app:latest
+
+            # Wait a moment for container to start
+            sleep 5
+
+            # Verify container environment variables are set
+            echo "🔍 Verifying container environment..."
+            docker exec my-nest-app printenv | grep "CORE_DATABASE" | wc -l
+
+            # Debug environment variables (không show values)
+            echo "🔍 Debugging database connection..."
+            docker exec my-nest-app sh -c "echo 'Database Host Length:' \${#CORE_DATABASE_HOST}"
+            docker exec my-nest-app sh -c "echo 'Database Port:' \$CORE_DATABASE_PORT"
+            docker exec my-nest-app sh -c "echo 'Database Name Length:' \${#CORE_DATABASE_DB_NAME}"
+
+            # Test config loading trong container
+            echo "🔍 Testing config loading in container..."
+            docker exec my-nest-app node -e "
+              const config = require('config');
+              console.log('Config loaded from:', config.util.getConfigSources().map(s => s.name));
+              console.log('Database host from config:', config.get('core.database.host'));
+              console.log('Database port from config:', config.get('core.database.port'));
+              console.log('Database dbName from config:', config.get('core.database.dbName'));
+            " || echo "Config test failed"
+
+            # Debug trực tiếp từ secrets (masked nhưng có thể test connectivity)
+            echo "🔍 Testing database connectivity from host..."
+            nc -zv ${{ secrets.CORE_DATABASE_HOST }} ${{ secrets.CORE_DATABASE_PORT }} || echo "Host to DB connection failed"
+
+            # Test database connectivity từ trong container
+            echo "🔍 Testing database connectivity from container..."
+            docker exec my-nest-app sh -c "timeout 5 nc -zv \$CORE_DATABASE_HOST \$CORE_DATABASE_PORT" || echo "Container to DB connection failed"
+
+            sudo systemctl reload nginx
+
+            # Wait for container to be healthy
+            echo "⏳ Waiting for container to start and become healthy..."
+            timeout=300  # 5 minutes timeout
+            counter=0
+            while [ $counter -lt $timeout ]; do
+              if docker inspect --format='{{.State.Health.Status}}' my-nest-app 2>/dev/null | grep -q "healthy"; then
+                echo "✅ Container is healthy"
+                break
+              elif docker inspect --format='{{.State.Health.Status}}' my-nest-app 2>/dev/null | grep -q "unhealthy"; then
+                echo "❌ Container is unhealthy"
+                docker logs --tail 20 my-nest-app
+                exit 1
+              else
+                echo "⏳ Container status: $(docker inspect --format='{{.State.Health.Status}}' my-nest-app 2>/dev/null || echo 'starting')"
+                sleep 5
+                counter=$((counter + 5))
+              fi
+            done
+
+            if [ $counter -ge $timeout ]; then
+              echo "❌ Container health check timeout"
+              docker logs --tail 20 my-nest-app
+              exit 1
+            fi
+
+            # Verify config is correctly loaded
+            echo "🔍 Verifying final config in container..."
+            docker exec my-nest-app node -e "
+              const config = require('config');
+              console.log('✅ Config sources:', config.util.getConfigSources().map(s => s.name));
+              console.log('✅ Database host:', config.get('core.database.host'));
+              console.log('✅ Database port:', config.get('core.database.port'));
+              console.log('✅ Database name:', config.get('core.database.dbName'));
+              console.log('✅ Database synchronize:', config.get('core.database.synchronize'));
+            " || echo "❌ Config verification failed"
+
+            # Reload nginx
+            sudo systemctl reload nginx
+
+            # Final health check
+            echo "🔍 Final external health check..."
+            if curl -f -m 10 https://veezy.shop/api/health; then
+              echo "✅ External health check passed"
+              echo "✅ Deployment successful"
+            else
+              echo "⚠️ External health check failed, checking container logs..."
+              docker logs --tail 10 my-nest-app
+              echo "✅ Deployment completed (container running, may need nginx config check)"
+            fi
+
+            docker image prune -f

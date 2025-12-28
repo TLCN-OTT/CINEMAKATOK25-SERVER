@@ -1,0 +1,171 @@
+import { AuditLogService } from 'src/audit-log/service/audit-log.service';
+
+import { plainToInstance } from 'class-transformer';
+
+import { UserSession } from '@app/common/decorators/userSession.decorator';
+import { LOG_ACTION } from '@app/common/enums/log.enum';
+import { IsAdminGuard, JwtAuthGuard } from '@app/common/guards';
+import { PaginatedApiResponseDto, ResponseBuilder } from '@app/common/utils/dto';
+import { PaginationQueryDto } from '@app/common/utils/dto/pagination-query.dto';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+
+import {
+  CreateDirectorDto,
+  DirectorContentDto,
+  DirectorDetailDto,
+  DirectorDto,
+  UpdateDirectorDto,
+} from '../dtos/director.dto';
+import { DirectorService } from '../services/director.service';
+
+@ApiTags('cms/Directors')
+@Controller('directors')
+@ApiBearerAuth()
+export class DirectorController {
+  constructor(
+    private readonly directorService: DirectorService,
+    private readonly auditLogService: AuditLogService,
+  ) {}
+
+  @Post()
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @ApiOperation({ summary: '[ADMIN] Create a new director' })
+  async create(@Body() createDirectorDto: CreateDirectorDto, @UserSession('id') userId: string) {
+    const director = await this.directorService.create(createDirectorDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.CREATE_DIRECTOR,
+      userId: userId,
+      description: `Created director with ID ${director.id} by admin ${userId}`,
+    });
+    return ResponseBuilder.createResponse({
+      message: 'Director created successfully',
+      data: plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
+    });
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all directors' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    type: String,
+    description: 'Sort order for directors',
+    example: '{ "createdAt": "DESC" }',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search directors by name or nationality',
+  })
+  async findAll(@Query() query: PaginationQueryDto) {
+    const { data, total } = await this.directorService.findAll(query);
+    return ResponseBuilder.createPaginatedResponse({
+      data: data.map(director =>
+        plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
+      ),
+      totalItems: total,
+      currentPage: query.page || 1,
+      itemsPerPage: query.limit || 10,
+      message: 'Directors retrieved successfully',
+    });
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a director by ID with all contents' })
+  @ApiParam({
+    name: 'id',
+    description: 'Director ID',
+    type: String,
+  })
+  async findOne(@Param('id') id: string) {
+    const director = await this.directorService.findOne(id);
+
+    // Transform response với contents
+    const directorDetail: any = {
+      ...plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
+      contents:
+        director.contents?.map((content: any) =>
+          plainToInstance(
+            DirectorContentDto,
+            {
+              id: content.movieOrSeriesId, // Movie ID hoặc TVSeries ID
+              contentId: content.id, // Content ID (metadata)
+              type: content.type,
+              title: content.title,
+              description: content.description,
+              thumbnail: content.thumbnail,
+              releaseDate: content.releaseDate,
+              duration: content.duration,
+              rating: content.rating,
+            },
+            { excludeExtraneousValues: true },
+          ),
+        ) || [],
+      contentCount: director.contents?.length || 0,
+    };
+
+    return ResponseBuilder.createResponse({
+      message: 'Director retrieved successfully',
+      data: directorDetail,
+    });
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @ApiOperation({ summary: '[ADMIN] Update a director' })
+  @ApiParam({
+    name: 'id',
+    description: 'Director ID',
+    type: String,
+  })
+  async update(
+    @Param('id') id: string,
+    @Body() updateDirectorDto: UpdateDirectorDto,
+    @UserSession('id') userId: string,
+  ) {
+    const director = await this.directorService.update(id, updateDirectorDto);
+    await this.auditLogService.log({
+      action: LOG_ACTION.UPDATE_DIRECTOR,
+      userId: userId,
+      description: `Updated director with ID ${director.id} by admin ${userId}`,
+    });
+    return ResponseBuilder.createResponse({
+      message: 'Director updated successfully',
+      data: plainToInstance(DirectorDto, director, { excludeExtraneousValues: true }),
+    });
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @ApiOperation({ summary: '[ADMIN] Delete a director' })
+  @ApiParam({
+    name: 'id',
+    description: 'Director ID',
+    type: String,
+  })
+  async remove(@Param('id') id: string, @UserSession('id') userId: string) {
+    await this.directorService.remove(id);
+    await this.auditLogService.log({
+      action: LOG_ACTION.DELETE_DIRECTOR,
+      userId: userId,
+      description: `Deleted director with ID ${id} by admin ${userId}`,
+    });
+    return ResponseBuilder.createResponse({
+      message: 'Director deleted successfully',
+      data: null,
+    });
+  }
+}
