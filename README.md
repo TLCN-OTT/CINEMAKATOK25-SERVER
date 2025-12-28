@@ -2,26 +2,8 @@
 
 A comprehensive cinema management system backend API built with NestJS framework, providing robust solutions for content management, scheduling, and user authentication.
 
-## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Database Setup](#database-setup)
-- [Running the Application](#running-the-application)
-- [API Documentation](#api-documentation)
-- [Docker Deployment](#docker-deployment)
-- [CI/CD Pipeline](#cicd-pipeline)
-- [Project Structure](#project-structure)
-- [Available Scripts](#available-scripts)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
-
-## 🎯 Overview
+## Overview
 
 CINEMAKATOK25 Server is a production-ready backend system for cinema management, featuring:
 
@@ -33,7 +15,7 @@ CINEMAKATOK25 Server is a production-ready backend system for cinema management,
 - Real-time notifications via email
 - Cloud storage integration (AWS S3, Cloudflare R2)
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Framework**: [NestJS](https://nestjs.com/) v10.x
 - **Language**: TypeScript 5.x
@@ -48,7 +30,7 @@ CINEMAKATOK25 Server is a production-ready backend system for cinema management,
 - **CI/CD**: GitHub Actions
 - **Containerization**: Docker
 
-## ✨ Features
+## Features
 
 ### Authentication Module ([`src/auth`](src/auth))
 
@@ -91,7 +73,7 @@ CINEMAKATOK25 Server is a production-ready backend system for cinema management,
 - VTT subtitle support
 - Queue-based processing with Bull
 
-## 📦 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed:
 
@@ -132,7 +114,7 @@ sudo apt install ffmpeg
 brew install ffmpeg
 ```
 
-## 🚀 Installation
+## Installation
 
 1. **Clone the repository**
 
@@ -263,7 +245,7 @@ REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
 ```
 
-## 💾 Database Setup
+## Database Setup
 
 ### 1. Create Database
 
@@ -309,7 +291,7 @@ This will create:
 
 See [`db/seed-data.ts`](db/seed-data.ts) for all seed data.
 
-## 🏃 Running the Application
+## Running the Application
 
 ### Development Mode
 
@@ -396,7 +378,7 @@ curl -X GET http://localhost:3000/cms/movies \
 - `GET /cms/analytics/movies` - Movie view statistics
 - `GET /cms/analytics/trending` - Trending content
 
-## 🐳 Docker Deployment
+## Docker Deployment
 
 ### Build Docker Image
 
@@ -474,7 +456,7 @@ Run with:
 docker-compose up -d
 ```
 
-## 🔄 CI/CD Pipeline
+## CI/CD Pipeline
 
 The project uses GitHub Actions for continuous integration and deployment.
 
@@ -547,7 +529,7 @@ REDIS_PORT
 REDIS_PASSWORD
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── .github/
@@ -638,7 +620,7 @@ REDIS_PASSWORD
 - [`libs/common/src/utils/hls/video-hls.ts`](libs/common/src/utils/hls/video-hls.ts) - HLS video processing
 - [`config/custom-environment-variables.js`](config/custom-environment-variables.js) - Environment variable mapping
 
-## 📜 Available Scripts
+## Available Scripts
 
 See [`package.json`](package.json) for all available scripts:
 
@@ -687,7 +669,7 @@ ts-node db/run-seed.ts    # Seed database
 pnpm run worker:video     # Start video processing worker
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Unit Tests
 
@@ -774,7 +756,7 @@ Or set environment variable:
 PORT=3001 pnpm run start:dev
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -789,11 +771,11 @@ PORT=3001 pnpm run start:dev
 - Write tests for new features
 - Update documentation as needed
 
-## 📄 License
+## License
 
 This project is [UNLICENSED] - Private project for CINEMAKATOK25 team.
 
-## 👥 Team
+## Team
 
 **CINEMAKATOK25 Development Team**
 
